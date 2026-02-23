@@ -2,14 +2,6 @@
 name: engineering-paper-humanizer
 description: 深度重写工程类中文学术文本（LaTeX），消除 AIGC 痕迹，注入人类工程师行文风格
 license: MIT
-compatibility:
-  - claude-code
-  - codex
-  - opencode
-metadata:
-  version: "3.1.0"
-  audience: "engineering-students, researchers"
-  workflow: "rewriting, anti-aigc, latex-safe, cli-integration"
 ---
 
 # Engineering Paper Humanizer

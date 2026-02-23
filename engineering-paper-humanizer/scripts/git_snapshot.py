@@ -16,6 +16,14 @@
 import argparse
 import subprocess
 from pathlib import Path
+import sys
+import io
+import os
+
+# Windows GBK 终端兼容：强制 UTF-8 输出
+if os.name == 'nt':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 
 SNAPSHOT_PREFIX = "[humanizer-backup]"
@@ -28,7 +36,7 @@ def is_git_repo() -> bool:
     """检测当前目录是否处于 Git 仓库内"""
     result = subprocess.run(
         ["git", "rev-parse", "--is-inside-work-tree"],
-        capture_output=True, text=True
+        capture_output=True, text=True, encoding='utf-8'
     )
     return result.returncode == 0 and result.stdout.strip() == "true"
 
@@ -37,7 +45,7 @@ def get_latest_snapshot_hash() -> str | None:
     """获取最近一次备份快照的 commit hash"""
     result = subprocess.run(
         ["git", "log", "--format=%H", f"--grep={SNAPSHOT_GREP}", "-1"],
-        capture_output=True, text=True
+        capture_output=True, text=True, encoding='utf-8'
     )
     if result.returncode == 0 and result.stdout.strip():
         return result.stdout.strip()
@@ -49,72 +57,72 @@ def get_latest_snapshot_hash() -> str | None:
 def cmd_snapshot(filepath: str) -> None:
     """为指定文件创建备份快照提交"""
     if not is_git_repo():
-        print("⚠️  当前目录不在 Git 仓库内，跳过备份快照（不影响后续流程）")
+        print("[WARN] 当前目录不在 Git 仓库内，跳过备份快照（不影响后续流程）")
         return
 
     path = Path(filepath)
     if not path.exists():
-        print(f"⚠️  文件不存在: {filepath}，跳过备份快照")
+        print(f"[WARN] 文件不存在: {filepath}，跳过备份快照")
         return
 
     # 检查文件是否有未提交变更
     status_result = subprocess.run(
         ["git", "status", "--porcelain", str(path)],
-        capture_output=True, text=True
+        capture_output=True, text=True, encoding='utf-8'
     )
     has_changes = bool(status_result.stdout.strip())
 
     if has_changes:
         # 有变更：git add + git commit
-        subprocess.run(["git", "add", str(path)], check=True)
+        subprocess.run(["git", "add", str(path)], check=True, encoding='utf-8')
         commit_msg = f"{SNAPSHOT_PREFIX} 修改前备份 {path.name}"
         result = subprocess.run(
             ["git", "commit", "-m", commit_msg],
-            capture_output=True, text=True
+            capture_output=True, text=True, encoding='utf-8'
         )
         if result.returncode == 0:
-            print(f"✅ 已创建备份快照：{commit_msg}")
+            print(f"[OK] 已创建备份快照：{commit_msg}")
         else:
-            print(f"⚠️  创建快照失败：{result.stderr.strip()}")
+            print(f"[WARN] 创建快照失败：{result.stderr.strip()}")
     else:
         # 无变更：检查最近提交是否已是备份快照
         latest_msg_result = subprocess.run(
             ["git", "log", "--format=%s", "-1"],
-            capture_output=True, text=True
+            capture_output=True, text=True, encoding='utf-8'
         )
-        latest_msg = latest_msg_result.stdout.strip()
+        latest_msg = (latest_msg_result.stdout or '').strip()
         if latest_msg.startswith(SNAPSHOT_PREFIX):
-            print(f"ℹ️  文件无变更且最近提交已是备份快照，跳过")
+            print("[INFO] 文件无变更且最近提交已是备份快照，跳过")
         else:
             # 创建空提交作为标记点
             commit_msg = f"{SNAPSHOT_PREFIX} 无变更标记点 {path.name}"
             result = subprocess.run(
                 ["git", "commit", "--allow-empty", "-m", commit_msg],
-                capture_output=True, text=True
+                capture_output=True, text=True, encoding='utf-8'
             )
             if result.returncode == 0:
-                print(f"✅ 已创建空提交标记点：{commit_msg}")
+                print(f"[OK] 已创建空提交标记点：{commit_msg}")
             else:
-                print(f"⚠️  创建标记点失败：{result.stderr.strip()}")
+                print(f"[WARN] 创建标记点失败：{result.stderr.strip()}")
 
 
 def cmd_list() -> None:
     """列出所有备份快照"""
     if not is_git_repo():
-        print("⚠️  当前目录不在 Git 仓库内，无法列出备份快照")
+        print("[WARN] 当前目录不在 Git 仓库内，无法列出备份快照")
         return
 
     result = subprocess.run(
         ["git", "log", "--format=%h %ai %s", f"--grep={SNAPSHOT_GREP}"],
-        capture_output=True, text=True
+        capture_output=True, text=True, encoding='utf-8'
     )
     if result.returncode != 0:
-        print(f"⚠️  查询失败：{result.stderr.strip()}")
+        print(f"[WARN] 查询失败：{result.stderr.strip()}")
         return
 
     snapshots = result.stdout.strip()
     if not snapshots:
-        print("ℹ️  暂无备份快照记录")
+        print("[INFO] 暂无备份快照记录")
     else:
         print("备份快照列表（最新在前）：")
         print(snapshots)
@@ -123,59 +131,59 @@ def cmd_list() -> None:
 def cmd_rollback(target_hash: str | None) -> None:
     """回滚到指定快照（默认最近一次）"""
     if not is_git_repo():
-        print("⚠️  当前目录不在 Git 仓库内，无法执行回滚")
+        print("[WARN] 当前目录不在 Git 仓库内，无法执行回滚")
         return
 
     if target_hash is None:
         target_hash = get_latest_snapshot_hash()
         if target_hash is None:
-            print("ℹ️  未找到任何备份快照，无法回滚")
+            print("[INFO] 未找到任何备份快照，无法回滚")
             return
 
     # 回滚前先自动保存当前状态（防止用户后悔回滚）
     pre_rollback_msg = f"{SNAPSHOT_PREFIX} 回滚前自动保存"
-    subprocess.run(["git", "add", "-u"], capture_output=True)
+    subprocess.run(["git", "add", "-u"], capture_output=True, encoding='utf-8')
     save_result = subprocess.run(
         ["git", "commit", "--allow-empty", "-m", pre_rollback_msg],
-        capture_output=True, text=True
+        capture_output=True, text=True, encoding='utf-8'
     )
     if save_result.returncode == 0:
-        print(f"✅ 已保存当前状态：{pre_rollback_msg}")
+        print(f"[OK] 已保存当前状态：{pre_rollback_msg}")
 
     # 执行回滚
     checkout_result = subprocess.run(
         ["git", "checkout", target_hash, "--", "."],
-        capture_output=True, text=True
+        capture_output=True, text=True, encoding='utf-8'
     )
     if checkout_result.returncode == 0:
-        print(f"✅ 已回滚到快照：{target_hash}")
+        print(f"[OK] 已回滚到快照：{target_hash}")
     else:
-        print(f"⚠️  回滚失败：{checkout_result.stderr.strip()}")
+        print(f"[WARN] 回滚失败：{checkout_result.stderr.strip()}")
 
 
 def cmd_diff(filepath: str) -> None:
     """显示文件与最近快照的差异"""
     if not is_git_repo():
-        print("⚠️  当前目录不在 Git 仓库内，无法对比差异")
+        print("[WARN] 当前目录不在 Git 仓库内，无法对比差异")
         return
 
     snapshot_hash = get_latest_snapshot_hash()
     if snapshot_hash is None:
-        print("ℹ️  未找到任何备份快照，无法对比差异")
+        print("[INFO] 未找到任何备份快照，无法对比差异")
         return
 
     result = subprocess.run(
         ["git", "diff", snapshot_hash, "--", filepath],
-        capture_output=True, text=True
+        capture_output=True, text=True, encoding='utf-8'
     )
     if result.returncode != 0:
-        print(f"⚠️  对比失败：{result.stderr.strip()}")
+        print(f"[WARN] 对比失败：{result.stderr.strip()}")
         return
 
     if result.stdout.strip():
         print(result.stdout)
     else:
-        print(f"ℹ️  {filepath} 与最近快照 {snapshot_hash[:7]} 无差异")
+        print(f"[INFO] {filepath} 与最近快照 {snapshot_hash[:7]} 无差异")
 
 
 # ── 入口 ──────────────────────────────────────────────────

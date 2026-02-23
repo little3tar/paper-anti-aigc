@@ -17,6 +17,12 @@ import json
 import argparse
 from pathlib import Path
 
+# ── Windows GBK 兼容：强制 stdout/stderr 使用 UTF-8 ────────
+import io, os
+if os.name == 'nt':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 
 # ── 规则定义 ──────────────────────────────────────────────
 
@@ -77,7 +83,7 @@ RULES = [
     {
         "id": "LATEX-001",
         "severity": "error",
-        "pattern": r'(?<!\\)%(?!\\)',
+        "pattern": r'(?<=\d)%(?!\s*$)',
         "message": "裸百分号 % 未转义（会导致行尾截断）",
         "fix": "改为 \\%",
     },
@@ -337,16 +343,16 @@ def check_burstiness(lines: list[str], start: int, end: int) -> list[dict]:
 # ── 输出格式化 ────────────────────────────────────────────
 
 SEVERITY_ICONS = {
-    "error": "🔴",
-    "warning": "🟡",
-    "info": "🔵",
+    "error": "[ERROR]",
+    "warning": "[WARN]",
+    "info": "[INFO]",
 }
 
 
 def format_text(diagnostics: list[dict], filepath: str) -> str:
     """格式化为人类可读的文本报告"""
     if not diagnostics:
-        return f"✅ {filepath}: 未发现问题"
+        return f"[OK] {filepath}: 未发现问题"
 
     counts = {"error": 0, "warning": 0, "info": 0}
     lines = []
