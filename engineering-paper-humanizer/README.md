@@ -30,7 +30,8 @@ engineering-paper-humanizer/
 ├── examples/
 │   └── cli-workflows.md                  # CLI 使用场景
 ├── scripts/
-│   └── check_latex.py                    # LaTeX 格式自动检查
+│   ├── check_latex.py                    # LaTeX 格式自动检查
+│   └── git_snapshot.py                   # Git 安全快照（修改前备份/回滚）
 └── README.md
 ```
 
@@ -47,6 +48,26 @@ python3 scripts/check_latex.py main.tex --json
 检测内容包括：`\cite{}` 位置错误、裸百分号、花括号内换行、英文引号、AIGC 敏感词、段首连接词泛滥、段落突发性过低。
 
 `check_latex.py` 的规则全部集中在文件顶部的 `RULES` 列表和 `CONNECTIVES` 列表中，新增规则只需要往列表里追加字典，不用改任何其他代码。
+
+## 安全快照脚本
+
+在修改 .tex 文件前自动创建 Git 备份快照，支持一键回滚。无需额外依赖（纯 Python 3 标准库），需要 Git 环境：
+
+```bash
+# 修改前创建快照
+python3 scripts/git_snapshot.py main.tex
+
+# 查看所有备份快照
+python3 scripts/git_snapshot.py --list
+
+# 回滚到最近的快照
+python3 scripts/git_snapshot.py --rollback
+
+# 对比当前文件与最近快照的差异
+python3 scripts/git_snapshot.py --diff main.tex
+```
+
+非 Git 环境下脚本会自动跳过，不影响任何功能。
 
 ## 使用方式
 

@@ -60,3 +60,33 @@ python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main
 请先运行 check_latex.py 检查 main.tex 第 3 节，然后根据输出的诊断结果逐条修复所有 error 级别问题。
 修复完毕后再次运行脚本确认清零。
 ```
+
+## 场景五：安全备份与回滚
+
+**修改前创建快照**（agent 自动执行，也可手动）：
+
+```bash
+python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py main.tex
+```
+
+**查看历史快照**：
+
+```bash
+python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --list
+```
+
+**改坏了？一键回滚**：
+
+```bash
+# 回滚到最近的快照
+python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --rollback
+
+# 回滚到指定快照
+python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --rollback abc1234
+```
+
+**对比改了什么**：
+
+```bash
+python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --diff main.tex
+```
