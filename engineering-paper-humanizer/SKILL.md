@@ -35,6 +35,30 @@ metadata:
 
 ## Step-by-Step Process
 
+### Phase 0：安全备份（Git 版本快照）
+
+**在对任何 .tex 文件进行修改之前，先执行 Git 安全备份：**
+
+```bash
+# 自动检测 Git 环境并创建备份快照
+python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py main.tex
+```
+
+该脚本会：
+1. 检测当前目录是否处于 Git 仓库内
+2. 如果是，自动将目标 .tex 文件的当前状态提交为一个备份快照
+3. 如果不是 Git 环境，打印提示并跳过（不影响后续流程）
+
+**如果重写结果不满意，用户可以随时回滚：**
+
+```bash
+# 查看备份历史
+python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --list
+
+# 回滚到最近一次备份
+python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --rollback
+```
+
 ### Phase 1：扫描解构
 
 读入用户草稿，逐段定位 AIGC 痕迹：
@@ -103,6 +127,7 @@ python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main
 ## Quick Reference Card
 
 ```
+□ 运行 git_snapshot.py 创建安全备份（Git 环境下自动执行）
 □ 扫描 AIGC 痕迹（连接词、对称排比、低突发性）
 □ 砍宏大叙事废话 + 降级绝对化词汇
 □ 打破机械结构（预告句、八股列表）
@@ -141,6 +166,7 @@ python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main
 | `references/main-tex-context.md`       | 宿主文档 main.tex 章节锚点与工程事实                        |
 | `examples/cli-workflows.md`            | CLI 三大使用场景与建议 Prompt                               |
 | `scripts/check_latex.py`               | LaTeX 格式自动检查脚本（引用位置、标点、AIGC 痕迹、突发性） |
+| `scripts/git_snapshot.py`              | Git 安全快照脚本（修改前备份、查看历史、回滚、对比差异）    |
 
 ## Integration Notes
 
@@ -148,3 +174,6 @@ python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main
 - 兼容 OpenCode、Claude Code、Cursor 等支持 SKILL.md 的 CLI 工具
 - 处理完毕后可直接覆盖更新原 `.tex` 文件
 - 建议在 Phase 4 输出前运行检查脚本确认 error 清零
+- 新增 `scripts/git_snapshot.py` Git 安全快照脚本，纯 Python 3 标准库，零外部依赖
+- 在 Git 环境中自动在修改前创建备份快照，支持 `--list`、`--rollback`、`--diff`
+- 非 Git 环境下自动跳过，不影响任何现有功能
