@@ -27,15 +27,27 @@ license: MIT
 
 ## Step-by-Step Process
 
-### Phase 0：安全备份（Git 版本快照）
+### Phase 0：安全备份（Git 分支备份）
 
-在对任何 .tex 文件进行修改之前，先执行 Git 安全备份：
+在对任何 .tex 文件进行修改之前，先执行 Git 分支备份。脚本会自动创建独立的备份分支（`backup/humanizer/<时间戳>`），不污染主分支的提交历史：
 
 ```bash
 python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py main.tex
 ```
 
-非 Git 环境自动跳过，不影响后续流程。回滚与历史查看详见 `examples/cli-workflows.md` 场景五。
+非 Git 环境自动跳过，不影响后续流程。回滚、历史查看与备份清理详见 `examples/cli-workflows.md` 场景五。
+
+### Phase 0.5：背景知识一致性预检
+
+在读取 `references/main-tex-context.md` 作为重写参考之前，执行一致性预检：
+
+1. 快速扫描 `main.tex` 的章节结构（`\section`/`\subsection` 标题）和核心参数
+2. 与 `references/main-tex-context.md` 中记录的信息交叉比对
+3. 若发现**显著偏差**（章节结构不一致、核心参数缺失或过时、新增章节未记录），则：
+   - 警告用户："检测到 `main-tex-context.md` 与当前 `main.tex` 存在大量不一致，建议先重置并更新背景知识"
+   - 经用户同意后，将 `main-tex-context.md` 恢复到模板结构（详见 `references/main-tex-context-template.md`），然后根据最新 `main.tex` 内容重新填充
+   - 若用户拒绝，使用现有版本继续后续流程
+4. 若无显著偏差，直接进入 Phase 1
 
 ### Phase 1：扫描解构
 
@@ -62,6 +74,20 @@ python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main
 
 只输出重写后的 LaTeX 代码块，不附加任何主观解释、不输出过程分析。
 
+### Phase 5：背景知识同步（用户确认）
+
+完成所有修改后，询问用户：
+
+> "main.tex 内容已有变更，是否需要同步更新 `references/main-tex-context.md` 中的背景知识？"
+
+若用户确认，则：
+
+1. 读取最新 `main.tex` 全文
+2. 按 `main-tex-context.md` 模板格式（详见 `references/main-tex-context-template.md`）提取章节结构、核心参数和排版环境信息
+3. 覆盖写入 `main-tex-context.md`
+
+若用户拒绝或未响应，跳过此步骤。
+
 ## Data Integrity Red Line
 
 | 优先级  | 数据来源 | 规则                                          |
@@ -74,26 +100,29 @@ python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main
 ## Quick Reference Card
 
 ```
-□ 运行 git_snapshot.py 创建安全备份（Git 环境下自动执行）
+□ 运行 git_snapshot.py 创建分支备份（Git 环境下自动执行）
+□ 执行背景知识一致性预检（Phase 0.5）
 □ 按七大维度扫描 + 重写（references/aigc-kill-dimensions.md）
 □ 替换 AI 高频敏感词组（references/aigc-word-replacements.md）
 □ 严格遵守 LaTeX 保护红线（references/latex-protection-rules.md）
 □ 严禁捏造数据（Data Integrity Red Line）
 □ 运行 check_latex.py 逐条修复，确认 error 清零
 □ 仅输出 LaTeX 代码块
+□ 询问用户是否同步更新 main-tex-context.md（Phase 5）
 ```
 
 ## Reference Files
 
-| 文件                                   | 内容                                                        |
-| -------------------------------------- | ----------------------------------------------------------- |
-| `references/aigc-kill-dimensions.md`   | 七大核心维度详细规则、改写示例与 Anti-Patterns 速查表       |
-| `references/aigc-word-replacements.md` | AI 高频敏感词组降重替换字典                                 |
-| `references/latex-protection-rules.md` | LaTeX 绝对保护红线完整规则                                  |
-| `references/main-tex-context.md`       | 宿主文档 main.tex 章节锚点与工程事实                        |
-| `examples/cli-workflows.md`            | CLI 使用场景与建议 Prompt                                   |
-| `scripts/check_latex.py`               | LaTeX 格式自动检查脚本（引用位置、标点、AIGC 痕迹、突发性） |
-| `scripts/git_snapshot.py`              | Git 安全快照脚本（修改前备份、查看历史、回滚、对比差异）    |
+| 文件                                      | 内容                                                                 |
+| ----------------------------------------- | -------------------------------------------------------------------- |
+| `references/aigc-kill-dimensions.md`      | 七大核心维度详细规则、改写示例与 Anti-Patterns 速查表                |
+| `references/aigc-word-replacements.md`    | AI 高频敏感词组降重替换字典                                          |
+| `references/latex-protection-rules.md`    | LaTeX 绝对保护红线完整规则                                           |
+| `references/main-tex-context.md`          | 宿主文档 main.tex 章节锚点与工程事实                                 |
+| `references/main-tex-context-template.md` | `main-tex-context.md` 模板格式（Phase 0.5 重置 / Phase 5 同步用）    |
+| `examples/cli-workflows.md`               | CLI 使用场景与建议 Prompt                                            |
+| `scripts/check_latex.py`                  | LaTeX 格式自动检查脚本（引用位置、标点、AIGC 痕迹、突发性）          |
+| `scripts/git_snapshot.py`                 | Git 分支备份脚本（修改前备份、查看历史、回滚、对比差异、清理旧备份） |
 
 ## Integration Notes
 

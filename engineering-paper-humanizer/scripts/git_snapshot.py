@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""engineering-paper-humanizer Git 安全快照脚本
+"""engineering-paper-humanizer Git 分支备份脚本
 
-在修改 .tex 文件之前自动创建 Git 备份快照，支持查看历史、回滚和对比差异。
+在修改 .tex 文件之前，自动创建独立的备份分支保存当前文件状态，
+不污染主分支的提交历史。支持列出备份、回滚、对比差异和清理旧备份。
 非 Git 环境下自动跳过，不影响任何现有功能。
 
 用法:
-    python3 scripts/git_snapshot.py main.tex           # 创建备份快照
-    python3 scripts/git_snapshot.py --list             # 列出所有备份快照
-    python3 scripts/git_snapshot.py --rollback         # 回滚到最近快照
-    python3 scripts/git_snapshot.py --rollback abc1234 # 回滚到指定快照
-    python3 scripts/git_snapshot.py --diff main.tex    # 对比与最近快照的差异
+    python3 scripts/git_snapshot.py main.tex           # 创建分支备份
+    python3 scripts/git_snapshot.py --list             # 列出所有备份分支
+    python3 scripts/git_snapshot.py --rollback         # 从最近备份恢复文件
+    python3 scripts/git_snapshot.py --rollback <branch># 从指定备份恢复文件
+    python3 scripts/git_snapshot.py --diff main.tex    # 对比与最近备份的差异
+    python3 scripts/git_snapshot.py --cleanup          # 删除所有备份分支（需确认）
+    python3 scripts/git_snapshot.py --cleanup --yes    # 删除所有备份分支（跳过确认）
 """
 
 import argparse
 import subprocess
+from datetime import datetime
 from pathlib import Path
 import sys
 import io
@@ -26,188 +30,260 @@ if os.name == 'nt':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 
-SNAPSHOT_PREFIX = "[humanizer-backup]"
-SNAPSHOT_GREP = r"\[humanizer-backup\]"
+BACKUP_PREFIX = "backup/humanizer/"
 
 
-# ── Git 环境检测 ───────────────────────────────────────────
+# ── 工具函数 ───────────────────────────────────────────────
+
+def run_git(*args: str, check: bool = False) -> subprocess.CompletedProcess:
+    """执行 git 命令并返回结果"""
+    return subprocess.run(
+        ["git", *args],
+        capture_output=True, text=True, encoding='utf-8',
+        check=check
+    )
+
 
 def is_git_repo() -> bool:
     """检测当前目录是否处于 Git 仓库内"""
-    result = subprocess.run(
-        ["git", "rev-parse", "--is-inside-work-tree"],
-        capture_output=True, text=True, encoding='utf-8'
-    )
+    result = run_git("rev-parse", "--is-inside-work-tree")
     return result.returncode == 0 and result.stdout.strip() == "true"
 
 
-def get_latest_snapshot_hash() -> str | None:
-    """获取最近一次备份快照的 commit hash"""
-    result = subprocess.run(
-        ["git", "log", "--format=%H", f"--grep={SNAPSHOT_GREP}", "-1"],
-        capture_output=True, text=True, encoding='utf-8'
-    )
-    if result.returncode == 0 and result.stdout.strip():
+def get_current_branch() -> str | None:
+    """获取当前分支名（detached HEAD 时返回 None）"""
+    result = run_git("symbolic-ref", "--short", "HEAD")
+    if result.returncode == 0:
         return result.stdout.strip()
     return None
+
+
+def get_backup_branches() -> list[str]:
+    """获取所有备份分支名，按时间倒序（最新在前）"""
+    result = run_git("branch", "--list", f"{BACKUP_PREFIX}*", "--format=%(refname:short)")
+    if result.returncode != 0 or not result.stdout.strip():
+        return []
+    branches = result.stdout.strip().split('\n')
+    branches.sort(reverse=True)  # 分支名含时间戳，字典序倒排即时间倒序
+    return branches
+
+
+def has_staged_or_unstaged_changes() -> bool:
+    """检查工作区是否有未提交的变更（包括 staged 和 unstaged）"""
+    result = run_git("status", "--porcelain")
+    return bool(result.stdout.strip())
 
 
 # ── 核心功能 ───────────────────────────────────────────────
 
 def cmd_snapshot(filepath: str) -> None:
-    """为指定文件创建备份快照提交"""
+    """为指定文件创建备份分支
+
+    流程：
+    1. 记录当前分支
+    2. stash 保存工作区变更（如有）
+    3. 创建备份分支并提交目标文件
+    4. 切回原分支
+    5. 恢复 stash（如有）
+    """
     if not is_git_repo():
-        print("[WARN] 当前目录不在 Git 仓库内，跳过备份快照（不影响后续流程）")
+        print("[WARN] 当前目录不在 Git 仓库内，跳过分支备份（不影响后续流程）")
         return
 
     path = Path(filepath)
     if not path.exists():
-        print(f"[WARN] 文件不存在: {filepath}，跳过备份快照")
+        print(f"[WARN] 文件不存在: {filepath}，跳过分支备份")
         return
 
-    # 检查文件是否有未提交变更
-    status_result = subprocess.run(
-        ["git", "status", "--porcelain", str(path)],
-        capture_output=True, text=True, encoding='utf-8'
-    )
-    has_changes = bool(status_result.stdout.strip())
+    # 记录当前分支
+    original_branch = get_current_branch()
+    if original_branch is None:
+        print("[WARN] 当前处于 detached HEAD 状态，跳过分支备份")
+        return
 
-    if has_changes:
-        # 有变更：git add + git commit
-        subprocess.run(["git", "add", str(path)], check=True, encoding='utf-8')
-        commit_msg = f"{SNAPSHOT_PREFIX} 修改前备份 {path.name}"
-        result = subprocess.run(
-            ["git", "commit", "-m", commit_msg],
-            capture_output=True, text=True, encoding='utf-8'
-        )
-        if result.returncode == 0:
-            print(f"[OK] 已创建备份快照：{commit_msg}")
+    # 生成备份分支名
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup_branch = f"{BACKUP_PREFIX}{timestamp}"
+
+    # stash 保存当前工作区变更
+    had_changes = has_staged_or_unstaged_changes()
+    if had_changes:
+        stash_result = run_git("stash", "push", "-m", f"humanizer-backup-temp-{timestamp}")
+        if stash_result.returncode != 0:
+            print(f"[WARN] stash 失败：{stash_result.stderr.strip()}，跳过分支备份")
+            return
+
+    try:
+        # 创建并切换到备份分支
+        create_result = run_git("checkout", "-b", backup_branch)
+        if create_result.returncode != 0:
+            print(f"[WARN] 创建备份分支失败：{create_result.stderr.strip()}")
+            return
+
+        # 在备份分支上提交目标文件
+        run_git("add", str(path))
+        commit_msg = f"[humanizer-backup] {path.name} @ {timestamp}"
+        commit_result = run_git("commit", "--allow-empty", "-m", commit_msg)
+        if commit_result.returncode != 0:
+            print(f"[WARN] 备份提交失败：{commit_result.stderr.strip()}")
+            # 即使提交失败也需要切回原分支
         else:
-            print(f"[WARN] 创建快照失败：{result.stderr.strip()}")
-    else:
-        # 无变更：检查最近提交是否已是备份快照
-        latest_msg_result = subprocess.run(
-            ["git", "log", "--format=%s", "-1"],
-            capture_output=True, text=True, encoding='utf-8'
-        )
-        latest_msg = (latest_msg_result.stdout or '').strip()
-        if latest_msg.startswith(SNAPSHOT_PREFIX):
-            print("[INFO] 文件无变更且最近提交已是备份快照，跳过")
-        else:
-            # 创建空提交作为标记点
-            commit_msg = f"{SNAPSHOT_PREFIX} 无变更标记点 {path.name}"
-            result = subprocess.run(
-                ["git", "commit", "--allow-empty", "-m", commit_msg],
-                capture_output=True, text=True, encoding='utf-8'
-            )
-            if result.returncode == 0:
-                print(f"[OK] 已创建空提交标记点：{commit_msg}")
-            else:
-                print(f"[WARN] 创建标记点失败：{result.stderr.strip()}")
+            print(f"[OK] 已创建备份分支：{backup_branch}")
+
+    finally:
+        # 无论成功失败，都切回原分支
+        switch_result = run_git("checkout", original_branch)
+        if switch_result.returncode != 0:
+            print(f"[ERROR] 切回原分支 {original_branch} 失败：{switch_result.stderr.strip()}")
+            print("[ERROR] 请手动执行: git checkout", original_branch)
+
+        # 恢复 stash
+        if had_changes:
+            pop_result = run_git("stash", "pop")
+            if pop_result.returncode != 0:
+                print(f"[WARN] stash pop 失败：{pop_result.stderr.strip()}")
+                print("[WARN] 你的变更仍在 stash 中，请手动执行: git stash pop")
 
 
 def cmd_list() -> None:
-    """列出所有备份快照"""
+    """列出所有备份分支"""
     if not is_git_repo():
-        print("[WARN] 当前目录不在 Git 仓库内，无法列出备份快照")
+        print("[WARN] 当前目录不在 Git 仓库内，无法列出备份分支")
         return
 
-    result = subprocess.run(
-        ["git", "log", "--format=%h %ai %s", f"--grep={SNAPSHOT_GREP}"],
-        capture_output=True, text=True, encoding='utf-8'
-    )
-    if result.returncode != 0:
-        print(f"[WARN] 查询失败：{result.stderr.strip()}")
+    branches = get_backup_branches()
+    if not branches:
+        print("[INFO] 暂无备份分支")
         return
 
-    snapshots = result.stdout.strip()
-    if not snapshots:
-        print("[INFO] 暂无备份快照记录")
-    else:
-        print("备份快照列表（最新在前）：")
-        print(snapshots)
+    print(f"备份分支列表（共 {len(branches)} 个，最新在前）：")
+    for branch in branches:
+        # 获取该分支最新提交的信息
+        log_result = run_git("log", branch, "-1", "--format=%ai %s")
+        info = log_result.stdout.strip() if log_result.returncode == 0 else ""
+        print(f"  {branch}  {info}")
 
 
-def cmd_rollback(target_hash: str | None) -> None:
-    """回滚到指定快照（默认最近一次）"""
+def cmd_rollback(target_branch: str | None) -> None:
+    """从备份分支恢复文件到当前工作区
+
+    不切换分支，仅通过 git checkout <backup-branch> -- . 恢复文件内容。
+    """
     if not is_git_repo():
         print("[WARN] 当前目录不在 Git 仓库内，无法执行回滚")
         return
 
-    if target_hash is None:
-        target_hash = get_latest_snapshot_hash()
-        if target_hash is None:
-            print("[INFO] 未找到任何备份快照，无法回滚")
+    # 未指定分支时，使用最近的备份
+    if target_branch is None:
+        branches = get_backup_branches()
+        if not branches:
+            print("[INFO] 未找到任何备份分支，无法回滚")
             return
+        target_branch = branches[0]
 
-    # 回滚前先自动保存当前状态（防止用户后悔回滚）
-    pre_rollback_msg = f"{SNAPSHOT_PREFIX} 回滚前自动保存"
-    subprocess.run(["git", "add", "-u"], capture_output=True, encoding='utf-8')
-    save_result = subprocess.run(
-        ["git", "commit", "--allow-empty", "-m", pre_rollback_msg],
-        capture_output=True, text=True, encoding='utf-8'
-    )
-    if save_result.returncode == 0:
-        print(f"[OK] 已保存当前状态：{pre_rollback_msg}")
+    # 验证备份分支存在
+    verify = run_git("rev-parse", "--verify", target_branch)
+    if verify.returncode != 0:
+        print(f"[WARN] 备份分支不存在：{target_branch}")
+        return
 
-    # 执行回滚
-    checkout_result = subprocess.run(
-        ["git", "checkout", target_hash, "--", "."],
-        capture_output=True, text=True, encoding='utf-8'
-    )
+    # 从备份分支恢复文件（不切换分支）
+    checkout_result = run_git("checkout", target_branch, "--", ".")
     if checkout_result.returncode == 0:
-        print(f"[OK] 已回滚到快照：{target_hash}")
+        print(f"[OK] 已从备份分支恢复文件：{target_branch}")
     else:
         print(f"[WARN] 回滚失败：{checkout_result.stderr.strip()}")
 
 
 def cmd_diff(filepath: str) -> None:
-    """显示文件与最近快照的差异"""
+    """显示文件与最近备份分支的差异"""
     if not is_git_repo():
         print("[WARN] 当前目录不在 Git 仓库内，无法对比差异")
         return
 
-    snapshot_hash = get_latest_snapshot_hash()
-    if snapshot_hash is None:
-        print("[INFO] 未找到任何备份快照，无法对比差异")
+    branches = get_backup_branches()
+    if not branches:
+        print("[INFO] 未找到任何备份分支，无法对比差异")
         return
 
-    result = subprocess.run(
-        ["git", "diff", snapshot_hash, "--", filepath],
-        capture_output=True, text=True, encoding='utf-8'
-    )
+    latest_branch = branches[0]
+    result = run_git("diff", latest_branch, "--", filepath)
     if result.returncode != 0:
         print(f"[WARN] 对比失败：{result.stderr.strip()}")
         return
 
     if result.stdout.strip():
+        print(f"与备份分支 {latest_branch} 的差异：")
         print(result.stdout)
     else:
-        print(f"[INFO] {filepath} 与最近快照 {snapshot_hash[:7]} 无差异")
+        print(f"[INFO] {filepath} 与最近备份 {latest_branch} 无差异")
+
+
+def cmd_cleanup(skip_confirm: bool = False) -> None:
+    """删除所有备份分支"""
+    if not is_git_repo():
+        print("[WARN] 当前目录不在 Git 仓库内，无法清理备份分支")
+        return
+
+    branches = get_backup_branches()
+    if not branches:
+        print("[INFO] 暂无备份分支需要清理")
+        return
+
+    print(f"将删除以下 {len(branches)} 个备份分支：")
+    for b in branches:
+        print(f"  {b}")
+
+    if not skip_confirm:
+        try:
+            answer = input("\n确认删除？(y/N): ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            answer = ""
+        if answer != 'y':
+            print("[INFO] 已取消清理")
+            return
+
+    deleted = 0
+    for b in branches:
+        result = run_git("branch", "-D", b)
+        if result.returncode == 0:
+            deleted += 1
+        else:
+            print(f"[WARN] 删除失败: {b} — {result.stderr.strip()}")
+
+    print(f"[OK] 已删除 {deleted}/{len(branches)} 个备份分支")
 
 
 # ── 入口 ──────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(
-        description="engineering-paper-humanizer Git 安全快照"
+        description="engineering-paper-humanizer Git 分支备份"
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--list", action="store_true",
-        help="列出所有备份快照"
+        help="列出所有备份分支"
     )
     group.add_argument(
-        "--rollback", nargs="?", const="__latest__", metavar="HASH",
-        help="回滚到最近快照或指定 hash"
+        "--rollback", nargs="?", const="__latest__", metavar="BRANCH",
+        help="从最近备份或指定备份分支恢复文件"
     )
     group.add_argument(
         "--diff", metavar="FILE",
-        help="显示文件与最近快照的差异"
+        help="显示文件与最近备份分支的差异"
+    )
+    group.add_argument(
+        "--cleanup", action="store_true",
+        help="删除所有备份分支"
+    )
+    parser.add_argument(
+        "--yes", action="store_true",
+        help="跳过 --cleanup 的确认提示"
     )
     parser.add_argument(
         "file", nargs="?",
-        help="要备份的 .tex 文件路径（不与 --list/--rollback/--diff 同用）"
+        help="要备份的 .tex 文件路径（不与 --list/--rollback/--diff/--cleanup 同用）"
     )
     args = parser.parse_args()
 
@@ -218,6 +294,8 @@ def main():
         cmd_rollback(target)
     elif args.diff:
         cmd_diff(args.diff)
+    elif args.cleanup:
+        cmd_cleanup(skip_confirm=args.yes)
     elif args.file:
         cmd_snapshot(args.file)
     else:

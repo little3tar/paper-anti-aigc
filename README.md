@@ -24,7 +24,7 @@
 - 🛡️ **LaTeX 安全保护** — 严格保护数学公式、引用格式、命令完整性
 - 📊 **多维度降解** — 从语态、结构、词频、突发性等多维度消除 AI 痕迹
 - 🐍 **零依赖脚本** — 辅助工具基于纯 Python 3 标准库，开箱即用
-- 🔄 **安全回滚** — 内置 Git 快照机制，修改前自动备份
+- 🔄 **安全回滚** — 内置 Git 分支备份机制，修改前自动创建独立备份分支，不污染主分支提交历史
 
 ## 📦 已收录 Skills
 
@@ -63,8 +63,20 @@ cp -r engineering-paper-humanizer/ your-project/.agents/skills/
 # LaTeX 格式检查
 python3 engineering-paper-humanizer/scripts/check_latex.py your-paper.tex
 
-# Git 安全快照（修改前备份）
+# Git 分支备份（修改前自动创建备份分支）
 python3 engineering-paper-humanizer/scripts/git_snapshot.py your-paper.tex
+
+# 查看所有备份分支
+python3 engineering-paper-humanizer/scripts/git_snapshot.py --list
+
+# 从最近备份恢复文件
+python3 engineering-paper-humanizer/scripts/git_snapshot.py --rollback
+
+# 对比当前文件与最近备份的差异
+python3 engineering-paper-humanizer/scripts/git_snapshot.py --diff your-paper.tex
+
+# 清理所有备份分支
+python3 engineering-paper-humanizer/scripts/git_snapshot.py --cleanup
 ```
 
 ## 📁 项目结构
@@ -80,12 +92,13 @@ paper-anti-aigc/
     │   ├── aigc-kill-dimensions.md    # 七大维度详细规则
     │   ├── aigc-word-replacements.md  # 降重替换字典
     │   ├── latex-protection-rules.md  # LaTeX 保护红线
-    │   └── main-tex-context.md        # main.tex 背景知识
+    │   ├── main-tex-context.md        # main.tex 背景知识
+    │   └── main-tex-context-template.md # 背景知识模板格式
     ├── examples/                      # 使用示例
     │   └── cli-workflows.md           # CLI 使用场景
     └── scripts/                       # 辅助脚本
         ├── check_latex.py             # LaTeX 格式自动检查
-        └── git_snapshot.py            # Git 安全快照
+        └── git_snapshot.py            # Git 分支备份（备份/回滚/清理）
 ```
 
 ## 🤝 贡献指南

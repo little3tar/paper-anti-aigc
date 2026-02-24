@@ -26,12 +26,13 @@ engineering-paper-humanizer/
 │   ├── aigc-kill-dimensions.md           # 七大维度详细规则
 │   ├── aigc-word-replacements.md         # 降重替换字典
 │   ├── latex-protection-rules.md         # LaTeX 保护红线
-│   └── main-tex-context.md              # main.tex 背景知识
+│   ├── main-tex-context.md              # main.tex 背景知识
+│   └── main-tex-context-template.md     # 背景知识模板格式
 ├── examples/
 │   └── cli-workflows.md                  # CLI 使用场景
 ├── scripts/
 │   ├── check_latex.py                    # LaTeX 格式自动检查
-│   └── git_snapshot.py                   # Git 安全快照（修改前备份/回滚）
+│   └── git_snapshot.py                   # Git 分支备份（修改前备份/回滚/清理）
 └── README.md
 ```
 
@@ -49,24 +50,21 @@ python3 scripts/check_latex.py main.tex --json
 
 `check_latex.py` 的规则全部集中在文件顶部的 `RULES` 列表和 `CONNECTIVES` 列表中，新增规则只需要往列表里追加字典，不用改任何其他代码。
 
-## 安全快照脚本
+## 分支备份脚本
 
-在修改 .tex 文件前自动创建 Git 备份快照，支持一键回滚。无需额外依赖（纯 Python 3 标准库），需要 Git 环境：
-
+在修改 .tex 文件前自动创建独立的 Git 备份分支（`backup/humanizer/<时间戳>`），不污染主分支提交历史。支持一键回滚和备份清理。无需额外依赖（纯 Python 3 标准库），需要 Git 环境：
 ```bash
-# 修改前创建快照
+# 修改前创建分支备份
 python3 scripts/git_snapshot.py main.tex
-
-# 查看所有备份快照
+# 查看所有备份分支
 python3 scripts/git_snapshot.py --list
-
-# 回滚到最近的快照
+# 从最近备份恢复文件
 python3 scripts/git_snapshot.py --rollback
-
-# 对比当前文件与最近快照的差异
+# 对比当前文件与最近备份的差异
 python3 scripts/git_snapshot.py --diff main.tex
+# 清理所有备份分支
+python3 scripts/git_snapshot.py --cleanup
 ```
-
 非 Git 环境下脚本会自动跳过，不影响任何功能。
 
 ## 使用方式
