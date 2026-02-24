@@ -115,12 +115,15 @@ paper-anti-aigc/
 每个 Skill 应作为独立目录存放在仓库根目录下，推荐包含以下文件：
 
 ```text
-your-new-skill/
-├── SKILL.md          # [必需] 核心指令定义
-├── README.md         # [推荐] Skill 说明文档
-├── references/       # [推荐] 参考规则文档
-├── examples/         # [推荐] 使用示例
-└── scripts/          # [可选] 辅助脚本
+skill-name/                    # 文件夹名：小写 + 连字符
+├── SKILL.md                   # 【必需】核心指令文件
+│   ├── YAML frontmatter       # 【必需】元数据
+│   │   ├── name:              # 技能名称（与目录名一致）
+│   │   └── description:       # 触发描述（最重要）
+│   └── Markdown body          # 【必需】使用指南
+├── scripts/                   # 【可选】可执行脚本
+├── references/                # 【可选】参考文档
+└── assets/                    # 【可选】资源文件
 ```
 
 ## 📄 许可证
