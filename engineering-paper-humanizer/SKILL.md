@@ -35,7 +35,7 @@ license: MIT
 python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py main.tex
 ```
 
-非 Git 环境自动跳过，不影响后续流程。回滚、历史查看与备份清理详见 `examples/cli-workflows.md` 场景五。
+非 Git 环境自动跳过，不影响后续流程。回滚、历史查看与备份清理详见 `references/cli-workflows.md` 场景五。
 
 ### Phase 0.5：背景知识一致性预检
 
@@ -68,7 +68,7 @@ python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py mai
 python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main.tex
 ```
 
-修复完毕后再次运行脚本确认 error 清零。脚本用法详见 `examples/cli-workflows.md` 场景四。
+修复完毕后再次运行脚本确认 error 清零。脚本用法详见 `references/cli-workflows.md` 场景四。
 
 ### Phase 4：静默输出
 
@@ -120,7 +120,7 @@ python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main
 | `references/latex-protection-rules.md`    | LaTeX 绝对保护红线完整规则                                           |
 | `references/main-tex-context.md`          | 宿主文档 main.tex 章节锚点与工程事实                                 |
 | `references/main-tex-context-template.md` | `main-tex-context.md` 模板格式（Phase 0.5 重置 / Phase 5 同步用）    |
-| `examples/cli-workflows.md`               | CLI 使用场景与建议 Prompt                                            |
+| `references/cli-workflows.md`            | CLI 使用场景与 Prompt 模板                                           |
 | `scripts/check_latex.py`                  | LaTeX 格式自动检查脚本（引用位置、标点、AIGC 痕迹、突发性）          |
 | `scripts/git_snapshot.py`                 | Git 分支备份脚本（修改前备份、查看历史、回滚、对比差异、清理旧备份） |
 

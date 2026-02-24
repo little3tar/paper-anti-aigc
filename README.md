@@ -87,15 +87,13 @@ paper-anti-aigc/
 ├── LICENSE                            # MIT 许可证
 └── engineering-paper-humanizer/       # Skill：工程论文人性化改写
     ├── SKILL.md                       # 核心指令定义
-    ├── README.md                      # Skill 详细说明
-    ├── references/                    # 参考规则文档
+    ├── references/                    # 参考规则与使用指南
     │   ├── aigc-kill-dimensions.md    # 七大维度详细规则
     │   ├── aigc-word-replacements.md  # 降重替换字典
     │   ├── latex-protection-rules.md  # LaTeX 保护红线
     │   ├── main-tex-context.md        # main.tex 背景知识
-    │   └── main-tex-context-template.md # 背景知识模板格式
-    ├── examples/                      # 使用示例
-    │   └── cli-workflows.md           # CLI 使用场景
+    │   ├── main-tex-context-template.md # 背景知识模板格式
+    │   └── cli-workflows.md           # CLI 使用场景与 Prompt 模板
     └── scripts/                       # 辅助脚本
         ├── check_latex.py             # LaTeX 格式自动检查
         └── git_snapshot.py            # Git 分支备份（备份/回滚/清理）
