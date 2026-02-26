@@ -87,12 +87,13 @@ paper-anti-aigc/
 ├── LICENSE                            # MIT 许可证
 └── engineering-paper-humanizer/       # Skill：工程论文人性化改写
     ├── SKILL.md                       # 核心指令定义
+    ├── assets/                        # 资源文件（模板等）
+    │   └── main-tex-context-template.md # 背景知识模板格式
     ├── references/                    # 参考规则与使用指南
     │   ├── aigc-kill-dimensions.md    # 七大维度详细规则
     │   ├── aigc-word-replacements.md  # 降重替换字典
     │   ├── latex-protection-rules.md  # LaTeX 保护红线
     │   ├── main-tex-context.md        # main.tex 背景知识
-    │   ├── main-tex-context-template.md # 背景知识模板格式
     │   └── cli-workflows.md           # CLI 使用场景与 Prompt 模板
     └── scripts/                       # 辅助脚本
         ├── check_latex.py             # LaTeX 格式自动检查
@@ -123,6 +124,16 @@ skill-name/                    # 文件夹名：小写 + 连字符
 ├── references/                # 【可选】参考文档
 └── assets/                    # 【可选】资源文件
 ```
+
+## 📚 参考来源
+
+本项目的工程论文 Humanizer 能力整合了以下开源项目的核心规则：
+
+- **[Humanizer-zh](https://github.com/op7418/Humanizer-zh)** — Humanizer 的汉化版本，Claude Code Skills，24 种通用 AI 写作模式识别与修复。MIT License。
+- **[blader/humanizer](https://github.com/blader/humanizer)** — 英文原版，Wikipedia "Signs of AI writing" 指南的技能实现。
+- **[hardikpandya/stop-slop](https://github.com/hardikpandya/stop-slop)** — 实用工具部分（核心规则、快速检查清单、质量评分）灵感来源。
+
+> 声明：engineering-paper-humanizer 在 Humanizer-zh 基础上针对工程类 LaTeX 论文场景进行了深度适配，保留了原项目的 MIT 许可证。
 
 ## 📄 许可证
 
