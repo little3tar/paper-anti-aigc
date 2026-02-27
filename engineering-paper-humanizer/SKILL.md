@@ -2,11 +2,26 @@
 name: engineering-paper-humanizer
 description: 深度重写工程类中文学术文本（LaTeX），按十二大维度消除 AIGC 痕迹，注入人类工程师行文风格与真实个性
 license: MIT
+requirements:
+  python: ">=3.7"
+  git: advised but not required (for backup functionality)
+metadata:
+  trigger: 对中文工程类 LaTeX 文档进行去 AI 化、洗稿、降 AIGC、humanize
+  source: 参考 op7418/Humanizer-zh 深度适配工程类 LaTeX 论文场景
+  language: zh-CN
 ---
 
 # Engineering Paper Humanizer
 
 深度重写工程类学术文本，彻底消除 AI 生成痕迹。在绝对保留原意、专业术语、文献引用和 LaTeX 命令完整的前提下，使其呈现出人类工程师真实、严谨且带有"工程粗糙感"和长短句顿挫的行文风格。
+
+> **路径约定**：本文档中 `<SKILL_DIR>` 指本 skill 所在目录。根据你使用的 AI 编码工具，实际路径不同：
+>
+> - OpenCode: `.opencode/skills/engineering-paper-humanizer/`
+> - Claude Code: `.claude/skills/engineering-paper-humanizer/`
+> - Cursor / 其他: 以实际安装路径为准
+>
+> `<TARGET_FILE>` 指用户要处理的 `.tex` 文件路径（如 `main.tex`、`latex/main.tex` 等），需根据项目实际结构指定。
 
 ## When to Activate
 
@@ -32,7 +47,7 @@ license: MIT
 在对任何 .tex 文件进行修改之前，先执行 Git 分支备份。脚本会自动创建独立的备份分支（`backup/humanizer/<时间戳>`），不污染主分支的提交历史：
 
 ```bash
-python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py main.tex
+python3 <SKILL_DIR>/scripts/git_snapshot.py <TARGET_FILE>
 ```
 
 非 Git 环境自动跳过，不影响后续流程。回滚、历史查看与备份清理详见 `references/cli-workflows.md` 场景五。
@@ -65,7 +80,7 @@ python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py mai
 运行自动检查脚本，根据输出的精确行号逐条修复：
 
 ```bash
-python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main.tex
+python3 <SKILL_DIR>/scripts/check_latex.py <TARGET_FILE>
 ```
 
 修复完毕后再次运行脚本确认 error 清零。脚本用法详见 `references/cli-workflows.md` 场景四。

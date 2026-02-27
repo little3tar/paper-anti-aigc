@@ -5,7 +5,7 @@
 **通过 Skills 自动化降低论文 AI 特征**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3](https://img.shields.io/badge/Python-3.x-green.svg)](https://www.python.org/)
+[![Python 3](https://img.shields.io/badge/Python-≥3.7-green.svg)](https://www.python.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/little3tar/paper-anti-aigc/pulls)
 
 </div>
@@ -22,18 +22,27 @@
 
 - 🔧 **模块化 Skill 架构** — 每个 Skill 独立成目录，即插即用
 - 🛡️ **LaTeX 安全保护** — 严格保护数学公式、引用格式、命令完整性
-- 📊 **多维度降解** — 从语态、结构、词频、突发性等多维度消除 AI 痕迹
-- 🐍 **零依赖脚本** — 辅助工具基于纯 Python 3 标准库，开箱即用
-- 🔄 **安全回滚** — 内置 Git 分支备份机制，修改前自动创建独立备份分支，不污染主分支提交历史
+- 📊 **十二维度降解** — 从语态、结构、词频、突发性等十二大维度消除 AI 痕迹
+- 🐍 **零依赖脚本** — 辅助工具基于纯 Python 3 标准库（≥3.7），开箱即用
+- 🔄 **安全回滚** — 内置 Git 分支备份机制，精确恢复被备份文件，不污染主分支提交历史
+- 🌐 **跨平台兼容** — 支持 Windows / macOS / Linux，适配 OpenCode、Claude Code、Cursor 等主流 AI 编码工具
 
 ## 📦 已收录 Skills
 
-| Skill | 说明 | 适用场景 |
-| ----- | ---- | -------- |
-| [engineering-paper-humanizer](./engineering-paper-humanizer/) | 深度重写工程类中文学术文本（LaTeX），消除 AIGC 痕迹，注入人类工程师行文风格 | 工程类中文 LaTeX 论文 |
-| *更多 Skill 持续添加中…* | | |
+| Skill | 说明 | 适用场景 | 环境要求 |
+| ----- | ---- | -------- | -------- |
+| [engineering-paper-humanizer](./engineering-paper-humanizer/) | 深度重写工程类中文学术文本（LaTeX），按十二大维度消除 AIGC 痕迹，注入人类工程师行文风格 | 工程类中文 LaTeX 论文 | Python ≥3.7, Git |
+| *更多 Skill 持续添加中…* | | | |
 
 ## 🚀 快速开始
+
+### 环境要求
+
+| 依赖 | 版本 | 说明 |
+| ---- | ---- | ---- |
+| Python | ≥3.7 | 脚本使用纯标准库，无需安装额外依赖 |
+| Git | 任意版本 | 分支备份/回滚功能需要；非 Git 环境自动跳过 |
+| AI 编码工具 | — | OpenCode / Claude Code / Cursor 等支持 SKILL.md 的工具 |
 
 ### 1. 克隆仓库
 
@@ -90,7 +99,7 @@ paper-anti-aigc/
     ├── assets/                        # 资源文件（模板等）
     │   └── main-tex-context-template.md # 背景知识模板格式
     ├── references/                    # 参考规则与使用指南
-    │   ├── aigc-kill-dimensions.md    # 七大维度详细规则
+    │   ├── aigc-kill-dimensions.md    # 十二大维度详细规则
     │   ├── aigc-word-replacements.md  # 降重替换字典
     │   ├── latex-protection-rules.md  # LaTeX 保护红线
     │   ├── main-tex-context.md        # main.tex 背景知识
@@ -118,7 +127,11 @@ skill-name/                    # 文件夹名：小写 + 连字符
 ├── SKILL.md                   # 【必需】核心指令文件
 │   ├── YAML frontmatter       # 【必需】元数据
 │   │   ├── name:              # 技能名称（与目录名一致）
-│   │   └── description:       # 触发描述（最重要）
+│   │   ├── description:       # 触发描述（最重要）
+│   │   ├── license:           # 许可证
+│   │   ├── requirements:      # 【推荐】环境需求（python/git/os）
+│   │   ├── allowed-tools:     # 【推荐】允许使用的工具白名单
+│   │   └── metadata:          # 【可选】触发词、来源、语言等
 │   └── Markdown body          # 【必需】使用指南
 ├── scripts/                   # 【可选】可执行脚本
 ├── references/                # 【可选】参考文档

@@ -11,6 +11,8 @@
     python3 scripts/check_latex.py <file.tex> --json
 """
 
+from __future__ import annotations
+
 import re
 import sys
 import json

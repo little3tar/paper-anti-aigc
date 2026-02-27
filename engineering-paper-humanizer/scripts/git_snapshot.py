@@ -16,6 +16,8 @@
     python3 scripts/git_snapshot.py --cleanup --yes    # 删除所有备份分支（跳过确认）
 """
 
+from __future__ import annotations
+
 import argparse
 import subprocess
 from datetime import datetime
@@ -167,7 +169,8 @@ def cmd_list() -> None:
 def cmd_rollback(target_branch: str | None) -> None:
     """从备份分支恢复文件到当前工作区
 
-    不切换分支，仅通过 git checkout <backup-branch> -- . 恢复文件内容。
+    从备份分支的 commit 中解析出被备份的文件列表，仅恢复这些文件，
+    避免误覆盖工作区中的其他变更。
     """
     if not is_git_repo():
         print("[WARN] 当前目录不在 Git 仓库内，无法执行回滚")
@@ -187,12 +190,26 @@ def cmd_rollback(target_branch: str | None) -> None:
         print(f"[WARN] 备份分支不存在：{target_branch}")
         return
 
-    # 从备份分支恢复文件（不切换分支）
-    checkout_result = run_git("checkout", target_branch, "--", ".")
-    if checkout_result.returncode == 0:
-        print(f"[OK] 已从备份分支恢复文件：{target_branch}")
+    # 从备份分支恢复文件（仅恢复被备份的文件，而非整个目录）
+    # 解析备份 commit 中实际变更的文件列表
+    files_result = run_git("diff-tree", "--no-commit-id", "--name-only", "-r", target_branch)
+    if files_result.returncode != 0 or not files_result.stdout.strip():
+        print(f"[WARN] 无法解析备份分支中的文件列表：{files_result.stderr.strip()}")
+        return
+
+    files = files_result.stdout.strip().split('\n')
+    restored = 0
+    for f in files:
+        checkout_result = run_git("checkout", target_branch, "--", f)
+        if checkout_result.returncode == 0:
+            restored += 1
+        else:
+            print(f"[WARN] 恢复文件失败: {f} — {checkout_result.stderr.strip()}")
+
+    if restored > 0:
+        print(f"[OK] 已从备份分支 {target_branch} 恢复 {restored} 个文件：{', '.join(files)}")
     else:
-        print(f"[WARN] 回滚失败：{checkout_result.stderr.strip()}")
+        print(f"[WARN] 未能从备份分支 {target_branch} 恢复任何文件")
 
 
 def cmd_diff(filepath: str) -> None:

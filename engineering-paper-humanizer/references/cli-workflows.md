@@ -41,13 +41,13 @@
 
 ```bash
 # 全文检查
-python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main.tex
+python3 <SKILL_DIR>/scripts/check_latex.py <TARGET_FILE>
 
 # 只看第 2 章的 error
-python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main.tex --section 2 --severity error
+python3 <SKILL_DIR>/scripts/check_latex.py <TARGET_FILE> --section 2 --severity error
 
 # JSON 输出供 agent 处理
-python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main.tex --json
+python3 <SKILL_DIR>/scripts/check_latex.py <TARGET_FILE> --json
 ```
 
 在 agent 对话中使用：
@@ -63,23 +63,23 @@ python3 .opencode/skills/engineering-paper-humanizer/scripts/check_latex.py main
 
 ```bash
 # 修改前创建分支备份（agent 自动执行，也可手动）
-python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py main.tex
+python3 <SKILL_DIR>/scripts/git_snapshot.py <TARGET_FILE>
 
 # 查看所有备份分支
-python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --list
+python3 <SKILL_DIR>/scripts/git_snapshot.py --list
 
 # 从最近备份恢复文件
-python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --rollback
+python3 <SKILL_DIR>/scripts/git_snapshot.py --rollback
 
 # 从指定备份分支恢复
-python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --rollback backup/humanizer/20260224-120000
+python3 <SKILL_DIR>/scripts/git_snapshot.py --rollback backup/humanizer/20260224-120000
 
 # 对比当前文件与最近备份的差异
-python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --diff main.tex
+python3 <SKILL_DIR>/scripts/git_snapshot.py --diff <TARGET_FILE>
 
 # 清理旧备份分支（交互确认）
-python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --cleanup
+python3 <SKILL_DIR>/scripts/git_snapshot.py --cleanup
 
 # 跳过确认直接清理
-python3 .opencode/skills/engineering-paper-humanizer/scripts/git_snapshot.py --cleanup --yes
+python3 <SKILL_DIR>/scripts/git_snapshot.py --cleanup --yes
 ```
