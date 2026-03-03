@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import subprocess
+import tempfile
 from datetime import datetime
 from pathlib import Path
 import sys
@@ -27,22 +28,22 @@ import io
 import os
 
 # Windows GBK 终端兼容：强制 UTF-8 输出
-if os.name == 'nt':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+if os.name == "nt":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 
 BACKUP_PREFIX = "backup/humanizer/"
+MAX_BACKUPS = 5  # 保留的最大备份数量，超出自动淘汰最旧的
 
 
 # ── 工具函数 ───────────────────────────────────────────────
 
+
 def run_git(*args: str, check: bool = False) -> subprocess.CompletedProcess:
     """执行 git 命令并返回结果"""
     return subprocess.run(
-        ["git", *args],
-        capture_output=True, text=True, encoding='utf-8',
-        check=check
+        ["git", *args], capture_output=True, text=True, encoding="utf-8", check=check
     )
 
 
@@ -52,41 +53,28 @@ def is_git_repo() -> bool:
     return result.returncode == 0 and result.stdout.strip() == "true"
 
 
-def get_current_branch() -> str | None:
-    """获取当前分支名（detached HEAD 时返回 None）"""
-    result = run_git("symbolic-ref", "--short", "HEAD")
-    if result.returncode == 0:
-        return result.stdout.strip()
-    return None
-
-
 def get_backup_branches() -> list[str]:
     """获取所有备份分支名，按时间倒序（最新在前）"""
-    result = run_git("branch", "--list", f"{BACKUP_PREFIX}*", "--format=%(refname:short)")
+    result = run_git(
+        "branch", "--list", f"{BACKUP_PREFIX}*", "--format=%(refname:short)"
+    )
     if result.returncode != 0 or not result.stdout.strip():
         return []
-    branches = result.stdout.strip().split('\n')
+    branches = result.stdout.strip().split("\n")
     branches.sort(reverse=True)  # 分支名含时间戳，字典序倒排即时间倒序
     return branches
 
 
-def has_staged_or_unstaged_changes() -> bool:
-    """检查工作区是否有未提交的变更（包括 staged 和 unstaged）"""
-    result = run_git("status", "--porcelain")
-    return bool(result.stdout.strip())
-
-
 # ── 核心功能 ───────────────────────────────────────────────
 
+
 def cmd_snapshot(filepath: str) -> None:
-    """为指定文件创建备份分支
+    """为指定文件创建备份分支（无需切换分支）
 
     流程：
-    1. 记录当前分支
-    2. stash 保存工作区变更（如有）
-    3. 创建备份分支并提交目标文件
-    4. 切回原分支
-    5. 恢复 stash（如有）
+    1. 读取文件当前内容，与最近备份对比（跳过无变更的空提交）
+    2. 使用底层 git 命令直接创建备份分支（不切换分支，不影响工作区）
+    3. 自动淘汰超出 MAX_BACKUPS 限制的最旧备份
     """
     if not is_git_repo():
         print("[WARN] 当前目录不在 Git 仓库内，跳过分支备份（不影响后续流程）")
@@ -97,54 +85,149 @@ def cmd_snapshot(filepath: str) -> None:
         print(f"[WARN] 文件不存在: {filepath}，跳过分支备份")
         return
 
-    # 记录当前分支
-    original_branch = get_current_branch()
-    if original_branch is None:
-        print("[WARN] 当前处于 detached HEAD 状态，跳过分支备份")
+    # 获取文件相对于仓库根目录的路径
+    repo_root_result = run_git("rev-parse", "--show-toplevel")
+    if repo_root_result.returncode != 0:
+        print("[WARN] 无法获取仓库根目录，跳过分支备份")
+        return
+    repo_root = Path(repo_root_result.stdout.strip())
+    try:
+        rel_path = path.resolve().relative_to(repo_root.resolve()).as_posix()
+    except ValueError:
+        print(f"[WARN] 文件 {filepath} 不在仓库内，跳过分支备份")
         return
 
-    # 生成备份分支名
+    # ── 跳过空提交：对比文件内容与最近备份 ──
+    branches = get_backup_branches()
+    if branches:
+        latest = branches[0]
+        # 获取最近备份中该文件的 blob hash
+        old_hash_result = run_git("rev-parse", f"{latest}:{rel_path}")
+        if old_hash_result.returncode == 0:
+            old_hash = old_hash_result.stdout.strip()
+            # 计算当前文件的 blob hash（不写入对象库）
+            new_hash_result = run_git("hash-object", str(path))
+            if new_hash_result.returncode == 0:
+                new_hash = new_hash_result.stdout.strip()
+                if old_hash == new_hash:
+                    print(f"[INFO] {filepath} 与最近备份 {latest} 内容相同，跳过备份")
+                    return
+
+    # ── 使用底层命令创建备份（无需切换分支） ──
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     backup_branch = f"{BACKUP_PREFIX}{timestamp}"
 
-    # stash 保存当前工作区变更
-    had_changes = has_staged_or_unstaged_changes()
-    if had_changes:
-        stash_result = run_git("stash", "push", "-m", f"humanizer-backup-temp-{timestamp}")
-        if stash_result.returncode != 0:
-            print(f"[WARN] stash 失败：{stash_result.stderr.strip()}，跳过分支备份")
-            return
+    # Step 1: 将文件写入 git 对象库
+    blob_result = run_git("hash-object", "-w", str(path))
+    if blob_result.returncode != 0:
+        print(f"[WARN] hash-object 失败：{blob_result.stderr.strip()}")
+        return
+    blob_hash = blob_result.stdout.strip()
+
+    # Step 2: 基于当前 HEAD 的 tree 构建新 tree（替换/添加目标文件）
+    # 先读取 HEAD 的 tree
+    head_tree_result = run_git("rev-parse", "HEAD^{tree}")
+    if head_tree_result.returncode != 0:
+        print(f"[WARN] 无法读取 HEAD tree：{head_tree_result.stderr.strip()}")
+        return
+    head_tree = head_tree_result.stdout.strip()
+
+    # 用 read-tree + update-index 在临时 index 中构建新 tree
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".idx") as tmp:
+        tmp_index = tmp.name
+
+    env = os.environ.copy()
+    env["GIT_INDEX_FILE"] = tmp_index
 
     try:
-        # 创建并切换到备份分支
-        create_result = run_git("checkout", "-b", backup_branch)
-        if create_result.returncode != 0:
-            print(f"[WARN] 创建备份分支失败：{create_result.stderr.strip()}")
+        # 读取 HEAD tree 到临时 index
+        r = subprocess.run(
+            ["git", "read-tree", head_tree],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env=env,
+        )
+        if r.returncode != 0:
+            print(f"[WARN] read-tree 失败：{r.stderr.strip()}")
             return
 
-        # 在备份分支上提交目标文件
-        run_git("add", str(path))
-        commit_msg = f"[humanizer-backup] {path.name} @ {timestamp}"
-        commit_result = run_git("commit", "--allow-empty", "-m", commit_msg)
-        if commit_result.returncode != 0:
-            print(f"[WARN] 备份提交失败：{commit_result.stderr.strip()}")
-            # 即使提交失败也需要切回原分支
-        else:
-            print(f"[OK] 已创建备份分支：{backup_branch}")
+        # 在临时 index 中更新目标文件
+        # 获取文件的 mode（通常是 100644）
+        r = subprocess.run(
+            [
+                "git",
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                f"100644,{blob_hash},{rel_path}",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env=env,
+        )
+        if r.returncode != 0:
+            print(f"[WARN] update-index 失败：{r.stderr.strip()}")
+            return
 
+        # 写出新 tree
+        r = subprocess.run(
+            ["git", "write-tree"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            env=env,
+        )
+        if r.returncode != 0:
+            print(f"[WARN] write-tree 失败：{r.stderr.strip()}")
+            return
+        new_tree = r.stdout.strip()
     finally:
-        # 无论成功失败，都切回原分支
-        switch_result = run_git("checkout", original_branch)
-        if switch_result.returncode != 0:
-            print(f"[ERROR] 切回原分支 {original_branch} 失败：{switch_result.stderr.strip()}")
-            print("[ERROR] 请手动执行: git checkout", original_branch)
+        # 清理临时 index
+        try:
+            os.unlink(tmp_index)
+        except OSError:
+            pass
 
-        # 恢复 stash
-        if had_changes:
-            pop_result = run_git("stash", "pop")
-            if pop_result.returncode != 0:
-                print(f"[WARN] stash pop 失败：{pop_result.stderr.strip()}")
-                print("[WARN] 你的变更仍在 stash 中，请手动执行: git stash pop")
+    # Step 3: 创建 commit 对象（以 HEAD 为父提交）
+    head_result = run_git("rev-parse", "HEAD")
+    if head_result.returncode != 0:
+        print(f"[WARN] 无法获取 HEAD：{head_result.stderr.strip()}")
+        return
+    head_sha = head_result.stdout.strip()
+
+    commit_msg = f"[humanizer-backup] {path.name} @ {timestamp}"
+    commit_result = run_git("commit-tree", new_tree, "-p", head_sha, "-m", commit_msg)
+    if commit_result.returncode != 0:
+        print(f"[WARN] commit-tree 失败：{commit_result.stderr.strip()}")
+        return
+    commit_sha = commit_result.stdout.strip()
+
+    # Step 4: 创建备份分支指向新 commit
+    ref_result = run_git("update-ref", f"refs/heads/{backup_branch}", commit_sha)
+    if ref_result.returncode != 0:
+        print(f"[WARN] 创建备份分支失败：{ref_result.stderr.strip()}")
+        return
+
+    print(f"[OK] 已创建备份分支：{backup_branch}")
+
+    # ── 自动淘汰超出限制的旧备份 ──
+    _auto_evict_old_backups()
+
+
+def _auto_evict_old_backups() -> None:
+    """当备份分支数超过 MAX_BACKUPS 时，自动删除最旧的备份"""
+    branches = get_backup_branches()  # 最新在前
+    if len(branches) <= MAX_BACKUPS:
+        return
+    to_delete = branches[MAX_BACKUPS:]  # 超出部分（最旧的）
+    for b in to_delete:
+        result = run_git("branch", "-D", b)
+        if result.returncode == 0:
+            print(f"[INFO] 自动淘汰旧备份：{b}")
+        else:
+            print(f"[WARN] 淘汰失败: {b} — {result.stderr.strip()}")
 
 
 def cmd_list() -> None:
@@ -192,12 +275,14 @@ def cmd_rollback(target_branch: str | None) -> None:
 
     # 从备份分支恢复文件（仅恢复被备份的文件，而非整个目录）
     # 解析备份 commit 中实际变更的文件列表
-    files_result = run_git("diff-tree", "--no-commit-id", "--name-only", "-r", target_branch)
+    files_result = run_git(
+        "diff-tree", "--no-commit-id", "--name-only", "-r", target_branch
+    )
     if files_result.returncode != 0 or not files_result.stdout.strip():
         print(f"[WARN] 无法解析备份分支中的文件列表：{files_result.stderr.strip()}")
         return
 
-    files = files_result.stdout.strip().split('\n')
+    files = files_result.stdout.strip().split("\n")
     restored = 0
     for f in files:
         checkout_result = run_git("checkout", target_branch, "--", f)
@@ -207,7 +292,9 @@ def cmd_rollback(target_branch: str | None) -> None:
             print(f"[WARN] 恢复文件失败: {f} — {checkout_result.stderr.strip()}")
 
     if restored > 0:
-        print(f"[OK] 已从备份分支 {target_branch} 恢复 {restored} 个文件：{', '.join(files)}")
+        print(
+            f"[OK] 已从备份分支 {target_branch} 恢复 {restored} 个文件：{', '.join(files)}"
+        )
     else:
         print(f"[WARN] 未能从备份分支 {target_branch} 恢复任何文件")
 
@@ -256,7 +343,7 @@ def cmd_cleanup(skip_confirm: bool = False) -> None:
             answer = input("\n确认删除？(y/N): ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             answer = ""
-        if answer != 'y':
+        if answer != "y":
             print("[INFO] 已取消清理")
             return
 
@@ -273,34 +360,27 @@ def cmd_cleanup(skip_confirm: bool = False) -> None:
 
 # ── 入口 ──────────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="engineering-paper-humanizer Git 分支备份"
     )
     group = parser.add_mutually_exclusive_group()
+    group.add_argument("--list", action="store_true", help="列出所有备份分支")
     group.add_argument(
-        "--list", action="store_true",
-        help="列出所有备份分支"
+        "--rollback",
+        nargs="?",
+        const="__latest__",
+        metavar="BRANCH",
+        help="从最近备份或指定备份分支恢复文件",
     )
-    group.add_argument(
-        "--rollback", nargs="?", const="__latest__", metavar="BRANCH",
-        help="从最近备份或指定备份分支恢复文件"
-    )
-    group.add_argument(
-        "--diff", metavar="FILE",
-        help="显示文件与最近备份分支的差异"
-    )
-    group.add_argument(
-        "--cleanup", action="store_true",
-        help="删除所有备份分支"
-    )
+    group.add_argument("--diff", metavar="FILE", help="显示文件与最近备份分支的差异")
+    group.add_argument("--cleanup", action="store_true", help="删除所有备份分支")
+    parser.add_argument("--yes", action="store_true", help="跳过 --cleanup 的确认提示")
     parser.add_argument(
-        "--yes", action="store_true",
-        help="跳过 --cleanup 的确认提示"
-    )
-    parser.add_argument(
-        "file", nargs="?",
-        help="要备份的 .tex 文件路径（不与 --list/--rollback/--diff/--cleanup 同用）"
+        "file",
+        nargs="?",
+        help="要备份的 .tex 文件路径（不与 --list/--rollback/--diff/--cleanup 同用）",
     )
     args = parser.parse_args()
 
