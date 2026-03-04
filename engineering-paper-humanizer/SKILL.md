@@ -1,6 +1,6 @@
 ---
 name: engineering-paper-humanizer
-description: 深度重写工程类中文学术文本（LaTeX），按十二大维度消除 AIGC 痕迹，注入人类工程师行文风格与真实个性。当用户提及洗稿、去AI、humanize、降AIGC、防检测、人味、AI浓度，或要求对中文工程类 LaTeX 文档（.tex）进行去 AI 化改写时，必须使用此 Skill。也适用于用户提交一段工程文本要求消除 AIGC 检测特征（困惑度、突发性），或需要将 AI 生成内容植入现有 main.tex 并保持风格一致的场景。
+description: 深度重写工程类中文学术文本（LaTeX），按核心维度消除 AIGC 痕迹，注入人类工程师行文风格与真实个性。当用户提及洗稿、去AI、humanize、降AIGC、防检测、人味、AI浓度，或要求对中文工程类 LaTeX 文档（.tex）进行去 AI 化改写时，必须使用此 Skill。也适用于用户提交一段工程文本要求消除 AIGC 检测特征（困惑度、突发性），或需要将 AI 生成内容植入现有 main.tex 并保持风格一致的场景。
 compatibility:
   python: ">=3.7"
   git: optional
@@ -8,82 +8,72 @@ compatibility:
 
 # Engineering Paper Humanizer
 
-深度重写工程类学术文本，彻底消除 AI 生成痕迹。在保留原意、专业术语、文献引用和 LaTeX 命令完整的前提下，使其呈现出人类工程师真实、严谨且带有"工程粗糙感"和长短句顿挫的行文风格。
+深度重写工程类学术文本，彻底消除 AI 生成痕迹。在保留原意、专业术语、文献引用和 LaTeX 命令完整的前提下，使其呈现出人类工程师真实、严谨且带有"工程粗糙感"和长短句顿挫的行文风格。不仅要"干净"（无 AI 痕迹），更要"鲜活"（有真实人味）。
 
 ## Core Principle
 
-1. **保留原意** — 术语替换会导致学术语义偏移，引用丢失直接影响查重通过率。专业术语、`\cite{}`、LaTeX 命令保持原样不动
-2. **彻底去 AI 味** — 按十二大维度逐条扫描降解（详见 `references/humanizer-rules.md` Part 1）
-3. **注入人味** — 工程妥协语态、定量参数碾压、长短句顿挫极化
-4. **禁止捏造数据** — 编造数字是学术不端硬伤，一旦被查无法辩护。只用原文已有数据或可追溯推导
+1. **保留原意** — 术语替换会导致学术语义偏移，引用丢失直接影响查重通过率。专业术语、`\cite{}`、LaTeX 命令保持原样不动。
+2. **彻底去 AI 味** — 按核心维度逐条扫描降解（详见 `references/humanizer-rules.md` Part 1）。
+3. **注入人味与灵魂** — 避免无菌、没有声音的机器感写作。引入工程妥协语态、定量参数碾压、长短句顿挫极化。
+4. **禁止捏造数据** — 编造数字是学术不端硬伤，一旦被查无法辩护。只用原文已有数据或可追溯推导。
 
 ## Step-by-Step Process
 
-### Phase 0：安全备份（Git 分支备份）
+### Phase 1：准备阶段（Git 备份 + 背景知识预检）
 
-在对任何 .tex 文件进行修改之前，先执行 Git 分支备份：
+1. **安全备份**：在对任何 `.tex` 文件进行修改前，执行 Git 分支备份（非 Git 环境自动跳过）：
+   ```bash
+   python3 <SKILL_DIR>/scripts/git_snapshot.py <TARGET_FILE>
+   ```
+2. **背景预检**：快速扫描 `main.tex` 章节结构与核心参数，与 `references/main-tex-context.md` 交叉比对。若发现显著偏差，警告用户并建议按模板更新。用户拒绝则使用现有版本继续。
 
-```bash
-python3 <SKILL_DIR>/scripts/git_snapshot.py <TARGET_FILE>
-```
+### Phase 2：扫描解构
 
-非 Git 环境自动跳过，不影响后续流程。
+读入用户草稿，按 `references/humanizer-rules.md` 逐段定位 AIGC 痕迹：
+- Part 1（十五大核心维度）逐条扫描
+- Part 2（个性与灵魂）识别"缺乏灵魂的写作迹象"
+- Part 3（降重字典）标记敏感词组
 
-### Phase 0.5：背景知识一致性预检
+### Phase 3：重构注入（重写 + 格式修复 + 快速自检）
 
-读取 `references/main-tex-context.md` 前，快速扫描 `main.tex` 章节结构与核心参数，与背景文件交叉比对。若发现章节结构不一致、核心参数缺失/过时、或新增章节未记录等显著偏差，警告用户并建议按模板（`assets/main-tex-context-template.md`）重置更新。用户拒绝则使用现有版本继续。
+1. **执行重写**：结合宿主文档背景事实，按核心维度执行重写。严格遵守**数据完整性红线**（见下方表格）和 **Part 4 LaTeX 保护红线**。
+2. **格式修复**：运行自动检查脚本，根据输出的精确行号逐条修复：
+   ```bash
+   python3 <SKILL_DIR>/scripts/check_latex.py <TARGET_FILE>
+   ```
+   修复完毕后再次运行脚本确认 error 清零。
+3. **快速自检**：对照 **Part 5 快速检查清单**进行最后验收。
 
-### Phase 1：扫描解构
-
-读入用户草稿，按十二大维度（`references/humanizer-rules.md` Part 1）逐段定位 AIGC 痕迹，同时查阅降重字典（Part 2）标记敏感词组。
-
-### Phase 2：重构注入
-
-结合宿主文档背景事实（`references/main-tex-context.md`），按十二大维度执行重写。重写时严格遵守：
-
-- **数据完整性红线**（见下方表格）
-- **LaTeX 保护红线**（`references/humanizer-rules.md` Part 3）
-
-### Phase 3：格式修复
-
-运行自动检查脚本，根据输出的精确行号逐条修复：
-
-```bash
-python3 <SKILL_DIR>/scripts/check_latex.py <TARGET_FILE>
-```
-
-修复完毕后再次运行脚本确认 error 清零。
-
-### Phase 4：静默输出
+### Phase 4：输出交付
 
 只输出重写后的 LaTeX 代码块，不附加任何主观解释、不输出过程分析。
 
-**改写示例**（展示期望的风格转换方向）：
+**改写示例与解析**（展示期望的风格转换方向）：
 
-输入：
+**输入（AI 味道，干净但无灵魂）：**
 ```latex
-本系统采用了先进的模糊PID控制算法，该算法能够有效地提升系统的响应速度和稳定性。
-实验结果表明，与传统PID相比，该方法在多个性能指标上均表现出显著的优越性。
+本系统采用了先进的模糊PID控制算法，该算法作为提升系统性能的关键，能够有效地提升系统的响应速度和稳定性。
+此外，实验结果表明，与传统PID相比，该方法在多个性能指标上均表现出显著的优越性，不仅降低了超调，还减少了时间。
 ```
 
-输出：
+**输出（人性化，鲜活且硬核）：**
 ```latex
 控制器选用模糊PID方案。相比经典PID，超调量从$12.3\%$压至$4.7\%$，
 调节时间由$3.8\,\mathrm{s}$缩短到$1.2\,\mathrm{s}$——代价是模糊规则表
 需要离线整定约40条，现场调参耗时两个工作日。
 ```
 
-### Phase 4.5：质量自检（可选）
+**所做更改标注：**
+- 删除了"作为...的关键"（系动词回避/夸大意义）
+- 删除了"此外"（AI 高频词）
+- 删除了"不仅...还..."（否定式排比）
+- 删除了"先进的"、"有效地"、"显著的优越性"（宣传性语言/空泛表达）
+- **注入灵魂**：加入了具体参数（$12.3\%$、$3.8\,\mathrm{s}$）替代模糊主张，并补充了"现场调参耗时两个工作日"的工程妥协感（承认复杂性与真实困境）。
 
-若用户要求评估 AI 浓度，按五维评分标准（`references/humanizer-rules.md` Part 4）执行评估。常规洗稿流程跳过此步。
+### Phase 5：后续维护（可选）
 
-### Phase 5：背景知识同步
-
-完成所有修改后，询问用户是否需要同步更新 `references/main-tex-context.md`。若用户确认：
-
-1. 读取最新 `main.tex` 全文
-2. 按模板格式（`assets/main-tex-context-template.md`）提取信息
-3. 覆盖写入 `main-tex-context.md`
+1. **质量评分**：若用户要求评估 AI 浓度，按 **Part 6 质量评分标准**（五维评分）执行评估。
+2. **背景知识同步**：完成所有修改后，询问用户是否需要同步更新 `references/main-tex-context.md`。若确认，则读取最新 `main.tex` 全文并按模板覆盖写入。
 
 ## Data Integrity Red Line
 
@@ -98,8 +88,8 @@ python3 <SKILL_DIR>/scripts/check_latex.py <TARGET_FILE>
 
 | 文件 | 内容 |
 | ---- | ---- |
-| `references/humanizer-rules.md` | 十二大维度 + 降重字典 + LaTeX 红线 + 质量评分（合集） |
+| `references/humanizer-rules.md` | 核心维度 + 降重字典 + LaTeX 红线 + 快速清单 + 质量评分 |
 | `references/main-tex-context.md` | 宿主文档 main.tex 章节锚点与工程事实 |
-| `assets/main-tex-context-template.md` | 背景知识模板格式（Phase 0.5/5 用） |
+| `assets/main-tex-context-template.md` | 背景知识模板格式（Phase 1/5 用） |
 | `scripts/check_latex.py` | LaTeX 格式自动检查脚本 |
 | `scripts/git_snapshot.py` | Git 分支备份脚本 |
