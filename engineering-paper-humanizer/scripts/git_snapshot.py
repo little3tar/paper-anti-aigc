@@ -14,6 +14,8 @@
     python3 scripts/git_snapshot.py --diff main.tex    # 对比与最近备份的差异
     python3 scripts/git_snapshot.py --cleanup          # 删除所有备份分支（需确认）
     python3 scripts/git_snapshot.py --cleanup --yes    # 删除所有备份分支（跳过确认）
+    python3 scripts/git_snapshot.py --dry-run main.tex # 模拟创建备份（不实际执行）
+    python3 scripts/git_snapshot.py --rollback --dry-run # 模拟恢复文件（不实际执行）
 """
 
 from __future__ import annotations
@@ -68,14 +70,27 @@ def get_backup_branches() -> list[str]:
 # ── 核心功能 ───────────────────────────────────────────────
 
 
-def cmd_snapshot(filepath: str) -> None:
+def cmd_snapshot(filepath: str, dry_run: bool = False) -> None:
     """为指定文件创建备份分支（无需切换分支）
 
     流程：
     1. 读取文件当前内容，与最近备份对比（跳过无变更的空提交）
     2. 使用底层 git 命令直接创建备份分支（不切换分支，不影响工作区）
     3. 自动淘汰超出 MAX_BACKUPS 限制的最旧备份
+
+    参数：
+        filepath: 要备份的文件路径
+        dry_run: 模拟模式，仅显示将要进行的操作而不实际执行
     """
+    if dry_run:
+        print(f"[DRY-RUN] 模拟备份文件: {filepath}")
+        print(f"[DRY-RUN] 实际将执行以下操作：")
+        print(f"  1. 检查是否为 Git 仓库")
+        print(f"  2. 检查文件是否存在")
+        print(f"  3. 对比文件与最近备份的差异")
+        print(f"  4. 创建备份分支（跳过空提交）")
+        print(f"  5. 自动淘汰超出 {MAX_BACKUPS} 个限制的旧备份")
+
     if not is_git_repo():
         print("[WARN] 当前目录不在 Git 仓库内，跳过分支备份（不影响后续流程）")
         return
@@ -116,6 +131,28 @@ def cmd_snapshot(filepath: str) -> None:
     # ── 使用底层命令创建备份（无需切换分支） ──
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     backup_branch = f"{BACKUP_PREFIX}{timestamp}"
+
+    # 检测空仓库（无任何 commit）
+    head_check = run_git("rev-parse", "--verify", "HEAD")
+    if head_check.returncode != 0:
+        print(
+            "[WARN] 仓库尚无任何提交（空仓库），请先执行 git commit 后再使用备份功能",
+        )
+        return
+
+    if dry_run:
+        print(f"[DRY-RUN] 将创建备份分支: {backup_branch}")
+        print(f"[DRY-RUN] 将执行以下 Git 命令：")
+        print(f"  - git hash-object -w {path}")
+        print(f"  - git read-tree HEAD^{{tree}}")
+        print(f"  - git update-index --add --cacheinfo 100644,<hash>,{rel_path}")
+        print(f"  - git write-tree")
+        print(
+            f"  - git commit-tree <tree> -p HEAD -m '[humanizer-backup] {path.name} @ {timestamp}'"
+        )
+        print(f"  - git update-ref refs/heads/{backup_branch} <commit>")
+        print(f"[DRY-RUN] 模拟完成，未实际创建备份分支")
+        return
 
     # Step 1: 将文件写入 git 对象库
     blob_result = run_git("hash-object", "-w", str(path))
@@ -213,15 +250,27 @@ def cmd_snapshot(filepath: str) -> None:
     print(f"[OK] 已创建备份分支：{backup_branch}")
 
     # ── 自动淘汰超出限制的旧备份 ──
-    _auto_evict_old_backups()
+    _auto_evict_old_backups(dry_run)
 
 
-def _auto_evict_old_backups() -> None:
-    """当备份分支数超过 MAX_BACKUPS 时，自动删除最旧的备份"""
+def _auto_evict_old_backups(dry_run: bool = False) -> None:
+    """当备份分支数超过 MAX_BACKUPS 时，自动删除最旧的备份
+
+    参数：
+        dry_run: 模拟模式，仅显示将要进行的操作而不实际执行
+    """
     branches = get_backup_branches()  # 最新在前
     if len(branches) <= MAX_BACKUPS:
         return
+
     to_delete = branches[MAX_BACKUPS:]  # 超出部分（最旧的）
+
+    if dry_run:
+        print(f"[DRY-RUN] 将自动淘汰 {len(to_delete)} 个旧备份分支:")
+        for b in to_delete:
+            print(f"  - git branch -D {b}")
+        return
+
     for b in to_delete:
         result = run_git("branch", "-D", b)
         if result.returncode == 0:
@@ -249,12 +298,23 @@ def cmd_list() -> None:
         print(f"  {branch}  {info}")
 
 
-def cmd_rollback(target_branch: str | None) -> None:
+def cmd_rollback(target_branch: str | None, dry_run: bool = False) -> None:
     """从备份分支恢复文件到当前工作区
 
     从备份分支的 commit 中解析出被备份的文件列表，仅恢复这些文件，
     避免误覆盖工作区中的其他变更。
+
+    参数：
+        target_branch: 目标备份分支，None 表示最近的备份
+        dry_run: 模拟模式，仅显示将要进行的操作而不实际执行
     """
+    if dry_run:
+        print(f"[DRY-RUN] 模拟从备份分支恢复文件")
+        if target_branch:
+            print(f"[DRY-RUN] 目标分支: {target_branch}")
+        else:
+            print(f"[DRY-RUN] 将使用最近的备份分支")
+
     if not is_git_repo():
         print("[WARN] 当前目录不在 Git 仓库内，无法执行回滚")
         return
@@ -266,6 +326,8 @@ def cmd_rollback(target_branch: str | None) -> None:
             print("[INFO] 未找到任何备份分支，无法回滚")
             return
         target_branch = branches[0]
+        if dry_run:
+            print(f"[DRY-RUN] 将使用最近的备份分支: {target_branch}")
 
     # 验证备份分支存在
     verify = run_git("rev-parse", "--verify", target_branch)
@@ -283,6 +345,14 @@ def cmd_rollback(target_branch: str | None) -> None:
         return
 
     files = files_result.stdout.strip().split("\n")
+
+    if dry_run:
+        print(f"[DRY-RUN] 将恢复以下 {len(files)} 个文件:")
+        for f in files:
+            print(f"  - git checkout {target_branch} -- {f}")
+        print(f"[DRY-RUN] 模拟完成，未实际恢复文件")
+        return
+
     restored = 0
     for f in files:
         checkout_result = run_git("checkout", target_branch, "--", f)
@@ -323,8 +393,13 @@ def cmd_diff(filepath: str) -> None:
         print(f"[INFO] {filepath} 与最近备份 {latest_branch} 无差异")
 
 
-def cmd_cleanup(skip_confirm: bool = False) -> None:
-    """删除所有备份分支"""
+def cmd_cleanup(skip_confirm: bool = False, dry_run: bool = False) -> None:
+    """删除所有备份分支
+
+    参数：
+        skip_confirm: 跳过确认提示
+        dry_run: 模拟模式，仅显示将要进行的操作而不实际执行
+    """
     if not is_git_repo():
         print("[WARN] 当前目录不在 Git 仓库内，无法清理备份分支")
         return
@@ -332,6 +407,14 @@ def cmd_cleanup(skip_confirm: bool = False) -> None:
     branches = get_backup_branches()
     if not branches:
         print("[INFO] 暂无备份分支需要清理")
+        return
+
+    if dry_run:
+        print(f"[DRY-RUN] 模拟删除所有备份分支")
+        print(f"[DRY-RUN] 将删除以下 {len(branches)} 个备份分支：")
+        for b in branches:
+            print(f"  - git branch -D {b}")
+        print(f"[DRY-RUN] 模拟完成，未实际删除任何分支")
         return
 
     print(f"将删除以下 {len(branches)} 个备份分支：")
@@ -378,9 +461,14 @@ def main():
     group.add_argument("--cleanup", action="store_true", help="删除所有备份分支")
     parser.add_argument("--yes", action="store_true", help="跳过 --cleanup 的确认提示")
     parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="模拟执行，显示将要进行的操作而不实际修改",
+    )
+    parser.add_argument(
         "file",
         nargs="?",
-        help="要备份的 .tex 文件路径（不与 --list/--rollback/--diff/--cleanup 同用）",
+        help="要备份的文件路径（不与 --list/--rollback/--diff/--cleanup 同用）",
     )
     args = parser.parse_args()
 
@@ -388,13 +476,13 @@ def main():
         cmd_list()
     elif args.rollback is not None:
         target = None if args.rollback == "__latest__" else args.rollback
-        cmd_rollback(target)
+        cmd_rollback(target, dry_run=args.dry_run)
     elif args.diff:
         cmd_diff(args.diff)
     elif args.cleanup:
-        cmd_cleanup(skip_confirm=args.yes)
+        cmd_cleanup(skip_confirm=args.yes, dry_run=args.dry_run)
     elif args.file:
-        cmd_snapshot(args.file)
+        cmd_snapshot(args.file, dry_run=args.dry_run)
     else:
         parser.print_help()
 

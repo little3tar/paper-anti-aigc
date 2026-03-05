@@ -1,0 +1,751 @@
+{
+  "rules": [
+    {
+      "id": "CITE-001",
+      "severity": "error",
+      "pattern": "。\\s*\\\\cite\\{",
+      "message": "\\cite{} 出现在句号之后（应在句号内侧）",
+      "fix": "将 \\cite{} 移到句号前：...\\cite{xxx}。",
+      "format": [
+        "latex"
+      ]
+    },
+    {
+      "id": "CITE-002",
+      "severity": "error",
+      "pattern": "，\\s*\\\\cite\\{",
+      "message": "\\cite{} 出现在逗号之后（应在逗号内侧）",
+      "fix": "将 \\cite{} 移到逗号前：...\\cite{xxx}，",
+      "format": [
+        "latex"
+      ]
+    },
+    {
+      "id": "CITE-003",
+      "severity": "error",
+      "pattern": "(?<=[^\\s\\\\])\\s+\\\\cite\\{",
+      "message": "\\cite{} 前存在空格",
+      "fix": "删除 \\cite{} 前的空格，使其紧贴被引文字",
+      "format": [
+        "latex"
+      ]
+    },
+    {
+      "id": "PUNCT-001",
+      "severity": "warning",
+      "pattern": "(?<![\\\\])\"[^\"]*\"",
+      "message": "检测到英文双引号，中文论文应使用 “ ”",
+      "fix": "替换为中文双引号 \\u201c \\u201d",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "PUNCT-002",
+      "severity": "warning",
+      "pattern": "——",
+      "message": "检测到中文破折号用于长解释（建议化入正文）",
+      "fix": "将破折号解释内容改写为正文从句",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "PUNCT-003",
+      "severity": "warning",
+      "pattern": "[）)]\\s*[（(]",
+      "message": "检测到连续括号堆砌",
+      "fix": "合并括号内容或将解释化入正文",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "LATEX-001",
+      "severity": "error",
+      "pattern": "(?<=\\d)%(?!\\s*$)",
+      "message": "裸百分号 % 未转义（会导致行尾截断）",
+      "fix": "改为 \\%",
+      "format": [
+        "latex"
+      ]
+    },
+    {
+      "id": "LATEX-002",
+      "severity": "error",
+      "pattern": "\\\\(?:cite|label|ref|includegraphics)\\{[^}]*$",
+      "message": "LaTeX 命令花括号在行尾未闭合（疑似内部换行）",
+      "fix": "将命令参数合并到同一行，确保花括号在同一行闭合",
+      "format": [
+        "latex"
+      ]
+    },
+    {
+      "id": "AIGC-001",
+      "severity": "info",
+      "pattern": "本[章节]将(?:针对|详细|主要|重点)",
+      "message": "检测到章节预告句式（AIGC 高频特征）",
+      "fix": "删除预告，用客观主语自然过渡",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-002",
+      "severity": "info",
+      "pattern": "(?:具有|拥有)(?:十分|非常|极其)?重要的(?:工程|理论|实际|现实)(?:应用)?(?:价值|意义)",
+      "message": "检测到空泛价值声明（AIGC 高频特征）",
+      "fix": "删除或改为具体学术贡献描述",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-003",
+      "severity": "info",
+      "pattern": "(?:突破|攻克)了?.*?(?:技术瓶颈|关键难题)",
+      "message": "检测到 AI 敏感词组“突破技术瓶颈”",
+      "fix": "替换为“克服...技术难点”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-004",
+      "severity": "info",
+      "pattern": "(?:提供|奠定)了?.*?(?:理论|数据|技术)(?:支撑|支持|基础)",
+      "message": "检测到 AI 升华结尾“提供数据支撑”",
+      "fix": "删除升华句，陈述完技术事实即结束段落",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-005",
+      "severity": "info",
+      "pattern": "(?:虽然|尽管).*?(?:取得了|已经|已有).*?(?:但是?|然而|不过).*?(?:仍然?|依然|尚)",
+      "message": "检测到“虽然...但仍...”模板句（AIGC 高频模式）",
+      "fix": "直接客观陈述双方侧重点",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-006",
+      "severity": "info",
+      "pattern": "应运而生",
+      "message": "检测到 AI 敏感词“应运而生”",
+      "fix": "直接删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-007",
+      "severity": "info",
+      "pattern": "双重困境",
+      "message": "检测到 AI 敏感词“双重困境”",
+      "fix": "替换为“双重问题”或“局限性”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-008",
+      "severity": "info",
+      "pattern": "旨在(?:解决|探讨|研究)",
+      "message": "检测到 AI 敏感词“旨在解决/探讨”",
+      "fix": "替换为“致力于改善”或“深入分析了”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-009",
+      "severity": "info",
+      "pattern": "(?:行业报告|观察者|专家|一些批评者|多个来源)(?:显示|指出|认为|表明)",
+      "message": "检测到模糊归因（应引用具体文献）",
+      "fix": "替换为具体学者姓名+\\cite{xxx}引用",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-010",
+      "severity": "warning",
+      "pattern": "(?:希望这(?:些信息)?对您有帮助|请告诉我|您说得[完全]*正确|当然！|一定！)",
+      "message": "检测到 AI 协作交流残留文本",
+      "fix": "删除协作交流痕迹",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-011",
+      "severity": "warning",
+      "pattern": "(?:截至目前|截至写作时|根据我最后的|虽然具体细节有限|基于可用信息)",
+      "message": "检测到 AI 知识截止免责声明残留",
+      "fix": "删除免责声明，补充具体文献引用",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-012",
+      "severity": "info",
+      "pattern": "(?:不仅仅是|这不仅仅是关于)",
+      "message": "检测到否定式排比（AI 高频模式）",
+      "fix": "删除否定式排比，直接陈述",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-013",
+      "severity": "info",
+      "pattern": "(?:未来看起来光明|激动人心的时代|追求卓越的旅程|向正确方向迈出)",
+      "message": "检测到通用积极结论（AI 套话）",
+      "fix": "删除套话，改为具体规划或直接删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-014",
+      "severity": "info",
+      "pattern": "可以潜在地(?:可能)?(?:被认为)?",
+      "message": "检测到过度限定表达",
+      "fix": "简化为直接陈述",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-015",
+      "severity": "info",
+      "pattern": "彻底解决",
+      "message": "检测到绝对化词汇“彻底解决”",
+      "fix": "降级为“有效改善”或“有效降低”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-016",
+      "severity": "info",
+      "pattern": "(?:现有研究|已有研究|相关研究)(?:表明|显示|证明|指出)",
+      "message": "检测到模糊文献综述起手式",
+      "fix": "替换为具体学者引用（如“张某等\\cite{xxx}指出”）",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-017",
+      "severity": "info",
+      "pattern": "国内(?:外)?起步较晚",
+      "message": "检测到 AI 文献综述套话“国内起步较晚”",
+      "fix": "删除，直接陈述“近年来，国内学者围绕XXX展开了针对性研究”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-018",
+      "severity": "info",
+      "pattern": "(?:众所周知|业内公认|普遍认为)",
+      "message": "检测到虚假权威/模糊归因",
+      "fix": "必须精确到具体参考文献编号或作者姓名",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-019",
+      "severity": "info",
+      "pattern": "(?:权威专家|大量实验)(?:建议|证明|表明)",
+      "message": "检测到虚假权威声明",
+      "fix": "删除或替换为具体实验数据+文献引用",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-020",
+      "severity": "warning",
+      "pattern": "(?:让我们来看|好问题|正如您所指出|非常准确地描述)",
+      "message": "检测到 AI 对话口癖残留",
+      "fix": "彻底删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-021",
+      "severity": "info",
+      "pattern": "(?:在某种程度上|在很大范围内|在一定程度上)",
+      "message": "检测到虚假范围限定词",
+      "fix": "删除或给出具体数值/工况区间",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-022",
+      "severity": "info",
+      "pattern": "(?:实现着|体现着|推动着|引领着|展现着)",
+      "message": "检测到虚假“着”字深度句式（模仿英文-ing）",
+      "fix": "改为直接动词陈述（“实现了”/“体现了”）",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-023",
+      "severity": "info",
+      "pattern": "(?:可以说|基本上(?:可以)?说?)",
+      "message": "检测到填充限定词",
+      "fix": "删除，工程结论应当是确定性的",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-024",
+      "severity": "info",
+      "pattern": "具有广阔的(?:应用|发展)?前景",
+      "message": "检测到通用积极结尾套话",
+      "fix": "删除或改为具体技术规划",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-025",
+      "severity": "info",
+      "pattern": "协同难题",
+      "message": "检测到 AI 敏感词“协同难题”",
+      "fix": "替换为“协同障碍”或“控制挑战”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-026",
+      "severity": "info",
+      "pattern": "取得了一定(?:的)?进展",
+      "message": "检测到 AI 模糊成果表述",
+      "fix": "替换为具体科研动作（如“提出了基于XX的算法”）",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-027",
+      "severity": "info",
+      "pattern": "(?:从而实现|以期(?:实现|达到)?)",
+      "message": "检测到 AI 高频啰嗦副词",
+      "fix": "替换为“以保证”、“迫使”或“以实现”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-028",
+      "severity": "info",
+      "pattern": "(?:至关重要|深入探讨|不可磨灭|充满活力)",
+      "message": "检测到通用 AI 高频词",
+      "fix": "按降重字典替换（至关重要→重要/关键，深入探讨→分析/研究）",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-029",
+      "severity": "info",
+      "pattern": "(?:不断演变|不断发展)的",
+      "message": "检测到 AI 高频修饰语",
+      "fix": "删除或改为具体变化描述",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-030",
+      "severity": "info",
+      "pattern": "为了实现这一目标",
+      "message": "检测到填充短语",
+      "fix": "替换为“为此”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-031",
+      "severity": "info",
+      "pattern": "(?:由于.*?的事实|在这个时间点|在.*?的情况下)",
+      "message": "检测到冗余填充短语",
+      "fix": "简化为“因为”/“目前”/“若/当”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-032",
+      "severity": "info",
+      "pattern": "具有.*?的能力",
+      "message": "检测到冗余能力表述",
+      "fix": "简化为“能够”或“可以”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-033",
+      "severity": "info",
+      "pattern": "研究人员(?:发现|认为|指出)",
+      "message": "检测到模糊归因“研究人员发现”",
+      "fix": "替换为具体学者姓名+\\cite{xxx}",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-034",
+      "severity": "info",
+      "pattern": "(?:开创性的?|令人叹为观止|无缝(?:衔接|集成|体验|融合)|卓越性能|著名的|坐落于|充满活力的)",
+      "message": "检测到宣传/广告语言",
+      "fix": "替换为平实表述（开创性→新型的/改进的，无缝→删除）",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-035",
+      "severity": "info",
+      "pattern": "似乎(?:可以|能够|表明)",
+      "message": "检测到过度限定词“似乎”",
+      "fix": "删除，工程结论应当是确定性的",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-036",
+      "severity": "info",
+      "pattern": "进一步加剧了这一状况",
+      "message": "检测到 AI 高频啰嗦表述",
+      "fix": "替换为“使...进一步恶化”",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-037",
+      "severity": "info",
+      "pattern": "(?:作为|代表|标志着|充当)了?(?:一个|一种)(?:提升|关键|体现|证明)",
+      "message": "检测到系动词回避（AI 喜欢用复杂结构替代简单的系动词）",
+      "fix": "改为简单的动词陈述（如“提升了”）",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-038",
+      "severity": "info",
+      "pattern": "(?:面临若干挑战|挑战与遗产|尽管存在这些挑战)",
+      "message": "检测到提纲式挑战声明（AI 模板句）",
+      "fix": "直接陈述具体的技术瓶颈",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-039",
+      "severity": "info",
+      "pattern": "所谓",
+      "message": "检测到教学式解释词“所谓”（AI 倾向过度解释）",
+      "fix": "直接删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-040",
+      "severity": "info",
+      "pattern": "(?:也就是|换言之|简单来说|通俗地说)",
+      "message": "检测到教学式解释短语（AI 倾向过度解释）",
+      "fix": "直接删除，直接陈述",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-041",
+      "severity": "info",
+      "pattern": "[（(]\\s*(?:即|例如|如)\\s*[^）)]+[）)]",
+      "message": "检测到括号内解释性文字（AI 教学痕迹）",
+      "fix": "将解释化入正文或直接删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-042",
+      "severity": "info",
+      "pattern": "(?:值得指出的是|需要强调的是|不容忽视的是)",
+      "message": "检测到过度强调短语（AI 高频模式）",
+      "fix": "直接删除，陈述事实",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-043",
+      "severity": "info",
+      "pattern": "(?:在很大程度上|从本质上讲|毫无疑问)",
+      "message": "检测到绝对化/过度程度限定词",
+      "fix": "直接删除或用具体描述替代",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-044",
+      "severity": "info",
+      "pattern": "(?:显然|显然地|明显地)(?:可以|能够|表明)?",
+      "message": "检测到无支撑的断言副词",
+      "fix": "删除副词，补充具体依据",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-045",
+      "severity": "info",
+      "pattern": "(?:显著地|极大地|非常|极其|特别|相当|十分)(?=\\s*(?:提升|改善|增强|优化|降低))",
+      "message": "检测到无数据支撑的程度副词",
+      "fix": "删除程度副词，补充具体数值",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "STYLE-001",
+      "severity": "info",
+      "pattern": "(?:\\*\\*[^*]{2,}\\*\\*.*){3}|(?:\\\\textbf\\{[^}]+\\}.*){3}",
+      "message": "检测到单行内多处粗体标记（可能为 AI 过度强调）",
+      "fix": "减少粗体使用，仅在首次定义术语时使用",
+      "format": [
+        "latex",
+        "markdown"
+      ]
+    },
+    {
+      "id": "STYLE-002",
+      "severity": "warning",
+      "pattern": "[\\U0001F600-\\U0001F64F\\U0001F300-\\U0001F5FF\\U0001F680-\\U0001F6FF\\U0001F1E0-\\U0001F1FF\\U0001F900-\\U0001F9FF\\U0001FA00-\\U0001FA6F\\U0001FA70-\\U0001FAFF\\u2702-\\u27B0\\u2600-\\u26FF\\u2700-\\u27BF\\u231A\\u231B\\u23E9-\\u23F3\\u23F8-\\u23FA\\u25AA\\u25AB\\u25B6\\u25C0\\u25FB-\\u25FE]",
+      "message": "检测到表情符号（学术论文中不应使用）",
+      "fix": "删除表情符号",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-046",
+      "severity": "info",
+      "pattern": "[^。、，\n]{2,15}[、，][^。、，\n]{2,15}[、，][^。、，\n]{2,15}(?:[。，的]|$)",
+      "message": "检测到三段式并列结构（AI 偏好将事物分成三组）",
+      "fix": "改为两项或四项，打破三段式节奏",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "STYLE-003",
+      "severity": "info",
+      "pattern": "\\\\item\\s*\\\\textbf\\{[^}]+[：:]\\}",
+      "message": "检测到内联标题垂直列表（\\item \\textbf{...：} 格式）",
+      "fix": "融合成连贯段落，禁止“名词+冒号+解释”的清单体",
+      "format": [
+        "latex"
+      ]
+    },
+    {
+      "id": "AIGC-047",
+      "severity": "info",
+      "pattern": "这是一个(?:很好的|非常好的|绝佳的)观点",
+      "message": "检测到 AI 谄媚语气残留",
+      "fix": "彻底删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-048",
+      "severity": "info",
+      "pattern": "(?:非常好的|很好的)问题",
+      "message": "检测到 AI 谄媚语气残留",
+      "fix": "彻底删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-049",
+      "severity": "info",
+      "pattern": "[（(]\\s*(?:即|例如|如)[^）)]*$",
+      "message": "检测到括号内解释性文字（跨行，AI 教学痕迹）",
+      "fix": "将括号内解释化入正文或直接删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    }
+  ],
+  "connectives": {
+    "format": [
+      "latex",
+      "markdown",
+      "plain"
+    ],
+    "severity": "info",
+    "rule_id": "AIGC-CONN",
+    "fix": "评估是否可删除，目标削减 ≥ 50%",
+    "words": [
+      "因此",
+      "然而",
+      "值得注意的是",
+      "此外",
+      "与此同时",
+      "综上所述",
+      "由此可见",
+      "不仅如此",
+      "更重要的是",
+      "总而言之",
+      "总的来说",
+      "换言之",
+      "事实上",
+      "显而易见",
+      "不可否认",
+      "毫无疑问",
+      "众所周知",
+      "正如前文所述",
+      "如前所述",
+      "接下来",
+      "值得指出的是",
+      "需要强调的是",
+      "不容忽视的是",
+      "在很大程度上",
+      "从本质上讲",
+      "显然",
+      "显然地",
+      "明显地"
+    ]
+  }
+}
