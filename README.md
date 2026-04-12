@@ -2,7 +2,7 @@
 
 # 📝 Paper Anti-AIGC
 
-**自用 AI 论文写作工具集 — Skills & Scripts**
+**自用 AI 论文写作工具 — Skills & Scripts**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3](https://img.shields.io/badge/Python-≥3.7-green.svg)](https://www.python.org/)
