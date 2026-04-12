@@ -34,7 +34,7 @@
       "id": "PUNCT-001",
       "severity": "warning",
       "pattern": "(?<![\\\\])\"[^\"]*\"",
-      "message": "检测到英文双引号，中文论文应使用 “ ”",
+      "message": "检测到英文双引号，中文论文应使用 \" \"",
       "fix": "替换为中文双引号 \\u201c \\u201d",
       "format": [
         "latex",
@@ -71,7 +71,7 @@
       "severity": "error",
       "pattern": "(?<=\\d)%(?!\\s*$)",
       "message": "裸百分号 % 未转义（会导致行尾截断）",
-      "fix": "改为 \\%",
+      "fix": "改为 \\% 以正确显示百分号，避免行尾截断",
       "format": [
         "latex"
       ]
@@ -115,7 +115,7 @@
       "severity": "info",
       "pattern": "(?:突破|攻克)了?.*?(?:技术瓶颈|关键难题)",
       "message": "检测到 AI 敏感词组“突破技术瓶颈”",
-      "fix": "替换为“克服...技术难点”",
+      "fix": "替换为“克服...技术难点”或“提出了...解决方案”，避免夸大和套话",
       "format": [
         "latex",
         "markdown",
@@ -255,6 +255,18 @@
       ]
     },
     {
+      "id": "AIGC-014a",
+      "severity": "info",
+      "pattern": "(?:为了实现这一点|由于下雨的事实|在这个时间点|在您需要帮助的情况下|系统具有处理的能力|值得注意的是数据显示)",
+      "message": "检测到 Humanizer-zh 填充短语",
+      "fix": "简化：为了实现这一点→因此/为此；由于...事实→因为；在这个时间点→目前/此时；在...情况下→若/当；系统具有...能力→系统可以；值得注意的是数据显示→数据显示",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
       "id": "AIGC-015",
       "severity": "info",
       "pattern": "彻底解决",
@@ -308,6 +320,18 @@
       "pattern": "(?:权威专家|大量实验)(?:建议|证明|表明)",
       "message": "检测到虚假权威声明",
       "fix": "删除或替换为具体实验数据+文献引用",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-019a",
+      "severity": "info",
+      "pattern": "(?: hailed\\s+as|acknowledged\\s+for|renowned\\s+for)",
+      "message": "检测到英文宣传性表述（AI 常用套话）",
+      "fix": "替换为平实英文描述",
       "format": [
         "latex",
         "markdown",
@@ -423,6 +447,42 @@
       ]
     },
     {
+      "id": "AIGC-028a",
+      "severity": "info",
+      "pattern": "(?:织锦|格局)(?:的|，|。)?",
+      "message": "检测到 AI 抽象名词高频词（织锦、格局）",
+      "fix": "删除抽象名词，用具体描述替代",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-028b",
+      "severity": "info",
+      "pattern": "(?:持久的|宝贵)(?:的|证明)?",
+      "message": "检测到 AI 高频修饰词（持久的、宝贵的）",
+      "fix": "替换为具体描述或直接删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-028c",
+      "severity": "info",
+      "pattern": "(?:培养|获得|促进|强调)(?:了|的)?",
+      "message": "检测到 AI 高频动词（培养、获得、促进、强调）",
+      "fix": "替换为更具体的动词（发展、得到、推动、指出）",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
       "id": "AIGC-029",
       "severity": "info",
       "pattern": "(?:不断演变|不断发展)的",
@@ -519,11 +579,59 @@
       ]
     },
     {
+      "id": "AIGC-036a",
+      "severity": "info",
+      "pattern": "(?:在很大的程度上|在很大程度上)",
+      "message": "检测到填充限定短语",
+      "fix": "直接删除或给出具体程度",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-036b",
+      "severity": "info",
+      "pattern": "(?:必须提到的一点是|值得一提的是)",
+      "message": "检测到 AI 填充短语（it must be noted that）",
+      "fix": "直接删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-036c",
+      "severity": "info",
+      "pattern": "(?:在很大程度上不可否认|不可否认的是)",
+      "message": "检测到弱断言填充短语",
+      "fix": "直接陈述事实，无需铺垫",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
       "id": "AIGC-037",
       "severity": "info",
       "pattern": "(?:作为|代表|标志着|充当)了?(?:一个|一种)(?:提升|关键|体现|证明)",
       "message": "检测到系动词回避（AI 喜欢用复杂结构替代简单的系动词）",
       "fix": "改为简单的动词陈述（如“提升了”）",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-037a",
+      "severity": "info",
+      "pattern": "(?: Gallery\\s+825\\s+serves\\s+as|serves\\s+as\\s+[a-z]+\\s+testament\\s+to)",
+      "message": "检测到英文系动词回避模式（serves as）",
+      "fix": "改为简单的系动词（is/has）",
       "format": [
         "latex",
         "markdown",
@@ -652,7 +760,7 @@
     {
       "id": "AIGC-046",
       "severity": "info",
-      "pattern": "[^。、，\n]{2,15}[、，][^。、，\n]{2,15}[、，][^。、，\n]{2,15}(?:[。，的]|$)",
+      "pattern": "[^。、，\\n]{2,15}[、，][^。、，\\n]{2,15}[、，][^。、，\\n]{2,15}(?:[。，的]|$)",
       "message": "检测到三段式并列结构（AI 偏好将事物分成三组）",
       "fix": "改为两项或四项，打破三段式节奏",
       "format": [
@@ -706,6 +814,132 @@
         "markdown",
         "plain"
       ]
+    },
+    {
+      "id": "AIGC-050",
+      "severity": "info",
+      "pattern": "(?:标志着|代表着)了?(?:一个|一种)(?:重要的?|关键的)?(?:时刻|转变|节点|里程碑|转折点)",
+      "message": "检测到夸大意义、遗产和更广泛趋势的套话",
+      "fix": "替换为具体事实陈述",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-051",
+      "severity": "info",
+      "pattern": "(?:进一步|有待)(?:研究|探讨|分析|深化)",
+      "message": "检测到博士论文结论套话",
+      "fix": "直接结束段落，无需此类陈词滥调",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-052",
+      "severity": "info",
+      "pattern": "(?:值得注意的是|需要指出的是)",
+      "message": "检测到偷渡论点短语",
+      "fix": "删除此类过渡短语，使论点自然呈现",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-053",
+      "severity": "info",
+      "pattern": "(?:奠定了|成为|构建起)(?:坚实)?(的)?(?:基础|理论基石)",
+      "message": "检测到奠基隐喻",
+      "fix": "简化为“促进了”或“为...提供了”或直接删除",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-054",
+      "severity": "warning",
+      "pattern": "\\$\\times\\$|\\times\\$",
+      "message": "LaTeX 数学模式占位符残留",
+      "fix": "补充正确的数学内容或删除占位符",
+      "format": [
+        "latex"
+      ]
+    },
+    {
+      "id": "AIGC-055",
+      "severity": "info",
+      "pattern": "^(?:见图\\s*\\d+|如图\\s*\\d+所示)[。，]",
+      "message": "检测到自问自答式修辞和列表后置模式",
+      "fix": "直接陈述，插入图片后立即解释",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-056",
+      "severity": "info",
+      "pattern": "(?:凸显|折射出)了",
+      "message": "检测到倒映谓词",
+      "fix": "简化表达，避免折射隐喻",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "AIGC-057",
+      "severity": "info",
+      "pattern": "(?:必须要说的是|必须要承认的是)",
+      "message": "检测到作者自我强调",
+      "fix": "删除此类短语，直接陈述",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
+    },
+    {
+      "id": "CITE-004",
+      "severity": "error",
+      "pattern": "\\\\cite\\{[a-z]*(?:ref|temp|xxx|abc|123|001|002)\\d*\\}",
+      "message": "检测到疑似虚构的文献引用键名（ref/temp/xxx/abc/001 等占位符）",
+      "fix": "删除虚假引用，改为客观事实陈述；或替换为真实文献引用",
+      "format": [
+        "latex"
+      ]
+    },
+    {
+      "id": "CITE-005",
+      "severity": "error",
+      "pattern": "(?:等|et\\s+al\\.)\\s*\\cite\\{[^}]*\\}\\s*(?:20\\d{2}|19\\d{2})[^\\w\\.]*?[^\\d]指出|指出.*\\cite\\{[^}]*\\}",
+      "message": "检测到可能虚构的文献引用（作者名 + cite + 年份 + 指出结构）",
+      "fix": "确认引用键名是否对应真实文献，无真实依据时删除并改为客观陈述",
+      "format": [
+        "latex"
+      ]
+    },
+    {
+      "id": "CITE-006",
+      "severity": "warning",
+      "pattern": "(?:根据|依据)(?:\\w{2,}(?:等|et\\s+al\\.)[^,]{0,30}20\\d{2}[a-z]?[^\\w]的研究|[^,]{0,20}20\\d{2}[^\\w]年的研究)",
+      "message": "检测到可能虚构的年份式文献归因（如“根据张三2020年的研究”）",
+      "fix": "必须有真实的 \\cite{} 引用支撑，否则删除并改为客观陈述",
+      "format": [
+        "latex",
+        "markdown",
+        "plain"
+      ]
     }
   ],
   "connectives": {
@@ -716,7 +950,7 @@
     ],
     "severity": "info",
     "rule_id": "AIGC-CONN",
-    "fix": "评估是否可删除，目标削减 ≥ 50%",
+    "fix": "评估是否可删除，目标削减 >= 50%",
     "words": [
       "因此",
       "然而",
@@ -745,7 +979,80 @@
       "从本质上讲",
       "显然",
       "显然地",
-      "明显地"
+      "明显地",
+      "尤其是",
+      "特别是",
+      "有趣的是",
+      "基于此",
+      "实际上",
+      "确实",
+      "本质上",
+      "进一步",
+      "反过来",
+      "相反",
+      "类似地",
+      "相比之下",
+      "首先",
+      "其次",
+      "再次",
+      "最后",
+      "尽管如此",
+      "虽然这样",
+      "或者",
+      "换句话说",
+      "也就是",
+      "例如",
+      "具体来说",
+      "在这种情况下",
+      "由于这些原因",
+      "基于这些原因",
+      "考虑到这些点",
+      "鉴于",
+      "同样地",
+      "同时",
+      "然后",
+      "另外",
+      "随后",
+      "此后",
+      "在这之后",
+      "即使如此",
+      "虽然如此",
+      "但是",
+      "不过",
+      "另一方面",
+      "与此形成对比",
+      "此外",
+      "除此",
+      "虽然",
+      "但是",
+      "不过",
+      "然而",
+      "而且",
+      "并且",
+      "同时",
+      "首先其次再次",
+      "一方面另一方面",
+      "不仅而且",
+      "不但而且",
+      "既又",
+      "虽然但是",
+      "尽管但是",
+      "即使也",
+      "无论都",
+      "只有才",
+      "只要就",
+      "因为所以",
+      "由于因此",
+      "既然就",
+      "如果那么",
+      "即使也",
+      "尽管还是",
+      "与其不如",
+      "宁可也不",
+      "要么要么",
+      "不是而是",
+      "是还是",
+      "及其"
     ]
   }
 }

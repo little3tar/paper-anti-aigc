@@ -27,7 +27,7 @@
 ### 环境要求
 
 - Python ≥ 3.7（无需额外依赖，仅使用标准库）
-- Git（分支备份/回滚需要；非 Git 环境自动跳过）
+- **Git（可选）**：分支备份首选 Git；若非 Git 仓库会自动尝试 `git init` 初始化；Git 不可用时自动回退到文件复制备份
 - 支持 SKILL.md 的 AI 编码工具
 
 ### 安装
@@ -56,7 +56,7 @@ python engineering-paper-humanizer/scripts/check_aigc.py your-text.txt --format 
 # 从 rules.json 生成人类可读敏感词速查表
 python engineering-paper-humanizer/scripts/generate_dict.py
 
-# Git 分支备份（修改前自动创建，最多保留 5 个）
+# 智能备份（首选 Git 分支，无 Git 时自动初始化，失败则回退到文件复制）
 python engineering-paper-humanizer/scripts/git_snapshot.py your-paper.tex
 
 # 其他：--list / --rollback / --diff <file> / --cleanup
