@@ -2,7 +2,7 @@
 
 # 📝 Paper Anti-AIGC
 
-**自用 AI 论文写作工具 — Skills & Scripts**
+**自用论文润色工具 — Skills & Scripts**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3](https://img.shields.io/badge/Python-≥3.7-green.svg)](https://www.python.org/)
@@ -12,7 +12,7 @@
 
 ---
 
-写论文过程中积攒的 Skills 和辅助脚本，配合 AI 编码工具（OpenCode / Claude Code / Cursor 等）使用。目前主要覆盖 AIGC 痕迹消除，后续可能加入其他有助于 AI 生成论文的工具。
+写论文过程中积攒的 Skills 和辅助脚本，配合 AI 编码工具（OpenCode / Claude Code / Cursor 等）使用。目前主要覆盖工程类中文论文润色、模板化表达清理和 LaTeX 文本自检，后续可能加入其他写作辅助工具。
 
 > ⚠️ **声明**：本项目仅供学术写作润色与风格优化参考，请遵守所在机构的学术诚信规范。
 
@@ -20,7 +20,7 @@
 
 | Skill | 说明 | 适用场景 | 环境要求 |
 | ----- | ---- | -------- | -------- |
-| [engineering-paper-humanizer](./engineering-paper-humanizer/) | 重写工程类中文学术文本，消除 AIGC 痕迹（支持 LaTeX/Markdown/纯文本） | 工程类中文学术文本 | Python ≥3.7, Git |
+| [engineering-paper-humanizer](./engineering-paper-humanizer/) | 重写工程类中文学术文本，减少机械化和聊天式表达（支持 LaTeX/Markdown/纯文本） | 工程类中文学术文本 | Python ≥3.7, Git |
 
 ## 🚀 快速开始
 
@@ -95,7 +95,7 @@ engineering-paper-humanizer/
 engineering-paper-humanizer 在以下项目基础上针对工程类 LaTeX 论文场景做了适配：
 
 - **[Humanizer-zh](https://github.com/op7418/Humanizer-zh)** — Humanizer 汉化版，24 种 AI 写作模式识别。MIT License。
-- **[blader/humanizer](https://github.com/blader/humanizer)** — 英文原版，Wikipedia "Signs of AI writing" 指南。
+- **[blader/humanizer](https://github.com/blader/humanizer)** — 英文原版，Wikipedia “Signs of AI writing” 指南。
 - **[hardikpandya/stop-slop](https://github.com/hardikpandya/stop-slop)** — 核心规则与质量评分灵感来源。
 
 ## 📄 许可证

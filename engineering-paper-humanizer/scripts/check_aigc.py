@@ -136,11 +136,12 @@ def precompute_block_math(lines: list[str]) -> list[bool]:
 
 
 def precompute_protected_envs(lines: list[str]) -> list[bool]:
-    """预计算每一行是否处于受保护的 LaTeX 环境内（tikzpicture, table, figure）
+    """预计算每一行是否处于受保护的 LaTeX 环境内
 
-    这些环境内的 AIGC/PUNCT/STYLE 规则应被跳过（仅检查 CITE/LATEX）。
+    代码、绘图和纯数据表格环境内的 AIGC/PUNCT/STYLE 规则应被跳过（仅检查 CITE/LATEX）。
+    不保护 figure/table 外层环境，因为 caption 和表格说明通常是正文的一部分。
     """
-    protected_envs = ("tikzpicture", "table", "figure")
+    protected_envs = ("tikzpicture", "verbatim", "lstlisting", "minted", "tabular", "tabularx")
     begin_pats = [re.compile(rf"\\begin\{{{env}\*?\}}") for env in protected_envs]
     end_pats = [re.compile(rf"\\end\{{{env}\*?\}}") for env in protected_envs]
     depth = 0
@@ -157,6 +158,48 @@ def precompute_protected_envs(lines: list[str]) -> list[bool]:
         # 同行包含 begin 时，该行也视为受保护环境内部
         result.append(depth > 0 or had_begin)
     return result
+
+
+def precompute_markdown_protected(lines: list[str]) -> list[bool]:
+    """预计算 Markdown/YAML frontmatter 和 fenced code block 行。"""
+    result = [False] * len(lines)
+
+    # YAML frontmatter: 仅当文件第一行是 --- 时启用
+    if lines and lines[0].strip() == "---":
+        result[0] = True
+        for i in range(1, len(lines)):
+            result[i] = True
+            if lines[i].strip() == "---":
+                break
+
+    in_fence = False
+    fence_marker = None
+    for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            marker = stripped[:3]
+            if not in_fence:
+                in_fence = True
+                fence_marker = marker
+                result[i] = True
+                continue
+            if marker == fence_marker:
+                result[i] = True
+                in_fence = False
+                fence_marker = None
+                continue
+        if in_fence:
+            result[i] = True
+    return result
+
+
+def mask_inline_code(line: str) -> str:
+    """用空格遮蔽 Markdown 行内代码和 HTML 标签，保留列号基本稳定。"""
+    def repl(match: re.Match) -> str:
+        return " " * (match.end() - match.start())
+
+    line = re.sub(r"`[^`\n]+`", repl, line)
+    return re.sub(r"<[^>\n]+>", repl, line)
 
 
 def strip_latex_comment(line: str) -> str:
@@ -221,11 +264,13 @@ def check_file(
     # 数学环境检测（仅 LaTeX）
     if target_format == "latex":
         in_block_math = precompute_block_math(lines)
-        # 受保护环境检测（tikzpicture, table, figure）
+        # 受保护环境检测（代码、绘图和纯数据表格环境）
         in_protected_env = precompute_protected_envs(lines)
+        in_markdown_protected = [False] * len(lines)
     else:
         in_block_math = [False] * len(lines)
         in_protected_env = [False] * len(lines)
+        in_markdown_protected = precompute_markdown_protected(lines) if target_format == "markdown" else [False] * len(lines)
 
     # 如果指定了 section，定位范围（仅 LaTeX）
     start_line, end_line = 0, len(lines)
@@ -259,10 +304,14 @@ def check_file(
         stripped = line.lstrip()
         if target_format == "latex" and stripped.startswith("%"):
             continue
+        if target_format == "markdown" and in_markdown_protected[i]:
+            continue
 
         # 对 LaTeX 文件剥离行内注释
         if target_format == "latex":
             line_for_check = strip_latex_comment(line)
+        elif target_format == "markdown":
+            line_for_check = mask_inline_code(line)
         else:
             line_for_check = line
 
@@ -331,6 +380,8 @@ def check_file(
             # 对 LaTeX 文件剥离行内注释
             if target_format == "latex":
                 line_for_conn = strip_latex_comment(line)
+            elif target_format == "markdown":
+                line_for_conn = mask_inline_code(line)
             else:
                 line_for_conn = line
 
@@ -338,6 +389,8 @@ def check_file(
 
             # 跳过整行注释（LaTeX）
             if target_format == "latex" and stripped.startswith("%"):
+                continue
+            if target_format == "markdown" and in_markdown_protected[i]:
                 continue
             # 跳过块级数学和受保护环境
             if in_block_math[i] or in_protected_env[i]:
