@@ -1,0 +1,4 @@
+interface:
+  display_name: "Evidence Chapter Writer"
+  short_description: "Write sourced thesis chapters."
+  default_prompt: "Write one sourced thesis chapter from the approved outline."

@@ -444,7 +444,7 @@ def cmd_list() -> None:
         all_backups = sorted(backup_dir.iterdir(), reverse=True)
         backups = [f for f in all_backups if f.is_file()]
         if backups:
-            print(f"\n[文件复制备份] 目录: {FILE_BACKIRD_DIR}/")
+            print(f"\n[文件复制备份] 目录: {FILE_BACKUP_DIR}/")
             print(f"               共 {len(backups)} 个（最新在前）：")
             for backup in backups[:10]:  # 最多显示10个
                 stat = backup.stat()
@@ -455,9 +455,9 @@ def cmd_list() -> None:
             if len(backups) > 10:
                 print(f"  ... 还有 {len(backups) - 10} 个备份")
         else:
-            print(f"\n[文件复制备份] 暂无 (目录: {FILE_BACKIRD_DIR}/)")
+            print(f"\n[文件复制备份] 暂无 (目录: {FILE_BACKUP_DIR}/)")
     else:
-        print(f"\n[文件复制备份] 暂无 (目录: {FILE_BACKIRD_DIR}/)")
+        print(f"\n[文件复制备份] 暂无 (目录: {FILE_BACKUP_DIR}/)")
 
 
 def cmd_rollback(filepath: str | None, git_branch: str | None = None, dry_run: bool = False) -> None:

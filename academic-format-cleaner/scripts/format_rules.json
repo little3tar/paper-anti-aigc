@@ -1,0 +1,106 @@
+﻿{
+    "rules":  [
+                  {
+                      "id":  "CITE-001",
+                      "severity":  "error",
+                      "pattern":  "。\\s*\\\\cite\\{",
+                      "message":  "\\cite{} 出现在句号之后（应在句号内侧）",
+                      "fix":  "将 \\cite{} 移到句号前：...\\cite{xxx}。",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "CITE-002",
+                      "severity":  "error",
+                      "pattern":  "，\\s*\\\\cite\\{",
+                      "message":  "\\cite{} 出现在逗号之后（应在逗号内侧）",
+                      "fix":  "将 \\cite{} 移到逗号前：...\\cite{xxx}，",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "CITE-003",
+                      "severity":  "error",
+                      "pattern":  "(?\u003c=[^\\s\\\\])\\s+\\\\cite\\{",
+                      "message":  "\\cite{} 前存在空格",
+                      "fix":  "删除 \\cite{} 前的空格，使其紧贴被引文字",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "LATEX-001",
+                      "severity":  "error",
+                      "pattern":  "(?\u003c=\\d)%(?!\\s*$)",
+                      "message":  "裸百分号 % 未转义（会导致行尾截断）",
+                      "fix":  "改为 \\% 以正确显示百分号，避免行尾截断",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "LATEX-002",
+                      "severity":  "error",
+                      "pattern":  "\\\\(?:cite|label|ref|includegraphics)\\{[^}]*$",
+                      "message":  "LaTeX 命令花括号在行尾未闭合（疑似内部换行）",
+                      "fix":  "将命令参数合并到同一行，确保花括号在同一行闭合",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "STYLE-003",
+                      "severity":  "info",
+                      "pattern":  "\\\\item\\s*\\\\textbf\\{[^}]+[：:]\\}",
+                      "message":  "检测到内联标题垂直列表（\\item \\textbf{...：} 格式）",
+                      "fix":  "融合成连贯段落，禁止“名词+冒号+解释”的清单体",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "LATEX-003",
+                      "severity":  "warning",
+                      "pattern":  "\\$\\times\\$|\\times\\$",
+                      "message":  "LaTeX 数学模式占位符残留",
+                      "fix":  "补充正确的数学内容或删除占位符",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "CITE-004",
+                      "severity":  "error",
+                      "pattern":  "\\\\cite\\{[a-z]*(?:ref|temp|xxx|abc|123|001|002)\\d*\\}",
+                      "message":  "检测到疑似虚构的文献引用键名（ref/temp/xxx/abc/001 等占位符）",
+                      "fix":  "删除虚假引用，改为客观事实陈述；或替换为真实文献引用",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "CITE-005",
+                      "severity":  "error",
+                      "pattern":  "(?:等|et\\s+al\\.)\\s*\\\\cite\\{[^}]*\\}\\s*(?:20\\d{2}|19\\d{2})[^\\w\\.]*?[^\\d]指出|指出.*\\\\cite\\{[^}]*\\}",
+                      "message":  "检测到可能虚构的文献引用（作者名 + cite + 年份 + 指出结构）",
+                      "fix":  "确认引用键名是否对应真实文献，无真实依据时删除并改为客观陈述",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "CITE-006",
+                      "severity":  "warning",
+                      "pattern":  "(?:根据|依据)(?:\\w{2,}(?:等|et\\s+al\\.)[^,]{0,30}20\\d{2}[a-z]?[^\\w]的研究|[^,]{0,20}20\\d{2}[^\\w]年的研究)",
+                      "message":  "检测到可能虚构的年份式文献归因（如“根据张三2020年的研究”）",
+                      "fix":  "必须有真实的 \\cite{} 引用支撑，否则删除并改为客观陈述",
+                      "format":  [
+                                     "latex",
+                                     "markdown",
+                                     "plain"
+                                 ]
+                  }
+              ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reference Integrity Auditor"
+  short_description: "Audit thesis source support."
+  default_prompt: "Audit this thesis draft for unsupported claims and citation problems."

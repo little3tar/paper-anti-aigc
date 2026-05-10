@@ -1,0 +1,4 @@
+interface:
+  display_name: "Thesis Writing Workflow"
+  short_description: "Coordinate thesis writing stages."
+  default_prompt: "Run the full evidence-based thesis writing workflow for my topic."

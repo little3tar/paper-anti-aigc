@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""engineering-paper-humanizer AIGC 检测脚本
+"""engineering-paper-humanizer 通用中文文本检测脚本
 
-扫描 LaTeX (.tex)、Markdown (.md) 或纯文本文件，检测 AIGC 残留格式问题和规范违规。
+扫描 LaTeX (.tex)、Markdown (.md) 或纯文本文件中的正文内容，检测 AI 腔、
+中文标点和通用写作问题。脚本会尽量跳过公式、代码块和命令参数等非正文区域，
+但不再报告 LaTeX/Markdown 专属格式问题。
 输出结构化的逐行诊断结果，供 agent 或人工快速定位修复。
 
 用法:
-    python3 scripts/check_aigc.py <file.tex>                    # LaTeX 文件（默认）
-    python3 scripts/check_aigc.py <file.md> --format markdown   # Markdown 文件
-    python3 scripts/check_aigc.py <file.txt> --format plain     # 纯文本文件
-    python3 scripts/check_aigc.py <file.tex> --section 3        # 只检查指定章节
-    python3 scripts/check_aigc.py <file.tex> --json             # JSON 格式输出
-    python3 scripts/check_aigc.py <file.tex> --severity error   # 只显示错误
+    python3 scripts/check_text.py <file.tex>                    # LaTeX 文件（默认）
+    python3 scripts/check_text.py <file.md> --format markdown   # Markdown 文件
+    python3 scripts/check_text.py <file.txt> --format plain     # 纯文本文件
+    python3 scripts/check_text.py <file.tex> --section 3        # 只检查指定章节
+    python3 scripts/check_text.py <file.tex> --json             # JSON 格式输出
+    python3 scripts/check_text.py <file.tex> --severity error   # 只显示错误
 """
 
 from __future__ import annotations
@@ -29,11 +31,11 @@ if os.name == "nt":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
-# ── 从 rules.json 加载规则 ──────────────────────────────────
+# ── 从 text_rules.json 加载规则 ─────────────────────────────
 
 
 def load_rules(format_filter: str = "latex") -> tuple[list[dict], list[str]]:
-    """从 rules.json 加载规则和连接词，按 format 过滤
+    """从 text_rules.json 加载规则和连接词，按 format 过滤
 
     参数:
         format_filter: "latex" | "markdown" | "plain"
@@ -42,16 +44,16 @@ def load_rules(format_filter: str = "latex") -> tuple[list[dict], list[str]]:
         (rules, connectives_words)
     """
     script_dir = Path(__file__).parent
-    rules_path = script_dir / "rules.json"
+    rules_path = script_dir / "text_rules.json"
 
     if not rules_path.exists():
         print(f"[ERROR] 规则文件不存在: {rules_path}", file=sys.stderr)
         sys.exit(1)
 
     try:
-        data = json.loads(rules_path.read_text(encoding="utf-8"))
+        data = json.loads(rules_path.read_text(encoding="utf-8-sig"))
     except Exception as e:
-        print(f"[ERROR] 无法加载 rules.json: {e}", file=sys.stderr)
+        print(f"[ERROR] 无法加载 text_rules.json: {e}", file=sys.stderr)
         sys.exit(1)
 
     # 过滤规则
@@ -202,6 +204,39 @@ def mask_inline_code(line: str) -> str:
     return re.sub(r"<[^>\n]+>", repl, line)
 
 
+def mask_latex_inline_protected(line: str) -> str:
+    r"""遮蔽 LaTeX 正文行内的代码、路径和链接命令。
+
+    文本 humanizer 需要检查中文正文，但不应把 \texttt{"x"}、\url{...}、
+    \href{...}{...} 或 \verb|...| 中的引号和 dash 当成正文标点。
+    这里做轻量遮蔽，避免为了标点检查误伤命令参数。
+    """
+
+    def repl(match: re.Match) -> str:
+        return " " * (match.end() - match.start())
+
+    line = re.sub(r"\\verb\*?(.).*?\1", repl, line)
+    return re.sub(
+        r"\\(?:texttt|url|path|href)\b(?:\[[^\]]*\])?\{[^{}\n]*\}(?:\{[^{}\n]*\})?",
+        repl,
+        line,
+    )
+
+
+def is_allowed_dash_context(line: str, start: int, end: int) -> bool:
+    """判断 dash 是否属于数字范围、页码范围或技术记号。"""
+    token = line[start:end]
+    prev_char = line[start - 1] if start > 0 else ""
+    next_char = line[end] if end < len(line) else ""
+
+    if token in {"–", "--", "---"}:
+        if prev_char.isdigit() and next_char.isdigit():
+            return True
+        if prev_char.isascii() and prev_char.isalnum() and next_char.isascii() and next_char.isalnum():
+            return True
+    return False
+
+
 def strip_latex_comment(line: str) -> str:
     """剥离 LaTeX 行内注释，返回处理后的行
 
@@ -309,7 +344,7 @@ def check_file(
 
         # 对 LaTeX 文件剥离行内注释
         if target_format == "latex":
-            line_for_check = strip_latex_comment(line)
+            line_for_check = mask_latex_inline_protected(strip_latex_comment(line))
         elif target_format == "markdown":
             line_for_check = mask_inline_code(line)
         else:
@@ -322,6 +357,10 @@ def check_file(
                 if rule["id"].startswith(("AIGC", "PUNCT", "STYLE")):
                     continue
                 for m in rule["_compiled"].finditer(line_for_check):
+                    if rule["id"] == "PUNCT-002" and is_allowed_dash_context(
+                        line_for_check, m.start(), m.end()
+                    ):
+                        continue
                     diagnostics.append(
                         {
                             "line": i + 1,
@@ -340,6 +379,10 @@ def check_file(
                 if rule["id"].startswith(("AIGC", "PUNCT")):
                     continue
                 for m in rule["_compiled"].finditer(line_for_check):
+                    if rule["id"] == "PUNCT-002" and is_allowed_dash_context(
+                        line_for_check, m.start(), m.end()
+                    ):
+                        continue
                     diagnostics.append(
                         {
                             "line": i + 1,
@@ -359,6 +402,10 @@ def check_file(
                         line_for_check, m.start()
                     ):
                         continue  # 跳过行内数学环境
+                    if rule["id"] == "PUNCT-002" and is_allowed_dash_context(
+                        line_for_check, m.start(), m.end()
+                    ):
+                        continue
                     diagnostics.append(
                         {
                             "line": i + 1,
@@ -379,7 +426,7 @@ def check_file(
 
             # 对 LaTeX 文件剥离行内注释
             if target_format == "latex":
-                line_for_conn = strip_latex_comment(line)
+                line_for_conn = mask_latex_inline_protected(strip_latex_comment(line))
             elif target_format == "markdown":
                 line_for_conn = mask_inline_code(line)
             else:
@@ -433,6 +480,17 @@ def check_file(
         lines, start_line, end_line, target_format, in_protected_env
     )
     diagnostics.extend(burstiness_warnings)
+
+    diagnostics.extend(
+        check_quote_balance(
+            lines, start_line, end_line, target_format, in_block_math, in_protected_env, in_markdown_protected
+        )
+    )
+    diagnostics.extend(
+        check_fragmented_headers(
+            lines, start_line, end_line, target_format, in_markdown_protected
+        )
+    )
 
     # 按行号排序
     diagnostics.sort(key=lambda d: (d["line"], d["column"]))
@@ -524,6 +582,107 @@ def check_burstiness(
     return warnings
 
 
+def check_quote_balance(
+    lines: list[str],
+    start: int,
+    end: int,
+    target_format: str,
+    in_block_math: list[bool],
+    in_protected_env: list[bool],
+    in_markdown_protected: list[bool],
+) -> list[dict]:
+    """检测中文弯引号是否成对出现。
+
+    这类问题靠单个正则很难定位。按行检查虽不能覆盖跨段引用，但足够抓住
+    常见的半边引号、误混英文引号和复制粘贴残留。
+    """
+    diagnostics = []
+    pairs = [("“", "”", "PUNCT-005"), ("‘", "’", "PUNCT-006")]
+
+    for i in range(start, end):
+        if in_block_math[i] or in_protected_env[i] or in_markdown_protected[i]:
+            continue
+
+        line = lines[i]
+        if target_format == "latex":
+            line_for_check = mask_latex_inline_protected(strip_latex_comment(line))
+            if line_for_check.lstrip().startswith("%"):
+                continue
+        elif target_format == "markdown":
+            line_for_check = mask_inline_code(line)
+        else:
+            line_for_check = line
+
+        for opener, closer, rule_id in pairs:
+            if (line_for_check.count(opener) + line_for_check.count(closer)) % 2 == 1:
+                first = min(
+                    [pos for pos in (line_for_check.find(opener), line_for_check.find(closer)) if pos != -1],
+                    default=0,
+                )
+                diagnostics.append(
+                    {
+                        "line": i + 1,
+                        "column": first + 1,
+                        "rule": rule_id,
+                        "severity": "warning",
+                        "message": f"检测到未成对的中文引号 {opener}{closer}",
+                        "fix": "补齐引号或改为正确层级：外层“...”，内层‘...’；若只是强调词，直接删除引号",
+                        "context": line.strip(),
+                    }
+                )
+
+    return diagnostics
+
+
+def check_fragmented_headers(
+    lines: list[str],
+    start: int,
+    end: int,
+    target_format: str,
+    in_markdown_protected: list[bool],
+) -> list[dict]:
+    """检测标题后紧跟空话式重复说明的碎片化标题。"""
+    diagnostics = []
+    heading_re = re.compile(r"^\s{0,3}#{1,6}\s+|\\(?:sub)*section\*?\{")
+    filler_re = re.compile(
+        r"^(?:本(?:节|章|部分)|该部分|这一部分)(?:主要|将|旨在|用于|围绕|介绍|分析)"
+        r"|^(?:性能|安全性|可靠性|精度|效率)(?:很|十分|非常)?(?:重要|关键)[。.]?$"
+    )
+
+    for i in range(start, end):
+        if target_format == "markdown" and in_markdown_protected[i]:
+            continue
+        line = lines[i].strip()
+        if not heading_re.search(line):
+            continue
+
+        j = i + 1
+        while j < end and not lines[j].strip():
+            j += 1
+        if j >= end:
+            continue
+        if target_format == "markdown" and in_markdown_protected[j]:
+            continue
+
+        next_line = lines[j].strip()
+        if target_format == "latex":
+            next_line = strip_latex_comment(next_line).strip()
+        if filler_re.search(next_line):
+            diagnostics.append(
+                {
+                    "line": j + 1,
+                    "column": 1,
+                    "rule": "AIGC-064",
+                    "severity": "info",
+                    "message": "检测到标题后的空话式重复说明（碎片化标题）",
+                    "fix": "让标题承担标题功能，正文直接写技术内容、参数、实验条件或结论",
+                    "context": next_line[:80],
+                }
+            )
+
+    return diagnostics
+
+
 # ── 输出格式化 ────────────────────────────────────────────
 
 SEVERITY_ICONS = {
@@ -568,7 +727,7 @@ def format_text(diagnostics: list[dict], filepath: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="engineering-paper-humanizer AIGC 检测"
+        description="engineering-paper-humanizer 通用中文文本检测"
     )
     parser.add_argument("file", help="要检查的文件路径")
     parser.add_argument(

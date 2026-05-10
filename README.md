@@ -12,7 +12,7 @@
 
 ---
 
-写论文过程中积攒的 Skills 和辅助脚本，配合 AI 编码工具（OpenCode / Claude Code / Cursor 等）使用。目前主要覆盖工程类中文论文润色、模板化表达清理和 LaTeX 文本自检，后续可能加入其他写作辅助工具。
+写论文过程中积攒的 Skills 和辅助脚本，配合 AI 编码工具（OpenCode / Claude Code / Cursor 等）使用。目前主要覆盖工程类中文论文正文润色、模板化表达清理、通用中文标点检查，以及 LaTeX/Markdown 格式自检。
 
 > ⚠️ **声明**：本项目仅供学术写作润色与风格优化参考，请遵守所在机构的学术诚信规范。
 
@@ -20,7 +20,8 @@
 
 | Skill | 说明 | 适用场景 | 环境要求 |
 | ----- | ---- | -------- | -------- |
-| [engineering-paper-humanizer](./engineering-paper-humanizer/) | 重写工程类中文学术文本，减少机械化和聊天式表达（支持 LaTeX/Markdown/纯文本） | 工程类中文学术文本 | Python ≥3.7, Git |
+| [engineering-paper-humanizer](./engineering-paper-humanizer/) | 重写工程类中文学术文本，减少机械化和聊天式表达，检查通用中文标点（支持 LaTeX/Markdown/纯文本正文） | 工程类中文学术文本 | Python ≥3.7, Git |
+| [academic-format-cleaner](./academic-format-cleaner/) | 检查学术文档格式层问题，如 LaTeX 引用位置、百分号、命令断行和列表格式 | LaTeX/Markdown/纯文本格式自检 | Python ≥3.7 |
 
 ## 🚀 快速开始
 
@@ -37,23 +38,30 @@
 ```bash
 # OpenCode
 cp -r engineering-paper-humanizer/ your-project/.opencode/skills/
+cp -r academic-format-cleaner/ your-project/.opencode/skills/
 
 # Claude Code
 cp -r engineering-paper-humanizer/ your-project/.claude/skills/
+cp -r academic-format-cleaner/ your-project/.claude/skills/
 
 # Cursor / 其他
 cp -r engineering-paper-humanizer/ your-project/.agents/skills/
+cp -r academic-format-cleaner/ your-project/.agents/skills/
 ```
 
 ### 辅助脚本
 
 ```bash
-# AIGC 残留检查（支持多格式）
-python engineering-paper-humanizer/scripts/check_aigc.py your-paper.tex
-python engineering-paper-humanizer/scripts/check_aigc.py your-doc.md --format markdown
-python engineering-paper-humanizer/scripts/check_aigc.py your-text.txt --format plain
+# 中文正文 AI 腔和通用标点检查（支持多格式正文）
+python engineering-paper-humanizer/scripts/check_text.py your-paper.tex
+python engineering-paper-humanizer/scripts/check_text.py your-doc.md --format markdown
+python engineering-paper-humanizer/scripts/check_text.py your-text.txt --format plain
 
-# 从 rules.json 生成人类可读敏感词速查表
+# LaTeX/Markdown/plain 格式检查
+python academic-format-cleaner/scripts/check_format.py your-paper.tex
+python academic-format-cleaner/scripts/check_format.py your-doc.md --format markdown
+
+# 从 text_rules.json 生成人类可读敏感词速查表
 python engineering-paper-humanizer/scripts/generate_dict.py
 
 # 智能备份（首选 Git 分支，无 Git 时自动初始化，失败则回退到文件复制）
@@ -72,14 +80,25 @@ engineering-paper-humanizer/
 ├── assets/
 │   └── main-tex-context-template.md   # 背景知识模板
 ├── references/
-│   ├── rewrite-guide.md               # 核心规则 + 灵魂注入指南 + LaTeX 保护红线
+│   ├── rewrite-guide.md               # 正文改写规则 + 工程语气指南
+│   ├── punctuation-guide.md           # 中文引号和破折号专项规则
 │   ├── optional-checks.md             # 质量评分标准（可选）
 │   └── main-tex-context.md            # main.tex 背景知识（按项目填写）
 └── scripts/
-    ├── check_aigc.py                  # AIGC 检测脚本（LaTeX/Markdown/纯文本）
-    ├── rules.json                     # 敏感词规则数据源（唯一权威源）
-    ├── generate_dict.py               # 从 rules.json 生成敏感词速查表
+    ├── check_text.py                  # 中文正文和通用标点检查
+    ├── text_rules.json                # 文本规则数据源
+    ├── generate_dict.py               # 从 text_rules.json 生成敏感词速查表
     └── git_snapshot.py                # Git 分支备份（备份/回滚/清理）
+
+academic-format-cleaner/
+├── SKILL.md                           # 格式检查 skill 指令
+├── LICENSE                            # MIT 许可证
+├── references/
+│   └── format-guide.md                # 格式检查边界说明
+└── scripts/
+    ├── check_format.py                # 格式检查脚本
+    ├── format_rules.json              # 格式规则数据源
+    └── generate_format_dict.py        # 从 format_rules.json 生成格式规则速查表
 ```
 
 ## 🤝 欢迎贡献
@@ -92,7 +111,7 @@ engineering-paper-humanizer/
 
 ## 📚 参考来源
 
-engineering-paper-humanizer 在以下项目基础上针对工程类 LaTeX 论文场景做了适配：
+engineering-paper-humanizer 在以下项目基础上针对中文工程论文场景做了适配：
 
 - **[Humanizer-zh](https://github.com/op7418/Humanizer-zh)** — Humanizer 汉化版，24 种 AI 写作模式识别。MIT License。
 - **[blader/humanizer](https://github.com/blader/humanizer)** — 英文原版，Wikipedia “Signs of AI writing” 指南。
