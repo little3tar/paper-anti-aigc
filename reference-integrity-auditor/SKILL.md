@@ -1,62 +1,93 @@
 ---
 name: reference-integrity-auditor
-description: Audit Chinese engineering thesis drafts for unsupported claims, weak citations, fabricated-looking literature, missing evidence, citation keyword consistency, and source reliability. Use after chapter drafting and before polishing, humanizing, format cleanup, or final bibliography work.
+description: >-
+  用于审计中文工程类论文草稿的证据完整性。用户需要检查 unsupported claims、weak citations、
+  fabricated-looking literature、missing evidence、P0/P1、source marker、title-based citation markers、
+  标准规范来源、公式/计算可复现性或来源可靠性时使用。应在章节写作之后、润色和格式清理之前运行。
 ---
 
 # Reference Integrity Auditor
 
-Use this skill to check whether a thesis outline, chapter draft, or section draft is actually supported by sources. It should run before style polishing so the text does not become more fluent while remaining weakly sourced.
+本 skill 用来检查论文大纲、章节草稿或小节草稿是否真的被来源支撑。它应在风格润色之前运行，避免文本变得更流畅但证据仍然薄弱。
 
-## Workflow
+## 审计模式
 
-1. Identify the audit scope.
-   - Determine whether the user wants paragraph-level audit, citation-key audit, source-list audit, or a revision-ready issue list.
-   - If output format is unspecified, default to a Markdown audit report in chat.
-   - If project ledger files exist, read them and check the draft against confirmed facts, formulas, sources, and decisions.
+- **Submission mode**：真实提交或定稿前使用。只要仍有 P0/P1 问题，就停止下游润色和格式收尾。
+- **Validation mode**：测试 workflow 或 dry-run 时使用。可以在 P0/P1 仍可见的前提下继续 humanizer 和 format check，但必须把 unsupported 正文内容移到证据缺口区。
 
-2. Segment the draft.
-   - Split by headings and paragraphs.
-   - Preserve formulas, figure placeholders, tables, and citation placeholders.
-   - Do not rewrite the whole chapter unless the user asks for edits.
+## 工作流程
 
-3. Check source support.
-   - Every paragraph with factual or technical claims should have a source marker, user-provided data marker, design assumption, formula derivation, or clear internal reasoning.
-   - Flag unsupported quantities, performance comparisons, equipment specifications, standards, named technologies, and research-status claims.
-   - Flag vague source phrases such as "研究表明" when no source is attached.
-   - For formulas and calculations, verify that original parameters have sources and derived parameters have reproducible calculation chains.
+1. **确定审计范围**
+   - 判断用户需要逐段审计、source marker 审计、来源清单审计，还是可直接修订的问题列表。
+   - 独立一次性问答未指定输出格式时，默认在对话中输出 Markdown 审计报告；真实论文工作流中每轮审计后应同步更新 `.thesis-workflow/03-reference-audit.md`。
+   - 单独运行本 skill 时，若当前目录、用户指定目录或已识别的论文项目根目录中存在 `.thesis-workflow/`，或用户明确处于论文 workflow 项目中，结束时必须更新 `.thesis-workflow/03-reference-audit.md` 和必要的 `project-ledger.md`；不要因为用户没有再次说“生成文件”而跳过更新。
+   - 进入论文项目工作流后，默认写入或更新论文项目根目录下的 `.thesis-workflow/03-reference-audit.md`；不要写入 skill 仓库。若当前目录无法判断论文项目根目录，先确认保存位置。
+   - 未指定拆分方式时，把主要问题、逐段审计、公式审计、source marker 问题和待补资料统一写入一个默认主文件，例如 `.thesis-workflow/03-reference-audit.md`。
+   - 如果存在 project ledger，读取后对照已确认事实、公式、来源和设计决策。
 
-4. Check formula and calculation integrity.
-   - Read `references/formula-audit-rules.md` for detailed criteria.
-   - Read `references/project-ledger-audit-rules.md` when the project uses ledger files.
-   - Preserve formulas exactly during audit unless the user asks for correction.
-   - Check formula source, symbol definitions, units, substitution steps, result precision, and selection margin.
-   - Flag any calculation result that cannot be reproduced from the preceding parameters.
+2. **切分草稿**
+   - 按标题和段落切分。
+   - 保留公式、图表占位符、表格和引用占位符。
+   - 除非用户要求修改，否则不要重写整章。
 
-5. Check citation keyword integrity.
-   - Verify `[参考文献]`, `[引用关键词: ...]`, `[网络资料: ...]`, and `[待补来源: ...]` are used consistently.
-   - Ensure Chinese titles are preserved and English keys are lowercase without spaces or punctuation when keys are present.
-   - Flag duplicate English keys unless year or first author disambiguates them.
+3. **检查来源支撑**
+   - 涉及逐段证据审计或 claim 分类时读取 `references/audit-rules.md`。
+   - 每个包含事实或技术判断的段落，都应有 source marker、用户数据、设计假设、公式推导或清楚的内部推理。
+   - 标记无来源数量、性能比较、设备规格、标准、具名技术和研究现状判断。
+   - 凡涉及行业标准、国家标准、规范、规程、验收要求、限值或标准条文，必须有可追溯来源。正文应说明标准名称、标准号、版本/年份、发布机构和适用条款或范围；缺关键要素时按 P1 或 P2 处理。
+   - 标记“研究表明”“相关文献指出”等没有连接来源的模糊归因。
+   - 公式和计算要检查原始参数来源，以及派生参数是否有可复现计算链。
 
-6. Classify findings.
-   - `P0`: likely fabricated or materially false claim.
-   - `P1`: important claim lacks source or has source mismatch.
-   - `P2`: citation marker exists but is too vague to resolve.
-   - `P3`: style or consistency issue that can wait until formatting.
+4. **检查公式和计算完整性**
+   - 涉及公式审计时读取 `references/formula-audit-rules.md`。
+   - 使用 project ledger 时读取 `references/project-ledger-audit-rules.md`。
+   - 审计期间保持公式原样，除非用户要求修正。
+   - 检查公式来源、符号定义、单位、代入步骤、结果精度和选型裕量。
+   - 无法从前文参数复现的计算结果，按 P1 或更高处理。
 
-7. Recommend next action.
-   - If P0/P1 issues remain, fix evidence before polishing.
-   - If only P2/P3 issues remain, proceed to `engineering-paper-humanizer`, then `academic-format-cleaner`.
+5. **检查 source marker 完整性**
+   - 验证 `[参考文献]`、`[文献题名]`、`[网络资料: ...]`、`[标准规范: ...]`、`[用户材料: ...]` 使用一致。
+   - 把正文中残留的 `[标准规范: ...]` 视为工作稿标记。若标准已核验，建议改成正式正文表述和引用；若未核验，移入 `证据缺口清单`。
+   - 把正文中的 `[待补来源: ...]` 视为残留 evidence gap marker，建议移入 `未写入正文的待补资料`、`证据缺口清单` 或 project ledger。
+   - Zotero/local source marker 应使用来源题名作为括号内容，例如 `[基于神经网络的悬臂式掘进机自适应截割控制系统研究]` 或 `[A development in rock cutting technology]`。
+   - 重复题名需要在 marker 内追加作者和年份，例如 `[A development in rock cutting technology Hood 2000]`。
+   - 检查图表占位符是否位于正文相关插入点，而不只是尾部清单。
 
-## Audit Output
+6. **分类问题**
+   - `P0`：疑似伪造、实质错误或可能改变论文结论的问题。
+   - `P1`：重要事实、参数、公式、性能判断或文献归因缺来源或来源不匹配。
+   - `P2`：有 marker 但不够清楚，后续 bibliography 或格式转换难以解析。
+   - `P3`：风格、格式或一致性问题，可等到格式收尾阶段处理。
 
-Return findings first. Use this structure:
+7. **建议下一步**
+   - P0/P1 未解决时，先补证据或降级表述。
+   - 标准或规范来源缺失时，建议检索方向应包含标准名称、标准号候选、发布机构、年份/版本和条文范围。
+   - 只有 P2/P3 时，可以进入 `engineering-paper-humanizer`，再进入 `academic-format-cleaner`。
+   - Validation mode 下，清楚区分“可为 workflow 测试继续润色”和“不可用于最终提交”。
+
+## 审计输出
+
+发现问题优先，默认使用这个结构：
 
 1. `主要问题`
 2. `逐段证据审查表`
 3. `公式与计算审查表`
-4. `引用关键词与来源清单问题`
+4. `source marker 与来源清单问题`
 5. `需要补充的资料`
 6. `可直接进入后处理的部分`
 7. `建议的下一步确认问题`
 
-Do not invent missing sources. When a source is needed, describe the evidence type and likely search keyword instead of fabricating a reference.
+交接给 `engineering-paper-humanizer` 时，额外给出两个短清单：
+
+- `可润色段落`：证据状态足以进入风格润色的段落。
+- `禁止润色成定论的段落`：含 P0/P1、缺数据或 unsupported claims 的段落；润色前应移出正文或补证据。
+
+不要编造缺失来源。需要来源时，在 evidence gap section 中说明证据类型和可检索关键词，不要伪造参考文献，也不要把缺来源定论留在正文中。
+
+## 参考文件
+
+| 文件 | 用途 |
+| --- | --- |
+| `references/audit-rules.md` | 通用 claim 证据要求和 P0-P3 分级边界 |
+| `references/formula-audit-rules.md` | 公式、参数、单位和计算链审计规则 |
+| `references/project-ledger-audit-rules.md` | 使用 project ledger 时的对照审计规则 |

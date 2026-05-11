@@ -69,33 +69,31 @@ def format_markdown_table(rules: list[dict]) -> str:
     if not rules:
         return ""
 
+    def code_cell(value: str) -> str:
+        value = str(value).replace("\n", " ")
+        value = value.replace("`", "\\`").replace("|", "\\|")
+        return f"`{value}`"
+
     lines = []
     lines.append("| ❌ AI 高频词/短语 | ✅ 替换为 | 严重程度 | 适用格式 |")
     lines.append("|-------------------|-----------|----------|----------|")
 
     for rule in rules:
-        # 提取敏感词（从 pattern 中提取人类可读部分）
+        # 优先使用人工可读标签；没有标签时保留原始正则，避免破坏语义。
         pattern = rule.get("pattern", "")
+        display_pattern = (
+            rule.get("label")
+            or rule.get("example")
+            or rule.get("examples")
+            or rule.get("phrase")
+            or pattern
+        )
+        if isinstance(display_pattern, list):
+            display_pattern = " / ".join(str(x) for x in display_pattern[:4])
+        if len(str(display_pattern)) > 80:
+            display_pattern = str(display_pattern)[:77] + "..."
+
         message = rule.get("message", "")
-
-        # 简化 pattern 显示
-        display_pattern = pattern
-        if len(pattern) > 40:
-            display_pattern = pattern[:37] + "..."
-
-        # 清理正则元字符
-        display_pattern = display_pattern.replace("\\", "")
-        display_pattern = display_pattern.replace("(?:", "")
-        display_pattern = display_pattern.replace(")", "")
-        display_pattern = display_pattern.replace(".*?", "…")
-        display_pattern = display_pattern.replace("?", "")
-        display_pattern = display_pattern.replace("*", "")
-        display_pattern = display_pattern.replace("+", "")
-        display_pattern = display_pattern.replace("[", "")
-        display_pattern = display_pattern.replace("]", "")
-        display_pattern = display_pattern.replace("^", "")
-        display_pattern = display_pattern.replace("$", "")
-        display_pattern = display_pattern.replace("|", " 或 ")
 
         # 提取替换建议
         fix = rule.get("fix", "")
@@ -116,7 +114,7 @@ def format_markdown_table(rules: list[dict]) -> str:
         format_str = ", ".join(formats)
 
         lines.append(
-            f"| `{display_pattern}` | {fix} | {severity_icon} {severity} | {format_str} |"
+            f"| {code_cell(display_pattern)} | {fix} | {severity_icon} {severity} | {format_str} |"
         )
 
     return "\n".join(lines)

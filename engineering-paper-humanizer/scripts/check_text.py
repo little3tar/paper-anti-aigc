@@ -223,6 +223,23 @@ def mask_latex_inline_protected(line: str) -> str:
     )
 
 
+def is_markdown_table_separator(line: str) -> bool:
+    """Return True for Markdown table separator rows such as ``| --- | :---: |``."""
+    stripped = line.strip()
+    return bool(
+        re.fullmatch(r"\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?", stripped)
+    )
+
+
+def is_markdown_structured_row(line: str) -> bool:
+    """Return True for Markdown rows/lists where enumeration noise is expected."""
+    stripped = line.lstrip()
+    return bool(
+        stripped.startswith("|")
+        or re.match(r"^(?:[-*+]|\d+[.)])\s+", stripped)
+    )
+
+
 def is_allowed_dash_context(line: str, start: int, end: int) -> bool:
     """判断 dash 是否属于数字范围、页码范围或技术记号。"""
     token = line[start:end]
@@ -286,7 +303,7 @@ def check_file(
         print(f"Error: file not found: {filepath}", file=sys.stderr)
         sys.exit(1)
 
-    text = path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8-sig")
     lines = text.splitlines()
 
     # 加载规则（按 format 过滤）
@@ -398,6 +415,11 @@ def check_file(
             # 普通行：正常检查，但跳过行内数学环境
             for rule in rules:
                 for m in rule["_compiled"].finditer(line_for_check):
+                    if target_format == "markdown":
+                        if rule["id"] == "PUNCT-002" and is_markdown_table_separator(line):
+                            continue
+                        if rule["id"] == "AIGC-046" and is_markdown_structured_row(line):
+                            continue
                     if target_format == "latex" and is_in_math_env(
                         line_for_check, m.start()
                     ):

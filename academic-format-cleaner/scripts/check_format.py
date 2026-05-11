@@ -204,6 +204,108 @@ def mask_inline_code(line: str) -> str:
     return re.sub(r"<[^>\n]+>", repl, line)
 
 
+def check_markdown_math_style(lines: list[str], start: int, end: int) -> list[dict]:
+    """Check whether Markdown block math styles are mixed in one file."""
+    styles: dict[str, int] = {}
+    for i in range(start, end):
+        stripped = lines[i].strip()
+        if re.match(r"^```(?:math|latex)\b", stripped, re.IGNORECASE):
+            styles.setdefault("fenced math", i + 1)
+        elif stripped == "$$":
+            styles.setdefault("$$", i + 1)
+        elif stripped in {r"\[", r"\]"}:
+            styles.setdefault(r"\[...\]", i + 1)
+
+    if len(styles) <= 1:
+        return []
+
+    first_style, first_line = next(iter(styles.items()))
+    return [
+        {
+            "line": first_line,
+            "column": 1,
+            "rule": "MD-MATH-001",
+            "severity": "warning",
+            "message": "Markdown 文件混用了多种块级数学格式",
+            "fix": "统一使用一种块级数学格式，例如 fenced math、$$...$$ 或 \\[...\\]，除非模板明确要求混用",
+            "context": "、".join(styles.keys()),
+        }
+    ]
+
+
+def check_markdown_title_markers(lines: list[str], start: int, end: int) -> list[dict]:
+    """Check working citation title markers after [参考文献]."""
+    diagnostics = []
+    old_marker = re.compile(r"\[参考文献\]。\[引用关键词:\s*[^\]]+\]")
+    compact_key = re.compile(r"\[参考文献\]。\[([a-z][a-z0-9_-]{3,})\]")
+
+    for i in range(start, end):
+        line = mask_inline_code(lines[i])
+        m_old = old_marker.search(line)
+        if m_old:
+            diagnostics.append(
+                {
+                    "line": i + 1,
+                    "column": m_old.start() + 1,
+                    "rule": "MD-CITE-001",
+                    "severity": "warning",
+                    "message": "工作稿引用标记使用了非题名格式",
+                    "fix": "Zotero/local 文献标记使用题名，例如 [参考文献]。[基于神经网络的悬臂式掘进机自适应截割控制系统研究]",
+                    "context": lines[i].strip(),
+                }
+            )
+            continue
+
+        m_key = compact_key.search(line)
+        if m_key:
+            diagnostics.append(
+                {
+                    "line": i + 1,
+                    "column": m_key.start() + 1,
+                    "rule": "MD-CITE-002",
+                    "severity": "info",
+                    "message": "工作稿引用标记疑似使用短 key",
+                    "fix": "工作稿优先使用 [文献题名]；同题名时使用 [题名 作者 年份]，最终定稿再转换为正式引用键",
+                    "context": lines[i].strip(),
+                }
+            )
+
+    return diagnostics
+
+
+def check_markdown_evidence_gaps(lines: list[str], start: int, end: int) -> list[dict]:
+    """Flag missing-source markers left in Markdown body text."""
+    diagnostics = []
+    marker = re.compile(r"\[待补来源(?::[^\]]*)?\]")
+    gap_headings = ("未写入正文的待补资料", "证据缺口清单", "待用户补充的信息", "项目台账")
+    in_gap_section = False
+
+    for i in range(start, end):
+        stripped = lines[i].strip()
+        if re.match(r"^#{1,6}\s+", stripped):
+            in_gap_section = any(name in stripped for name in gap_headings)
+
+        if in_gap_section:
+            continue
+
+        line = mask_inline_code(lines[i])
+        m = marker.search(line)
+        if m:
+            diagnostics.append(
+                {
+                    "line": i + 1,
+                    "column": m.start() + 1,
+                    "rule": "MD-SOURCE-001",
+                    "severity": "warning",
+                    "message": "正文中残留缺来源标记",
+                    "fix": "将缺来源事实、参数或结论移出正文，放入“未写入正文的待补资料”“证据缺口清单”或项目台账",
+                    "context": lines[i].strip(),
+                }
+            )
+
+    return diagnostics
+
+
 def strip_latex_comment(line: str) -> str:
     """剥离 LaTeX 行内注释，返回处理后的行
 
@@ -253,7 +355,7 @@ def check_file(
         print(f"Error: file not found: {filepath}", file=sys.stderr)
         sys.exit(1)
 
-    text = path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8-sig")
     lines = text.splitlines()
 
     # 加载规则（按 format 过滤）
@@ -317,10 +419,30 @@ def check_file(
         else:
             line_for_check = line
 
+        # 裸百分号本身会截断 LaTeX 行尾，不能等剥离注释后再检查。
+        if target_format == "latex":
+            for rule in rules:
+                if rule["id"] != "LATEX-001":
+                    continue
+                for m in rule["_compiled"].finditer(line):
+                    diagnostics.append(
+                        {
+                            "line": i + 1,
+                            "column": m.start() + 1,
+                            "rule": rule["id"],
+                            "severity": rule["severity"],
+                            "message": rule["message"],
+                            "fix": rule["fix"],
+                            "context": line.strip(),
+                        }
+                    )
+
         # 检查是否在受保护环境内（tikzpicture/table/figure）
         if target_format == "latex" and in_protected_env[i]:
             # 受保护环境内：跳过 AIGC/PUNCT/STYLE 规则，只检查 CITE/LATEX 规则
             for rule in rules:
+                if rule["id"] == "LATEX-001":
+                    continue
                 if rule["id"].startswith(("AIGC", "PUNCT", "STYLE")):
                     continue
                 for m in rule["_compiled"].finditer(line_for_check):
@@ -339,6 +461,8 @@ def check_file(
         elif in_block_math[i]:
             # 块级数学环境内：跳过 AIGC/PUNCT 规则，CITE/LATEX 规则仍然检查
             for rule in rules:
+                if rule["id"] == "LATEX-001":
+                    continue
                 if rule["id"].startswith(("AIGC", "PUNCT")):
                     continue
                 for m in rule["_compiled"].finditer(line_for_check):
@@ -356,6 +480,8 @@ def check_file(
         else:
             # 普通行：正常检查，但跳过行内数学环境
             for rule in rules:
+                if rule["id"] == "LATEX-001":
+                    continue
                 for m in rule["_compiled"].finditer(line_for_check):
                     if target_format == "latex" and is_in_math_env(
                         line_for_check, m.start()
@@ -429,6 +555,11 @@ def check_file(
                             }
                         )
         diagnostics.extend(connective_hits)
+
+    if target_format == "markdown":
+        diagnostics.extend(check_markdown_math_style(lines, start_line, end_line))
+        diagnostics.extend(check_markdown_title_markers(lines, start_line, end_line))
+        diagnostics.extend(check_markdown_evidence_gaps(lines, start_line, end_line))
 
     # 按行号排序
     diagnostics.sort(key=lambda d: (d["line"], d["column"]))

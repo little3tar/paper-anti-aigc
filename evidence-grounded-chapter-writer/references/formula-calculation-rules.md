@@ -35,14 +35,21 @@ Every original parameter must be classified:
 
 | Source type | Marker | Examples |
 | --- | --- | --- |
-| Literature or standard | `[参考文献]` plus source note | empirical coefficient, material property, recommended pressure |
+| Literature | `[参考文献]` plus `[文献题名]` source note | empirical coefficient, material property, published equation |
+| Verified standard/specification | `[参考文献]` plus standard name/number/version in body; working note may use `[标准规范: 标准号或规范名称]` | limit value, design code, acceptance requirement, recommended pressure |
 | User task material | `[用户材料: ...]` | design requirement, target value, boundary condition |
 | Manufacturer sample/manual | `[网络资料: ...]` or `[参考文献]` | rated parameter, product limit, catalog value |
 | Design assumption | `[设计假设: ...]` | safety factor, initial value, simplification |
 | Derived calculation | `[计算导出: 公式编号]` | area, torque, power, efficiency, index value |
 | Simulation/experiment | `[仿真结果: 软件/工况]` or `[实验结果: ...]` | response, error, fluctuation, measured metric |
 
-Do not present a design assumption as a measured fact. Do not present a derived value without the formula and source values.
+Do not present a design assumption as a measured fact. Do not present a derived value without the formula and source values. Do not write a standard requirement as a final design basis until the standard number, version/year, issuing body, and applicable clause or scope are verified.
+
+## Standards In Body Text
+
+Verified standards and specifications should be integrated into the thesis body when they support design parameters, limit values, selection basis, acceptance requirements, or safety margins. The sentence should name the standard, standard number, version/year, and applicable scope or clause when available, and keep a formal citation placeholder such as `[参考文献]`.
+
+Use `[标准规范: ...]` as a working note while drafting or auditing. Before final cleanup, either convert it into a formal citation-supported sentence or move it to `证据缺口清单` if the standard remains unverified.
 
 ## Symbol Table
 
@@ -58,8 +65,8 @@ Use consistent symbols across the chapter. If a symbol changes meaning between s
 - Preserve all source values exactly unless unit conversion is explicitly shown.
 - Use SI units by default and state conversions.
 - Keep effective figures reasonable for engineering design.
-- If a numeric value has no source, mark `[待补来源: 参数来源]` or rewrite as a design assumption.
-- If a formula is standard but no source is available, mark `[待补来源: 公式来源或推导依据]`.
+- If a numeric value has no source, keep it out of the body and record the missing parameter in `未写入正文的待补资料` or the project ledger.
+- If a formula is standard but no source is available, keep it as a formula plan outside the final body until the source or derivation basis is supplied.
 
 ## Formula Need Classification
 
