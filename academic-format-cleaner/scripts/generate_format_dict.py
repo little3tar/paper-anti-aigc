@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""从 text_rules.json 生成人类可读的敏感词速查表
+"""从 format_rules.json 生成人类可读的格式规则速查表
 
-生成 Markdown 格式的中文文本规则速查表，可用于文档或快速参考。
+生成 Markdown 格式的敏感词替换字典，可用于文档或快速参考。
 不用于实际检测，仅用于人类阅读。
 
 用法:
-    python3 scripts/generate_dict.py > dict.md
-    python3 scripts/generate_dict.py --format latex > dict-latex.md
+    python3 scripts/generate_format_dict.py > format-dict.md
+    python3 scripts/generate_format_dict.py --format latex > format-dict-latex.md
 """
 
 from __future__ import annotations
@@ -26,9 +26,9 @@ if os.name == "nt":
 
 
 def load_rules() -> tuple[list[dict], dict]:
-    """从 text_rules.json 加载规则和连接词"""
+    """从 format_rules.json 加载规则和连接词"""
     script_dir = Path(__file__).parent
-    rules_path = script_dir / "text_rules.json"
+    rules_path = script_dir / "format_rules.json"
 
     if not rules_path.exists():
         print(f"[ERROR] 规则文件不存在: {rules_path}", file=sys.stderr)
@@ -37,14 +37,14 @@ def load_rules() -> tuple[list[dict], dict]:
     try:
         data = json.loads(rules_path.read_text(encoding="utf-8-sig"))
     except Exception as e:
-        print(f"[ERROR] 无法加载 text_rules.json: {e}", file=sys.stderr)
+        print(f"[ERROR] 无法加载 format_rules.json: {e}", file=sys.stderr)
         sys.exit(1)
 
     return data.get("rules", []), data.get("connectives", {})
 
 
 def categorize_rules(rules: list[dict]) -> dict[str, list[dict]]:
-    """按规则 ID 前缀分组（与 text_rules.json 保持一致，无硬编码）"""
+    """按规则 ID 前缀分组（与 format_rules.json 保持一致，无硬编码）"""
     # ID 前缀 → 人类可读分类名
     PREFIX_MAP = {
         "CITE": "引用格式问题（LaTeX）",
@@ -75,7 +75,7 @@ def format_markdown_table(rules: list[dict]) -> str:
         return f"`{value}`"
 
     lines = []
-    lines.append("| ❌ AI 高频词/短语 | ✅ 替换为 | 严重程度 | 适用格式 |")
+    lines.append("| ❌ 格式模式/问题 | ✅ 修复方式 | 严重程度 | 适用格式 |")
     lines.append("|-------------------|-----------|----------|----------|")
 
     for rule in rules:
@@ -126,10 +126,10 @@ def generate_markdown(format_filter: str = "all") -> str:
     categories = categorize_rules(rules)
 
     lines = []
-    lines.append("# 中文文本去 AI 化规则速查表（自动生成）")
+    lines.append("# 学术文档格式规则速查表（自动生成）")
     lines.append("")
-    lines.append("> 本文件由 `scripts/generate_dict.py` 从 `text_rules.json` 自动生成。")
-    lines.append("> 实际检测请使用 `python3 scripts/check_text.py <file>`。")
+    lines.append("> 本文件由 `scripts/generate_format_dict.py` 从 `format_rules.json` 自动生成。")
+    lines.append("> 实际检测请使用 `python3 scripts/check_format.py <file>`。")
     lines.append("")
     lines.append("## 连接词泛滥检测")
     lines.append("")
@@ -171,16 +171,16 @@ def generate_markdown(format_filter: str = "all") -> str:
     # 使用说明
     lines.append("## 使用说明")
     lines.append("")
-    lines.append("1. **实际检测**：运行 `python3 scripts/check_text.py <file>`")
+    lines.append("1. **实际检测**：运行 `python3 scripts/check_format.py <file>`")
     lines.append("2. **格式支持**：")
-    lines.append("   - LaTeX: `python3 scripts/check_text.py paper.tex`")
+    lines.append("   - LaTeX: `python3 scripts/check_format.py paper.tex`")
     lines.append(
-        "   - Markdown: `python3 scripts/check_text.py paper.md --format markdown`"
+        "   - Markdown: `python3 scripts/check_format.py paper.md --format markdown`"
     )
     lines.append(
-        "   - 纯文本: `python3 scripts/check_text.py draft.txt --format plain`"
+        "   - 纯文本: `python3 scripts/check_format.py draft.txt --format plain`"
     )
-    lines.append("3. **重新生成本文件**：`python3 scripts/generate_dict.py > dict.md`")
+    lines.append("3. **重新生成本文件**：`python3 scripts/generate_format_dict.py > format-dict.md`")
     lines.append("")
     lines.append("---")
     lines.append("*生成时间：自动生成，请勿手动编辑*")
@@ -191,7 +191,7 @@ def generate_markdown(format_filter: str = "all") -> str:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="从 text_rules.json 生成敏感词速查表")
+    parser = argparse.ArgumentParser(description="从 format_rules.json 生成格式规则速查表")
     parser.add_argument(
         "--format",
         choices=["all", "latex", "markdown", "plain"],

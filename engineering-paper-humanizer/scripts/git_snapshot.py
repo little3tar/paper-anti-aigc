@@ -3,11 +3,10 @@
 """engineering-paper-humanizer 智能备份脚本
 
 智能备份策略（按优先级）：
-1. Git 分支备份（首选）- 若当前目录是 Git 仓库或可以初始化为 Git 仓库
-2. 文件复制备份（回退）- 若 Git 不可用或未安装
+1. Git 分支备份 - 当前目录已经是 Git 仓库且已有提交时使用
+2. 文件复制备份 - 非 Git 目录、空 Git 仓库或 Git 不可用时使用 `.thesis-workflow/backups/`
 
 支持功能：
-- 自动 Git 初始化：非 Git 目录自动执行 git init
 - 智能回退：Git 命令不可用时自动切换到文件复制备份
 - 完整备份生命周期：创建、列出、回滚、对比、清理
 
@@ -41,7 +40,7 @@ if os.name == "nt":
 
 BACKUP_PREFIX = "backup/humanizer/"
 MAX_BACKUPS = 5  # 保留的最大备份数量
-FILE_BACKUP_DIR = ".humanizer-backups"  # 文件复制备份目录
+FILE_BACKUP_DIR = Path(".thesis-workflow") / "backups"  # 文件复制备份目录
 
 
 # ── 工具函数 ───────────────────────────────────────────────
@@ -69,16 +68,6 @@ def is_git_repo() -> bool:
     """检测当前目录是否处于 Git 仓库内"""
     result = run_git("rev-parse", "--is-inside-work-tree")
     return result.returncode == 0 and result.stdout.strip() == "true"
-
-
-def try_git_init() -> bool:
-    """尝试初始化 Git 仓库，返回是否成功"""
-    result = run_git("init")
-    if result.returncode != 0:
-        print(f"[WARN] Git 初始化失败：{result.stderr.strip()}")
-        return False
-    print("[INFO] Git 仓库已自动初始化")
-    return True
 
 
 def get_backup_branches() -> list[str]:
@@ -119,14 +108,7 @@ def ensure_git_ready() -> dict:
         status["mode"] = "git"
         return status
 
-    # 尝试初始化 Git
-    print("[INFO] 当前目录不是 Git 仓库，尝试自动初始化...")
-    if try_git_init():
-        status["is_repo"] = True
-        status["ready"] = True
-        status["mode"] = "git"
-    else:
-        print("[INFO] Git 初始化失败，将使用文件复制备份")
+    print("[INFO] 当前目录不是 Git 仓库，将使用文件复制备份")
 
     return status
 
@@ -335,7 +317,7 @@ def file_backup(filepath: str, dry_run: bool = False) -> bool:
     if dry_run:
         print(f"[DRY-RUN] 模拟文件备份: {filepath}")
         print(f"[DRY-RUN] 实际将执行以下操作：")
-        print(f"  1. 创建备份目录: {FILE_BACKUP_DIR}")
+        print(f"  1. 创建备份目录: {FILE_BACKUP_DIR.as_posix()}")
         print(f"  2. 复制文件并添加时间戳")
         print(f"  3. 自动淘汰超出 {MAX_BACKUPS} 个限制的旧备份")
         return True
@@ -395,21 +377,19 @@ def _auto_evict_file_backups(filepath: str) -> None:
 
 
 def cmd_snapshot(filepath: str, dry_run: bool = False) -> None:
-    """智能备份入口 - 自动选择 Git 或文件备份"""
+    """智能备份入口 - 已有 Git 仓库用 Git，否则文件复制"""
     if dry_run:
         print(f"[DRY-RUN] 模拟备份文件: {filepath}")
         print("=" * 50)
 
-    # 检测并准备备份环境
     status = ensure_git_ready()
-
-    # 首选 Git 备份
     if status["mode"] == "git" and status["ready"]:
         if git_backup(filepath, dry_run):
             return
         print("[INFO] Git 备份失败，尝试文件备份...")
+    else:
+        print("[INFO] 未满足 Git 分支备份条件，改用文件复制备份")
 
-    # 回退到文件备份
     file_backup(filepath, dry_run)
 
 
@@ -444,7 +424,7 @@ def cmd_list() -> None:
         all_backups = sorted(backup_dir.iterdir(), reverse=True)
         backups = [f for f in all_backups if f.is_file()]
         if backups:
-            print(f"\n[文件复制备份] 目录: {FILE_BACKIRD_DIR}/")
+            print(f"\n[文件复制备份] 目录: {FILE_BACKUP_DIR.as_posix()}/")
             print(f"               共 {len(backups)} 个（最新在前）：")
             for backup in backups[:10]:  # 最多显示10个
                 stat = backup.stat()
@@ -455,9 +435,9 @@ def cmd_list() -> None:
             if len(backups) > 10:
                 print(f"  ... 还有 {len(backups) - 10} 个备份")
         else:
-            print(f"\n[文件复制备份] 暂无 (目录: {FILE_BACKIRD_DIR}/)")
+            print(f"\n[文件复制备份] 暂无 (目录: {FILE_BACKUP_DIR.as_posix()}/)")
     else:
-        print(f"\n[文件复制备份] 暂无 (目录: {FILE_BACKIRD_DIR}/)")
+        print(f"\n[文件复制备份] 暂无 (目录: {FILE_BACKUP_DIR.as_posix()}/)")
 
 
 def cmd_rollback(filepath: str | None, git_branch: str | None = None, dry_run: bool = False) -> None:
@@ -618,7 +598,7 @@ def cmd_cleanup(skip_confirm: bool = False, dry_run: bool = False) -> None:
 def main():
     parser = argparse.ArgumentParser(
         description="engineering-paper-humanizer 智能备份脚本\n"
-                    "支持 Git 分支备份（首选）和文件复制备份（回退）",
+                    "已有 Git 仓库优先使用分支备份；非 Git 目录使用文件复制备份",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 

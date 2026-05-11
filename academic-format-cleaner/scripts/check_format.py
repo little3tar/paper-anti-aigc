@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""engineering-paper-humanizer AIGC 检测脚本
+"""academic-format-cleaner 格式检查脚本
 
-扫描 LaTeX (.tex)、Markdown (.md) 或纯文本文件，检测 AIGC 残留格式问题和规范违规。
+扫描 LaTeX (.tex)、Markdown (.md) 或纯文本文件，检测文件格式、引用位置、
+LaTeX 命令和 Markdown/列表结构等格式问题。正文去 AI 化和通用中文标点问题
+由 engineering-paper-humanizer 负责。
 输出结构化的逐行诊断结果，供 agent 或人工快速定位修复。
 
 用法:
-    python3 scripts/check_aigc.py <file.tex>                    # LaTeX 文件（默认）
-    python3 scripts/check_aigc.py <file.md> --format markdown   # Markdown 文件
-    python3 scripts/check_aigc.py <file.txt> --format plain     # 纯文本文件
-    python3 scripts/check_aigc.py <file.tex> --section 3        # 只检查指定章节
-    python3 scripts/check_aigc.py <file.tex> --json             # JSON 格式输出
-    python3 scripts/check_aigc.py <file.tex> --severity error   # 只显示错误
+    python3 scripts/check_format.py <file.tex>                    # LaTeX 文件（默认）
+    python3 scripts/check_format.py <file.md> --format markdown   # Markdown 文件
+    python3 scripts/check_format.py <file.txt> --format plain     # 纯文本文件
+    python3 scripts/check_format.py <file.tex> --section 3        # 只检查指定章节
+    python3 scripts/check_format.py <file.tex> --json             # JSON 格式输出
+    python3 scripts/check_format.py <file.tex> --severity error   # 只显示错误
 """
 
 from __future__ import annotations
@@ -29,11 +31,11 @@ if os.name == "nt":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
-# ── 从 rules.json 加载规则 ──────────────────────────────────
+# ── 从 format_rules.json 加载规则 ───────────────────────────
 
 
 def load_rules(format_filter: str = "latex") -> tuple[list[dict], list[str]]:
-    """从 rules.json 加载规则和连接词，按 format 过滤
+    """从 format_rules.json 加载规则和连接词，按 format 过滤
 
     参数:
         format_filter: "latex" | "markdown" | "plain"
@@ -42,16 +44,16 @@ def load_rules(format_filter: str = "latex") -> tuple[list[dict], list[str]]:
         (rules, connectives_words)
     """
     script_dir = Path(__file__).parent
-    rules_path = script_dir / "rules.json"
+    rules_path = script_dir / "format_rules.json"
 
     if not rules_path.exists():
         print(f"[ERROR] 规则文件不存在: {rules_path}", file=sys.stderr)
         sys.exit(1)
 
     try:
-        data = json.loads(rules_path.read_text(encoding="utf-8"))
+        data = json.loads(rules_path.read_text(encoding="utf-8-sig"))
     except Exception as e:
-        print(f"[ERROR] 无法加载 rules.json: {e}", file=sys.stderr)
+        print(f"[ERROR] 无法加载 format_rules.json: {e}", file=sys.stderr)
         sys.exit(1)
 
     # 过滤规则
@@ -202,6 +204,108 @@ def mask_inline_code(line: str) -> str:
     return re.sub(r"<[^>\n]+>", repl, line)
 
 
+def check_markdown_math_style(lines: list[str], start: int, end: int) -> list[dict]:
+    """Check whether Markdown block math styles are mixed in one file."""
+    styles: dict[str, int] = {}
+    for i in range(start, end):
+        stripped = lines[i].strip()
+        if re.match(r"^```(?:math|latex)\b", stripped, re.IGNORECASE):
+            styles.setdefault("fenced math", i + 1)
+        elif stripped == "$$":
+            styles.setdefault("$$", i + 1)
+        elif stripped in {r"\[", r"\]"}:
+            styles.setdefault(r"\[...\]", i + 1)
+
+    if len(styles) <= 1:
+        return []
+
+    first_style, first_line = next(iter(styles.items()))
+    return [
+        {
+            "line": first_line,
+            "column": 1,
+            "rule": "MD-MATH-001",
+            "severity": "warning",
+            "message": "Markdown 文件混用了多种块级数学格式",
+            "fix": "统一使用一种块级数学格式，例如 fenced math、$$...$$ 或 \\[...\\]，除非模板明确要求混用",
+            "context": "、".join(styles.keys()),
+        }
+    ]
+
+
+def check_markdown_title_markers(lines: list[str], start: int, end: int) -> list[dict]:
+    """Check working citation title markers after [参考文献]."""
+    diagnostics = []
+    old_marker = re.compile(r"\[参考文献\]。\[引用关键词:\s*[^\]]+\]")
+    compact_key = re.compile(r"\[参考文献\]。\[([a-z][a-z0-9_-]{3,})\]")
+
+    for i in range(start, end):
+        line = mask_inline_code(lines[i])
+        m_old = old_marker.search(line)
+        if m_old:
+            diagnostics.append(
+                {
+                    "line": i + 1,
+                    "column": m_old.start() + 1,
+                    "rule": "MD-CITE-001",
+                    "severity": "warning",
+                    "message": "工作稿引用标记使用了非题名格式",
+                    "fix": "Zotero/local 文献标记使用题名，例如 [参考文献]。[基于神经网络的悬臂式掘进机自适应截割控制系统研究]",
+                    "context": lines[i].strip(),
+                }
+            )
+            continue
+
+        m_key = compact_key.search(line)
+        if m_key:
+            diagnostics.append(
+                {
+                    "line": i + 1,
+                    "column": m_key.start() + 1,
+                    "rule": "MD-CITE-002",
+                    "severity": "info",
+                    "message": "工作稿引用标记疑似使用短 key",
+                    "fix": "工作稿优先使用 [文献题名]；同题名时使用 [题名 作者 年份]，最终定稿再转换为正式引用键",
+                    "context": lines[i].strip(),
+                }
+            )
+
+    return diagnostics
+
+
+def check_markdown_evidence_gaps(lines: list[str], start: int, end: int) -> list[dict]:
+    """Flag missing-source markers left in Markdown body text."""
+    diagnostics = []
+    marker = re.compile(r"\[待补来源(?::[^\]]*)?\]")
+    gap_headings = ("未写入正文的待补资料", "证据缺口清单", "待用户补充的信息", "项目台账")
+    in_gap_section = False
+
+    for i in range(start, end):
+        stripped = lines[i].strip()
+        if re.match(r"^#{1,6}\s+", stripped):
+            in_gap_section = any(name in stripped for name in gap_headings)
+
+        if in_gap_section:
+            continue
+
+        line = mask_inline_code(lines[i])
+        m = marker.search(line)
+        if m:
+            diagnostics.append(
+                {
+                    "line": i + 1,
+                    "column": m.start() + 1,
+                    "rule": "MD-SOURCE-001",
+                    "severity": "warning",
+                    "message": "正文中残留缺来源标记",
+                    "fix": "将缺来源事实、参数或结论移出正文，放入“未写入正文的待补资料”“证据缺口清单”或项目台账",
+                    "context": lines[i].strip(),
+                }
+            )
+
+    return diagnostics
+
+
 def strip_latex_comment(line: str) -> str:
     """剥离 LaTeX 行内注释，返回处理后的行
 
@@ -251,7 +355,7 @@ def check_file(
         print(f"Error: file not found: {filepath}", file=sys.stderr)
         sys.exit(1)
 
-    text = path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8-sig")
     lines = text.splitlines()
 
     # 加载规则（按 format 过滤）
@@ -315,10 +419,30 @@ def check_file(
         else:
             line_for_check = line
 
+        # 裸百分号本身会截断 LaTeX 行尾，不能等剥离注释后再检查。
+        if target_format == "latex":
+            for rule in rules:
+                if rule["id"] != "LATEX-001":
+                    continue
+                for m in rule["_compiled"].finditer(line):
+                    diagnostics.append(
+                        {
+                            "line": i + 1,
+                            "column": m.start() + 1,
+                            "rule": rule["id"],
+                            "severity": rule["severity"],
+                            "message": rule["message"],
+                            "fix": rule["fix"],
+                            "context": line.strip(),
+                        }
+                    )
+
         # 检查是否在受保护环境内（tikzpicture/table/figure）
         if target_format == "latex" and in_protected_env[i]:
             # 受保护环境内：跳过 AIGC/PUNCT/STYLE 规则，只检查 CITE/LATEX 规则
             for rule in rules:
+                if rule["id"] == "LATEX-001":
+                    continue
                 if rule["id"].startswith(("AIGC", "PUNCT", "STYLE")):
                     continue
                 for m in rule["_compiled"].finditer(line_for_check):
@@ -337,6 +461,8 @@ def check_file(
         elif in_block_math[i]:
             # 块级数学环境内：跳过 AIGC/PUNCT 规则，CITE/LATEX 规则仍然检查
             for rule in rules:
+                if rule["id"] == "LATEX-001":
+                    continue
                 if rule["id"].startswith(("AIGC", "PUNCT")):
                     continue
                 for m in rule["_compiled"].finditer(line_for_check):
@@ -354,6 +480,8 @@ def check_file(
         else:
             # 普通行：正常检查，但跳过行内数学环境
             for rule in rules:
+                if rule["id"] == "LATEX-001":
+                    continue
                 for m in rule["_compiled"].finditer(line_for_check):
                     if target_format == "latex" and is_in_math_env(
                         line_for_check, m.start()
@@ -428,11 +556,10 @@ def check_file(
                         )
         diagnostics.extend(connective_hits)
 
-    # 突发性粗评（段落内句长方差）
-    burstiness_warnings = check_burstiness(
-        lines, start_line, end_line, target_format, in_protected_env
-    )
-    diagnostics.extend(burstiness_warnings)
+    if target_format == "markdown":
+        diagnostics.extend(check_markdown_math_style(lines, start_line, end_line))
+        diagnostics.extend(check_markdown_title_markers(lines, start_line, end_line))
+        diagnostics.extend(check_markdown_evidence_gaps(lines, start_line, end_line))
 
     # 按行号排序
     diagnostics.sort(key=lambda d: (d["line"], d["column"]))
@@ -568,7 +695,7 @@ def format_text(diagnostics: list[dict], filepath: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="engineering-paper-humanizer AIGC 检测"
+        description="academic-format-cleaner 格式检查"
     )
     parser.add_argument("file", help="要检查的文件路径")
     parser.add_argument(
