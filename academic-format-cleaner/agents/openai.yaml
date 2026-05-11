@@ -1,0 +1,4 @@
+interface:
+  display_name: "Academic Format Cleaner"
+  short_description: "Clean LaTeX, Markdown, and citation formatting."
+  default_prompt: "Check and clean this academic draft for formatting, citation placement, and placeholder issues."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Engineering Paper Humanizer"
+  short_description: "Polish Chinese engineering thesis prose."
+  default_prompt: "Polish this Chinese engineering thesis text while preserving technical meaning and evidence boundaries."
