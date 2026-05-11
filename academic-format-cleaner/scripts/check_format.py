@@ -24,24 +24,33 @@ import json
 import argparse
 from pathlib import Path
 
-# ── Windows GBK 兼容：强制 stdout/stderr 使用 UTF-8 ────────
-import io, os
+_shared_dir = Path(__file__).resolve().parents[2] / "engineering-paper-humanizer" / "scripts"
+sys.path.insert(0, str(_shared_dir))
+from _shared import (  # noqa: E402
+    is_in_math_env,
+    precompute_block_math,
+    precompute_protected_envs,
+    precompute_markdown_protected,
+    mask_inline_code,
+    strip_latex_comment,
+    SEVERITY_ICONS,
+    format_text,
+    setup_windows_utf8,
+)
 
-if os.name == "nt":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+setup_windows_utf8()
 
 # ── 从 format_rules.json 加载规则 ───────────────────────────
 
 
-def load_rules(format_filter: str = "latex") -> tuple[list[dict], list[str]]:
-    """从 format_rules.json 加载规则和连接词，按 format 过滤
+def load_rules(format_filter: str = "latex") -> list[dict]:
+    """从 format_rules.json 加载规则，按 format 过滤
 
     参数:
         format_filter: "latex" | "markdown" | "plain"
 
     返回:
-        (rules, connectives_words)
+        rules
     """
     script_dir = Path(__file__).parent
     rules_path = script_dir / "format_rules.json"
@@ -64,144 +73,10 @@ def load_rules(format_filter: str = "latex") -> tuple[list[dict], list[str]]:
         if format_filter in formats:
             rules.append(rule)
 
-    # 连接词（如果 format 匹配）
-    connectives = data.get("connectives", {})
-    connectives_words = []
-    if format_filter in connectives.get("format", ["latex", "markdown", "plain"]):
-        connectives_words = connectives.get("words", [])
-
-    return rules, connectives_words
+    return rules
 
 
 # ── 核心逻辑 ────────────────────────────────────────────────
-
-
-def is_in_math_env(line: str, match_start: int) -> bool:
-    r"""粗略判断匹配位置是否处于行内数学环境内部（仅 LaTeX）
-
-    支持: $...$, $$...$$, \(...\), \[...\]
-    """
-    # 检查 \(...\) 和 \[...\]
-    for opener, closer in [(r"\(", r"\)"), (r"\[", r"\]")]:
-        search_start = 0
-        while True:
-            op = line.find(opener, search_start)
-            if op == -1 or op >= match_start:
-                break
-            cl = line.find(closer, op + len(opener))
-            if cl == -1:
-                # 未闭合，match_start 在 opener 之后 → 视为数学环境内
-                if match_start > op:
-                    return True
-                break
-            if op < match_start <= cl:
-                return True
-            search_start = cl + len(closer)
-
-    # 检查 $...$ 和 $$...$$ (用未转义的 $ 做 toggle)
-    dollars = [m.start() for m in re.finditer(r"(?<!\\)\$", line)]
-    depth = 0
-    for d in dollars:
-        if d >= match_start:
-            break
-        depth += 1
-    return depth % 2 == 1
-
-
-def precompute_block_math(lines: list[str]) -> list[bool]:
-    """预计算每一行是否处于块级数学环境内（仅 LaTeX）"""
-    math_envs = (
-        "equation",
-        "align",
-        "gather",
-        "multline",
-        "eqnarray",
-        "math",
-        "displaymath",
-    )
-    begin_pats = [re.compile(rf"\\begin\{{{env}\*?\}}") for env in math_envs]
-    end_pats = [re.compile(rf"\\end\{{{env}\*?\}}") for env in math_envs]
-    depth = 0
-    result = []
-    for line in lines:
-        had_begin = False
-        for bp, ep in zip(begin_pats, end_pats):
-            begins = len(bp.findall(line))
-            ends = len(ep.findall(line))
-            if begins > 0:
-                had_begin = True
-            depth += begins
-            depth -= ends
-        # 同行包含 begin 时，该行也视为数学环境内部
-        result.append(depth > 0 or had_begin)
-    return result
-
-
-def precompute_protected_envs(lines: list[str]) -> list[bool]:
-    """预计算每一行是否处于受保护的 LaTeX 环境内
-
-    代码、绘图和纯数据表格环境内的 AIGC/PUNCT/STYLE 规则应被跳过（仅检查 CITE/LATEX）。
-    不保护 figure/table 外层环境，因为 caption 和表格说明通常是正文的一部分。
-    """
-    protected_envs = ("tikzpicture", "verbatim", "lstlisting", "minted", "tabular", "tabularx")
-    begin_pats = [re.compile(rf"\\begin\{{{env}\*?\}}") for env in protected_envs]
-    end_pats = [re.compile(rf"\\end\{{{env}\*?\}}") for env in protected_envs]
-    depth = 0
-    result = []
-    for line in lines:
-        had_begin = False
-        for bp, ep in zip(begin_pats, end_pats):
-            begins = len(bp.findall(line))
-            ends = len(ep.findall(line))
-            if begins > 0:
-                had_begin = True
-            depth += begins
-            depth -= ends
-        # 同行包含 begin 时，该行也视为受保护环境内部
-        result.append(depth > 0 or had_begin)
-    return result
-
-
-def precompute_markdown_protected(lines: list[str]) -> list[bool]:
-    """预计算 Markdown/YAML frontmatter 和 fenced code block 行。"""
-    result = [False] * len(lines)
-
-    # YAML frontmatter: 仅当文件第一行是 --- 时启用
-    if lines and lines[0].strip() == "---":
-        result[0] = True
-        for i in range(1, len(lines)):
-            result[i] = True
-            if lines[i].strip() == "---":
-                break
-
-    in_fence = False
-    fence_marker = None
-    for i, line in enumerate(lines):
-        stripped = line.lstrip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            marker = stripped[:3]
-            if not in_fence:
-                in_fence = True
-                fence_marker = marker
-                result[i] = True
-                continue
-            if marker == fence_marker:
-                result[i] = True
-                in_fence = False
-                fence_marker = None
-                continue
-        if in_fence:
-            result[i] = True
-    return result
-
-
-def mask_inline_code(line: str) -> str:
-    """用空格遮蔽 Markdown 行内代码和 HTML 标签，保留列号基本稳定。"""
-    def repl(match: re.Match) -> str:
-        return " " * (match.end() - match.start())
-
-    line = re.sub(r"`[^`\n]+`", repl, line)
-    return re.sub(r"<[^>\n]+>", repl, line)
 
 
 def check_markdown_math_style(lines: list[str], start: int, end: int) -> list[dict]:
@@ -306,37 +181,6 @@ def check_markdown_evidence_gaps(lines: list[str], start: int, end: int) -> list
     return diagnostics
 
 
-def strip_latex_comment(line: str) -> str:
-    """剥离 LaTeX 行内注释，返回处理后的行
-
-    截断 % 后的内容，但保留转义的 \\% 或 \\%{} 等。
-    """
-    # 找到第一个未转义的 %
-    # 排除 \% 和 \%{ 的情况
-    result = []
-    i = 0
-    while i < len(line):
-        # 检查 \% 或 \%{ (转义的百分号)
-        if i < len(line) - 1 and line[i] == "\\" and line[i + 1] == "%":
-            result.append("\\%")
-            i += 2
-        elif (
-            i < len(line) - 2
-            and line[i] == "\\"
-            and line[i + 1] == "%"
-            and line[i + 2] == "{"
-        ):
-            result.append("\\%{")
-            i += 3
-        elif line[i] == "%":
-            # 遇到未转义的 %，截断后面所有内容
-            break
-        else:
-            result.append(line[i])
-            i += 1
-    return "".join(result)
-
-
 def check_file(
     filepath: str, target_format: str = "latex", section: int | None = None
 ) -> list[dict]:
@@ -359,7 +203,7 @@ def check_file(
     lines = text.splitlines()
 
     # 加载规则（按 format 过滤）
-    rules, connectives_words = load_rules(target_format)
+    rules = load_rules(target_format)
 
     # 预编译正则表达式（避免每行重复编译）
     for rule in rules:
@@ -499,63 +343,6 @@ def check_file(
                         }
                     )
 
-    # 连接词泛滥统计（仅当有连接词列表时）
-    if connectives_words:
-        connective_hits = []
-        for i in range(start_line, end_line):
-            line = lines[i]
-
-            # 对 LaTeX 文件剥离行内注释
-            if target_format == "latex":
-                line_for_conn = strip_latex_comment(line)
-            elif target_format == "markdown":
-                line_for_conn = mask_inline_code(line)
-            else:
-                line_for_conn = line
-
-            stripped = line_for_conn.lstrip()
-
-            # 跳过整行注释（LaTeX）
-            if target_format == "latex" and stripped.startswith("%"):
-                continue
-            if target_format == "markdown" and in_markdown_protected[i]:
-                continue
-            # 跳过块级数学和受保护环境
-            if in_block_math[i] or in_protected_env[i]:
-                continue
-
-            for word in connectives_words:
-                # 检查行首
-                if stripped.startswith(word):
-                    connective_hits.append(
-                        {
-                            "line": i + 1,
-                            "column": 1,
-                            "rule": "AIGC-CONN",
-                            "severity": "info",
-                            "message": f"段/句首连接词“{word}”（连接词泛滥检测）",
-                            "fix": "评估是否可删除，目标削减 ≥ 50%",
-                            "context": stripped[:60],
-                        }
-                    )
-                # 检查句内句首（中文句号/问号/叹号后紧跟连接词）
-                for sep in ("。", "！", "？"):
-                    idx = stripped.find(sep + word)
-                    if idx != -1:
-                        col = len(line_for_conn) - len(stripped) + idx + len(sep) + 1
-                        connective_hits.append(
-                            {
-                                "line": i + 1,
-                                "column": col,
-                                "rule": "AIGC-CONN",
-                                "severity": "info",
-                                "message": f"句首连接词“{word}”（连接词泛滥检测）",
-                                "fix": "评估是否可删除，目标削减 ≥ 50%",
-                                "context": stripped[:60],
-                            }
-                        )
-        diagnostics.extend(connective_hits)
-
     if target_format == "markdown":
         diagnostics.extend(check_markdown_math_style(lines, start_line, end_line))
         diagnostics.extend(check_markdown_title_markers(lines, start_line, end_line))
@@ -566,128 +353,7 @@ def check_file(
     return diagnostics
 
 
-def check_burstiness(
-    lines: list[str], start: int, end: int, target_format: str, in_protected_env=None
-) -> list[dict]:
-    warnings, para_start, para_sentences = [], None, []
 
-    def _eval_para(p_start, sents):
-        if len(sents) < 4:
-            return None
-        avg = sum(sents) / len(sents)
-        variance = sum((s - avg) ** 2 for s in sents) / len(sents)
-        # 方差过低 → 句长过于均匀 → 低突发性
-        if avg > 0 and (variance**0.5) / avg < 0.20:
-            return {
-                "line": p_start + 1,
-                "column": 1,
-                "rule": "BURST-001",
-                "severity": "info",
-                "message": f"该段落句长方差过低（CV={((variance**0.5) / avg):.2f}），疑似低突发性",
-                "fix": "插入极短句（3~5字）或超长参数句（20+字）以提升顿挫感",
-                "context": f"段落起始行，含 {len(sents)} 句，平均句长 {avg:.0f} 字",
-            }
-        return None
-
-    for i in range(start, end):
-        # 如果在受保护环境内，跳过该行
-        if (
-            in_protected_env is not None
-            and i < len(in_protected_env)
-            and in_protected_env[i]
-        ):
-            continue
-
-        line = lines[i].strip()
-        # 空行或环境边界视为段落分隔
-        if not line:
-            if para_sentences:
-                w = _eval_para(para_start, para_sentences)
-                if w:
-                    warnings.append(w)
-            para_start = None
-            para_sentences = []
-            continue
-
-        # LaTeX 特定分隔符
-        if target_format == "latex":
-            if line.startswith("\\section") or line.startswith("\\subsection"):
-                if para_sentences:
-                    w = _eval_para(para_start, para_sentences)
-                    if w:
-                        warnings.append(w)
-                para_start = None
-                para_sentences = []
-                continue
-
-        if (
-            (target_format == "latex" and line.startswith("%"))
-            or (target_format == "latex" and line.startswith("\\begin"))
-            or (target_format == "latex" and line.startswith("\\end"))
-        ):
-            continue
-
-        if para_start is None:
-            para_start = i
-
-        # 按中文句号/问号/叹号分句
-        sentences = re.split(r"[。！？]", line)
-        for s in sentences:
-            # 移除 LaTeX 命令（仅 LaTeX）
-            if target_format == "latex":
-                clean = re.sub(r"\\[a-zA-Z]+\{[^}]*\}", "", s)
-            else:
-                clean = s
-            clean = re.sub(r"[^\u4e00-\u9fff]", "", clean)  # 只留中文字
-            if len(clean) >= 2:
-                para_sentences.append(len(clean))
-
-    # 处理最后一个段落
-    if para_sentences:
-        w = _eval_para(para_start, para_sentences)
-        if w:
-            warnings.append(w)
-
-    return warnings
-
-
-# ── 输出格式化 ────────────────────────────────────────────
-
-SEVERITY_ICONS = {
-    "error": "[ERROR]",
-    "warning": "[WARN]",
-    "info": "[INFO]",
-}
-
-
-def format_text(diagnostics: list[dict], filepath: str) -> str:
-    """格式化为人类可读的文本报告"""
-    if not diagnostics:
-        return f"[OK] {filepath}: 未发现问题"
-
-    counts: dict[str, int] = {"error": 0, "warning": 0, "info": 0}
-    lines = []
-    lines.append(f"{'=' * 60}")
-    lines.append(f"  检查文件: {filepath}")
-    lines.append(f"{'=' * 60}")
-
-    for d in diagnostics:
-        sev = d.get("severity", "info")
-        counts[sev] = counts.get(sev, 0) + 1
-        icon = SEVERITY_ICONS.get(sev, f"[{sev.upper()}]")
-        lines.append(f"")
-        lines.append(f"{icon} [{d['rule']}] L{d['line']}:{d['column']}  {d['message']}")
-        lines.append(f"   上下文: {d['context'][:80]}")
-        lines.append(f"   修复建议: {d['fix']}")
-
-    lines.append(f"")
-    lines.append(f"{'=' * 60}")
-    lines.append(
-        f"  汇总: {counts['error']} 错误 | {counts['warning']} 警告 | {counts['info']} 提示"
-    )
-    lines.append(f"{'=' * 60}")
-
-    return "\n".join(lines)
 
 
 # ── 入口 ──────────────────────────────────────────────────

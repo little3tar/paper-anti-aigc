@@ -1,32 +1,15 @@
 # Project Ledger Rules
 
-Default location: `.thesis-workflow/project-ledger.md` in the thesis project root. Do not create or update a project ledger inside the reusable skill directory.
+规范的 project ledger 结构、状态标签和完整列定义见 `thesis-writing-workflow/references/project-ledger-rules.md`。
 
-For multi-chapter thesis work, use project ledger files to preserve confirmed information across sessions. These files belong in the user's thesis workspace, not in the skill directory. In an active thesis workflow, read the ledger before drafting and update it after drafting when confirmed facts, formulas, data, decisions, sources, or evidence gaps change.
+本章节写作 skill 的 ledger 使用要点：
 
-Default location:
+- 起草章节前先读取 `.thesis-workflow/project-ledger.md`（如存在）。
+- 起草完成后，若产生了新的已确认事实、公式、参数、来源、设计决策或证据缺口，应更新 ledger。
+- 只有保存位置或是否使用文件不明确时才询问用户。
+- 未确认项使用 `draft`、`needs-source` 或 `needs-user-data`，不要因为某内容在草稿中有用就将其标记为 `confirmed`。
 
-```text
-.thesis-workflow/project-ledger.md
-```
-
-Large projects may split the same sections into:
-
-```text
-.thesis-workflow/ledger/
-  facts.md
-  formulas.md
-  sources.md
-  decisions.md
-  figures-tables.md
-  chapter-status.md
-```
-
-Read existing ledger files before drafting. When drafting produces new confirmed facts, formulas, data, decisions, sources, or evidence gaps, update `.thesis-workflow/project-ledger.md` if the workflow directory already exists or the user has asked to run the thesis workflow. Ask only when the thesis project root or the user's willingness to keep workflow files is unclear.
-
-Use `draft`, `needs-source`, or `needs-user-data` for unconfirmed items. Do not turn unconfirmed material into confirmed ledger facts merely because it was useful for drafting.
-
-Use these status labels:
+状态标签：
 
 - `confirmed`
 - `draft`
@@ -35,4 +18,4 @@ Use these status labels:
 - `derived`
 - `superseded`
 
-Do not overwrite confirmed entries silently. If a parameter, formula, or decision changes, keep the old entry and mark it `superseded`.
+不要静默覆盖已确认条目。参数、公式或决策变更时保留旧条目并标记 `superseded`。

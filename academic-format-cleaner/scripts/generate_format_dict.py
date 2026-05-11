@@ -13,16 +13,15 @@
 from __future__ import annotations
 
 import sys
-import io
-import os
 import re
 import json
 from pathlib import Path
 
-# ── Windows GBK 兼容：强制 stdout/stderr 使用 UTF-8 ────────
-if os.name == "nt":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+_shared_dir = Path(__file__).resolve().parents[2] / "engineering-paper-humanizer" / "scripts"
+sys.path.insert(0, str(_shared_dir))
+from _shared import setup_windows_utf8  # noqa: E402
+
+setup_windows_utf8()
 
 
 def load_rules() -> tuple[list[dict], dict]:
@@ -130,14 +129,14 @@ def generate_markdown(format_filter: str = "all") -> str:
     lines.append("")
     lines.append("> 本文件由 `scripts/generate_format_dict.py` 从 `format_rules.json` 自动生成。")
     lines.append("> 实际检测请使用 `python3 scripts/check_format.py <file>`。")
-    lines.append("")
-    lines.append("## 连接词泛滥检测")
-    lines.append("")
-    lines.append("以下连接词在段/句首出现时，建议删除至少 50%：")
-    lines.append("")
-
-    # 连接词列表
-    if connectives and "words" in connectives:
+    # 连接词列表（仅当 format_rules.json 包含 connectives 数据时显示）
+    has_connectives = connectives and "words" in connectives and connectives["words"]
+    if has_connectives:
+        lines.append("")
+        lines.append("## 连接词泛滥检测")
+        lines.append("")
+        lines.append("以下连接词在段/句首出现时，建议删除至少 50%：")
+        lines.append("")
         words = connectives["words"]
         lines.append("```")
         for i in range(0, len(words), 8):

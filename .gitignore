@@ -1,4 +1,4 @@
-__pycache__/
+**/__pycache__/
 .ruff_cache/
 .uv-cache/
 workflow-validation-*/
@@ -10,3 +10,4 @@ dict-*.md
 format-dict.md
 format-dict-*.md
 **/references/main-tex-context.md
+.claude/

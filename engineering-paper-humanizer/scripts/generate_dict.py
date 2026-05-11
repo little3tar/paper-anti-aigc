@@ -13,16 +13,13 @@
 from __future__ import annotations
 
 import sys
-import io
-import os
 import re
 import json
 from pathlib import Path
 
-# ── Windows GBK 兼容：强制 stdout/stderr 使用 UTF-8 ────────
-if os.name == "nt":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+from _shared import setup_windows_utf8
+
+setup_windows_utf8()
 
 
 def load_rules() -> tuple[list[dict], dict]:

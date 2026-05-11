@@ -78,5 +78,119 @@ class CheckerScriptTests(unittest.TestCase):
         self.assertIn("模拟 Git 备份", result.stdout)
 
 
+    def test_humanizer_checker_empty_file(self) -> None:
+        """空文件不产生诊断。"""
+        result = run_script(
+            "engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/empty.md",
+            "--format",
+            "markdown",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        self.assertEqual(diagnostics, [])
+
+    def test_humanizer_checker_section_filter(self) -> None:
+        """--section 参数只检查指定章节。"""
+        result = run_script(
+            "engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_multisection.tex",
+            "--section",
+            "1",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        # 第 1 章有 "本章介绍了" 应触发 AIGC-001
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("AIGC-001", rule_ids)
+
+    def test_humanizer_checker_severity_filter(self) -> None:
+        """--severity error 只返回 error 级别诊断。"""
+        result = run_script(
+            "engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_humanizer.md",
+            "--format",
+            "markdown",
+            "--json",
+            "--severity",
+            "error",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        for d in diagnostics:
+            self.assertEqual(d["severity"], "error")
+
+    def test_format_checker_markdown_math_style(self) -> None:
+        """MD-MATH-001: 检测 Markdown 混合数学格式。"""
+        result = run_script(
+            "academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_mixed_math.md",
+            "--format",
+            "markdown",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("MD-MATH-001", rule_ids)
+
+    def test_format_checker_evidence_gap_marker(self) -> None:
+        """MD-SOURCE-001: 检测正文中残留的证据缺口标记。"""
+        result = run_script(
+            "academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_evidence_gap.md",
+            "--format",
+            "markdown",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("MD-SOURCE-001", rule_ids)
+
+    def test_format_checker_no_aigc_conn(self) -> None:
+        """格式检查器不应报告 AIGC-CONN（连接词检测属于 humanizer）。"""
+        result = run_script(
+            "academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_humanizer.md",
+            "--format",
+            "markdown",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertNotIn("AIGC-CONN", rule_ids)
+
+    def test_humanizer_checker_json_output(self) -> None:
+        """--json 输出为有效 JSON 且包含必要字段。"""
+        result = run_script(
+            "engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_humanizer.md",
+            "--format",
+            "markdown",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        self.assertIsInstance(diagnostics, list)
+        if diagnostics:
+            d = diagnostics[0]
+            for key in ("line", "column", "rule", "severity", "message", "fix", "context"):
+                self.assertIn(key, d)
+
+    def test_git_snapshot_cleanup_dry_run(self) -> None:
+        """--cleanup --dry-run 不实际删除任何备份。"""
+        result = run_script(
+            "engineering-paper-humanizer/scripts/git_snapshot.py",
+            "--cleanup",
+            "--dry-run",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("模拟清理", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
