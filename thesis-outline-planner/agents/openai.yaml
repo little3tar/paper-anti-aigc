@@ -1,0 +1,4 @@
+interface:
+  display_name: "Thesis Outline Planner"
+  short_description: "Plan sourced thesis outlines."
+  default_prompt: "Plan an evidence-based thesis outline from my task book and research requirements."

@@ -1,0 +1,63 @@
+[
+  {
+    "skill_name": "thesis-writing-workflow",
+    "query": "我有任务书和几章草稿，想从大纲、证据审计、润色到最终格式清理完整跑一遍，但每个关键节点先让我确认。",
+    "should_trigger": true,
+    "expected_reason": "请求完整 thesis workflow、确认点和多阶段协作。"
+  },
+  {
+    "skill_name": "thesis-outline-planner",
+    "query": "根据我的毕业设计任务书，帮我规划一份中文工程类论文大纲，列出每章需要的文献、图表和后续要补的实验材料。",
+    "should_trigger": true,
+    "expected_reason": "任务书到章节结构、证据需求和图表计划。"
+  },
+  {
+    "skill_name": "evidence-grounded-chapter-writer",
+    "query": "按已经确认的第三章细纲继续写 3.2 节，保留参考文献占位、图表占位和缺参数清单，没证据的不要写成定论。",
+    "should_trigger": true,
+    "expected_reason": "基于已确认章节目标起草，并要求 source markers 和 evidence gaps。"
+  },
+  {
+    "skill_name": "reference-integrity-auditor",
+    "query": "审计这段论文草稿有没有 unsupported claims、疑似编造文献、标准规范缺版本号和公式无法复现的问题。",
+    "should_trigger": true,
+    "expected_reason": "明确要求证据完整性、标准规范和计算链审计。"
+  },
+  {
+    "skill_name": "engineering-paper-humanizer",
+    "query": "这几段中文工程论文已经审过证据了，帮我降 AI 味，去掉套话和破折号，但不要改公式、参数和技术结论。",
+    "should_trigger": true,
+    "expected_reason": "正文润色、去 AI 味，并保护技术含义。"
+  },
+  {
+    "skill_name": "academic-format-cleaner",
+    "query": "帮我检查这个 tex 文件的 \\cite{} 位置、百分号转义、命令断行和临时占位符，正文内容不要润色。",
+    "should_trigger": true,
+    "expected_reason": "LaTeX 格式层清理。"
+  },
+  {
+    "skill_name": "engineering-paper-humanizer",
+    "query": "帮我把这份论文草稿里的每个结论都补上真实参考文献，缺的你直接找几篇看起来合适的。",
+    "should_trigger": false,
+    "expected_reason": "这是证据补全/来源核验风险场景，应先用 reference-integrity-auditor 或检索流程，不能直接 humanizer。"
+  },
+  {
+    "skill_name": "academic-format-cleaner",
+    "query": "帮我重写第二章研究现状，让表达更像中文论文。",
+    "should_trigger": false,
+    "expected_reason": "这是正文改写需求，应触发 engineering-paper-humanizer 或章节写作，不是格式清理。"
+  },
+  {
+    "skill_name": "thesis-outline-planner",
+    "query": "只检查 README 里的 Markdown 表格有没有断列。",
+    "should_trigger": false,
+    "expected_reason": "普通 Markdown 格式检查，不是论文任务书到大纲规划。"
+  },
+  {
+    "skill_name": "reference-integrity-auditor",
+    "query": "把这段文字改得更自然一点，语气不要像 AI。",
+    "should_trigger": false,
+    "expected_reason": "润色需求，不是证据完整性审计。"
+  }
+]
+
