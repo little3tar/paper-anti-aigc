@@ -1,32 +1,32 @@
-# Citation Marker And Source Rules
+# 引用标记与来源规则
 
-## Working Citation Markers
+## 工作稿引用标记
 
-- `[参考文献]`: formal citation placeholder inside the chapter draft.
-- `[文献题名]`: local library or Zotero evidence note, using the source title as the marker text.
-- `[网络资料: 检索词或网页标题]`: web evidence note.
-- `[标准规范: 标准号或规范名称]`: working note for a standard, code, specification, acceptance requirement, or limit-value source before formal citation conversion.
-- `[用户材料: 文件名或材料名]`: user-provided material.
-- Missing evidence: keep unsupported claims out of the thesis body and record the needed evidence in `未写入正文的待补资料` or `证据缺口清单`.
+- `[参考文献]`：章节草稿内的正式引用占位符。
+- `[文献题名]`：本地文库或 Zotero 证据注释，使用来源题名作为标记文本。
+- `[网络资料: 检索词或网页标题]`：网络证据注释。
+- `[标准规范: 标准号或规范名称]`：标准、规范、规程、验收要求或限值来源在正式引用转换前的工作标注。
+- `[用户材料: 文件名或材料名]`：用户提供的材料。
+- 缺失证据：将无支撑的结论排除在正文之外，在 `未写入正文的待补资料` 或 `证据缺口清单` 中记录所需证据。
 
-## Title-Based Markers
+## 题名标记规则
 
-- Chinese source: keep the original Chinese title exactly.
-- English source: keep the original English title exactly.
-- Duplicate title: append author and year with spaces inside the marker.
+- 中文来源：保留原中文题名，不做任何改动。
+- 英文来源：保留原英文题名，不做任何改动。
+- 重复题名：在标记内追加作者和年份，以空格分隔。
 
-Examples:
+示例：
 
 - `[基于神经网络的悬臂式掘进机自适应截割控制系统研究]`
 - `[A development in rock cutting technology]`
 - `[A development in rock cutting technology Hood 2000]`
 
-## Writing Constraints
+## 写作约束
 
-Do not convert source notes into formal bibliography entries unless the source metadata is available. Do not fabricate authors, journals, years, DOI, standards numbers, or equipment parameters.
+除非来源元数据完整可用，否则不要将来源注释转换为正式参考文献条目。不得编造作者、期刊、年份、DOI、标准号或设备参数。
 
-When evidence is missing, omit the unsupported claim from the thesis body. Use the handoff, gap list, or ledger to record what evidence is needed.
+证据缺失时，将无支撑的结论从正文中移除。在交接文件、缺口清单或台账中记录所需证据。
 
-When standards or specifications are verified, integrate them into the thesis body as formal support for design parameters, limit values, selection basis, acceptance requirements, or safety margins. The body text should state the standard name, standard number, version/year, and applicable clause or scope when available, followed by `[参考文献]` or the final citation style required by the thesis template.
+标准或规范经核验后，应作为正式支撑融入正文，用于支撑设计参数、限值、选型依据、验收要求或安全裕量。正文应写明标准名称、标准号、版本/年份和适用条款或范围（如可获取），并附带 `[参考文献]` 或论文模板要求的最终引用格式。
 
-When standards or specifications are missing or unverified, record the needed standard name, candidate standard number, issuing body, version/year, clause scope, and likely official search path. Do not write a standard requirement as a final rule until the version and applicability are verified.
+标准或规范缺失或未核验时，记录所需的标准名称、候选标准号、发布机构、版本/年份、条款范围和可能的官方检索路径。在版本和适用性得到核验之前，不得将标准要求写成最终定论。

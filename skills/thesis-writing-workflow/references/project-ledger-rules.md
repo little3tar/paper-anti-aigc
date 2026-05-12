@@ -1,19 +1,19 @@
-# Project Ledger Rules
+# 项目台账规则
 
-Default location: `.thesis-workflow/project-ledger.md` in the thesis project root. Do not create or update a project ledger inside the reusable skill directory.
+默认位置：论文项目根目录下的 `.thesis-workflow/project-ledger.md`。不要在可复用的 skill 目录中创建或更新项目台账。
 
-Use a project ledger for long thesis projects where confirmed facts, data, formulas, sources, and decisions must survive across chapters and agent sessions. In an active thesis workflow, the ledger is a normal running artifact: read it at the start of each stage and update it at the end when the stage changes confirmed information or open evidence gaps.
+项目台账用于长期论文项目，需要已确认的事实、数据、公式、来源和决策跨章节和跨 Agent 会话保留。在活跃的论文工作流中，台账是常规运行产物：每个阶段开始时读取，阶段结束时若变更了已确认信息或开放证据缺口则更新。
 
-## Location
+## 存放位置
 
-Do not write project-specific data into skill folders. Store it in the user's thesis workspace. The default is one file:
+不要将项目特定数据写入 skill 文件夹。保存在用户的论文工作区中。默认为一个文件：
 
 ```text
 .thesis-workflow/
   project-ledger.md
 ```
 
-If the project becomes too large, the same sections may be split into separate files under `.thesis-workflow/ledger/`, for example:
+如果项目规模过大，可将相同分区拆分为 `.thesis-workflow/ledger/` 下的独立文件，例如：
 
 ```text
 .thesis-workflow/ledger/
@@ -25,79 +25,79 @@ If the project becomes too large, the same sections may be split into separate f
   chapter-status.md
 ```
 
-If the user does not want files, keep the same sections in the chat handoff.
+如果用户不希望创建文件，在对话交接文件中保留同样的分区内容。
 
-## When To Ask
+## 何时询问
 
-Ask only when the thesis project root or the user's willingness to keep workflow files is unclear. If `.thesis-workflow/` already exists, or the user has asked to run the thesis workflow, create or update `.thesis-workflow/project-ledger.md` without a separate confirmation prompt.
+仅在论文项目根目录或用户是否愿意保留工作流文件不明确时询问。若 `.thesis-workflow/` 已存在，或用户已要求运行论文工作流，则直接创建或更新 `.thesis-workflow/project-ledger.md`，无需单独确认。
 
-When a confirmation is needed, ask:
+需要确认时，询问：
 
 "是否创建 `.thesis-workflow/project-ledger.md`，用于保存已确认的内容、数据、公式、来源和章节状态？"
 
-If the user has explicitly preauthorized confirmations or file generation, create the ledger and record the authorization in `decisions.md` or the handoff report instead of asking again.
+如果用户已明确预授权确认或文件生成，直接创建台账并将授权记录在 `decisions.md` 或交接报告中，不再重复询问。
 
-If files already exist, read them before planning, drafting, auditing, humanizing, or format cleanup. Update them after each relevant stage; use `draft`, `needs-source`, or `needs-user-data` for unconfirmed items instead of presenting them as confirmed facts.
+如果文件已存在，在规划、起草、审计、润色或格式清理前先读取。每个相关阶段结束后更新；未确认项使用 `draft`、`needs-source` 或 `needs-user-data`，不要将其呈现为已确认事实。
 
-## Ledger Contents
+## 台账内容
 
 ### `facts.md`
 
-Confirmed task requirements, object descriptions, known constraints, terminology, and user-approved statements.
+已确认的任务要求、对象描述、已知约束、术语和用户批准的陈述。
 
-Recommended columns:
+推荐列：
 
-| ID | Fact | Type | Source | Status | Notes |
+| ID | 事实 | 类型 | 来源 | 状态 | 备注 |
 | --- | --- | --- | --- | --- | --- |
 
 ### `formulas.md`
 
-Confirmed formulas, symbol definitions, assumptions, and derivation notes.
+已确认的公式、符号定义、假设和推导说明。
 
-Recommended columns:
+推荐列：
 
-| ID | Formula | Purpose | Symbols | Source | Applies to | Status |
+| ID | 公式 | 用途 | 符号 | 来源 | 适用章节 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
 
 ### `sources.md`
 
-Zotero/local/web/user sources and title-based source markers.
+Zotero/本地/网络/用户来源及题名式 source marker。
 
-Recommended columns:
+推荐列：
 
-| Marker | Title | Authors/Year | Source type | Search keyword | Used in | Notes |
+| Marker | 题名 | 作者/年份 | 来源类型 | 检索词 | 使用章节 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
 
 ### `decisions.md`
 
-User-approved outline choices, design choices, terminology choices, and output format decisions.
+用户批准的大纲选择、设计选择、术语选择和输出格式决策。
 
-Recommended columns:
+推荐列：
 
-| Date | Decision | Reason | Scope | Open issues |
+| 日期 | 决策 | 理由 | 范围 | 待解决问题 |
 | --- | --- | --- | --- | --- |
 
 ### `figures-tables.md`
 
-Planned figures, tables, required data, and generation status.
+规划的图表、所需数据和生成状态。
 
-Recommended columns:
+推荐列：
 
-| ID | Placeholder | Needed content | Source/data | Target chapter | Status |
+| ID | 占位符 | 所需内容 | 来源/数据 | 目标章节 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 
 ### `chapter-status.md`
 
-Chapter-level status.
+章节级状态。
 
-Recommended columns:
+推荐列：
 
-| Chapter | Outline | Evidence | Draft | Audit | Humanize | Format | Notes |
+| 章节 | 大纲 | 证据 | 草稿 | 审计 | 润色 | 格式 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-## Status Labels
+## 状态标签
 
-Use these labels:
+使用以下标签：
 
 - `confirmed`
 - `draft`
@@ -106,4 +106,4 @@ Use these labels:
 - `derived`
 - `superseded`
 
-Never overwrite confirmed data silently. Add a new row or mark the old row as `superseded`.
+永远不要静默覆盖已确认数据。新增一行或将旧行标记为 `superseded`。

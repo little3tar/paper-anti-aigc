@@ -1,4 +1,4 @@
-# Project Ledger Rules
+# 项目台账规则
 
 规范的 project ledger 结构、状态标签和完整列定义见 `thesis-writing-workflow/references/project-ledger-rules.md`。
 

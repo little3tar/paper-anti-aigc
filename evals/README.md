@@ -1,5 +1,5 @@
-# Skill Trigger Evals
+# Skill 触发评估
 
-`trigger-evals.json` contains lightweight trigger and near-miss prompts for the six thesis skills.
+`trigger-evals.json` 包含六个论文 skills 的轻量级触发提示和近误提示。
 
-Use it when revising descriptions in `SKILL.md` frontmatter. Positive cases should clearly activate the named skill; negative cases are adjacent requests that should route elsewhere.
+用于修订 `SKILL.md` frontmatter 中的 description。正面案例应清晰激活指定 skill；负面案例是应路由到其他位置的相邻请求。

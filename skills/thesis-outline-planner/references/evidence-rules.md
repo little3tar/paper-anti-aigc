@@ -1,62 +1,62 @@
-# Evidence Rules For Thesis Planning
+# 论文规划证据规则
 
-## Source Priority
+## 来源优先级
 
-1. Zotero MCP or local literature MCP.
-2. User-provided files, exported BibTeX/RIS/CSV, notes, task books, and advisor comments.
-3. Official websites, standards databases, journal pages, patents, university repositories, and manufacturer pages.
-4. General web pages only when no better source is available.
+1. Zotero MCP 或本地文献 MCP。
+2. 用户提供的文件、导出的 BibTeX/RIS/CSV、笔记、任务书和导师意见。
+3. 官方网站、标准数据库、期刊页面、专利、高校文库和厂商页面。
+4. 仅在无更好来源时使用普通网页。
 
-Standards and specifications are not ordinary literature. If the topic depends on industry standards, national standards, codes, procedures, acceptance requirements, or limit values, search for them explicitly even when the user's Zotero library has no matching item. Verified standards should be planned as formal thesis evidence, not merely as background notes.
+标准规范不是普通文献。如果课题依赖行业标准、国家标准、规范、规程、验收要求或限值，即使用户的 Zotero 文库中没有匹配条目也应显式检索。已核验的标准应规划为正式论文证据，而不仅仅是背景说明。
 
-## Literature Pool
+## 文献池
 
-Use tiered source targets:
+按任务规模分层：
 
-- Real full thesis plan: aim for 30-50 relevant sources across the whole thesis.
-- Single chapter or section draft: aim for 5-10 directly relevant sources.
-- Workflow validation or minimal dry-run: 2-5 sources are enough when the goal is to test the process.
+- 真实完整论文计划：全篇目标 30-50 篇相关文献。
+- 单章或小节草稿：目标 5-10 篇直接相关文献。
+- 工作流验证或最小化演练：2-5 篇足以测试流程。
 
-For a full thesis plan, cover:
+完整论文计划应覆盖：
 
-- Core background and problem context.
-- Main object, system, method, or domain being studied.
-- Key theories, models, formulas, or design methods.
-- Experiments, simulations, datasets, algorithms, or validation methods when applicable.
-- Standards, patents, manuals, manufacturer materials, official reports, or authoritative industry sources when applicable.
-- User-created materials needed later, such as drawings, measurements, experiment logs, simulation screenshots, program outputs, equipment selections, site photos, and advisor annotations.
-- Comparable domestic and international work.
+- 核心背景和问题语境。
+- 正在研究的主要对象、系统、方法或领域。
+- 关键理论、模型、公式或设计方法。
+- 实验、仿真、数据集、算法或验证方法（如适用）。
+- 标准、专利、手册、厂商材料、官方报告或权威行业来源（如适用）。
+- 后续需要的用户自制材料，如图纸、测量数据、实验记录、仿真截图、程序输出、设备选型、现场照片和导师批注。
+- 可比较的国内外研究。
 
-Do not fabricate references to meet the count. If the pool is smaller, report the gap and suggest search terms.
+不要为了凑数而编造参考文献。文献池偏小时，如实报告缺口并给出检索建议。
 
-## Evidence Gaps
+## 证据缺口
 
-Missing evidence belongs in a planning or audit section, not in the thesis body. Use a `证据缺口清单` with:
+缺失证据应放在规划或审计章节中，不要放在论文正文中。使用 `证据缺口清单` 并包含：
 
-| Topic | Needed evidence | Likely search terms | Affected section |
+| 主题 | 所需证据 | 可能的检索词 | 影响章节 |
 | --- | --- | --- | --- |
 
-For standards/specifications, include standard name, candidate standard number, issuing body, year/version, and clause scope when known. If verified, mark where it should enter the thesis body as design basis, parameter basis, acceptance basis, limit-value basis, or safety-margin basis.
+对于标准/规范，如已知，应包含标准名称、候选标准号、发布机构、年份/版本和条款范围。若已核验，标明其应作为设计依据、参数依据、验收依据、限值依据或安全裕量依据进入正文的位置。
 
-Only write a claim into the body when it is supported by an existing source, user-provided material, confirmed design assumption, verified standard/specification, or reproducible derivation.
+仅在获得现有来源、用户提供材料、已确认设计假设、已核验标准/规范或可复现推导支撑后，才将结论写入正文。
 
-## Approval Checkpoints
+## 确认检查点
 
-Ask for confirmation at these points unless the user already requested continuous execution:
+除非用户已要求连续执行，在以下位置征求确认：
 
-1. Output format confirmation.
-2. Thesis outline confirmation.
-3. Chapter writing start confirmation.
-4. File generation confirmation when creating `.tex`, `.md`, `.txt`, or other deliverables changes the workflow.
+1. 输出格式确认。
+2. 论文大纲确认。
+3. 章节写作开始确认。
+4. 当创建 `.tex`、`.md`、`.txt` 或其他交付物会改变工作流时，征求文件生成确认。
 
-Use short questions. Avoid asking for information that can be inferred from the supplied task book.
+使用简短问题。避免询问可从已提供任务书中推断的信息。
 
-## Formula Planning
+## 公式规划
 
-When planning technical theses, mark formula support by need rather than by fixed chapter type:
+规划技术论文时，按需求标记公式支撑，不按固定章型标记：
 
-- Formula-light: background, research status, chapter organization, qualitative requirement analysis.
-- Formula-supported: design reasoning, model description, method comparison, evaluation index definition.
-- Formula-heavy: quantitative design, parameter calculation, mathematical modeling, algorithm derivation, experiment/simulation analysis, optimization, verification.
+- 公式轻度：背景、研究现状、章节组织、定性需求分析。
+- 公式支撑：设计推理、模型描述、方法比较、评价指标定义。
+- 公式重度：定量设计、参数计算、数学建模、算法推导、实验/仿真分析、优化、验证。
 
-For formula-heavy sections, reserve space for formula blocks, symbol tables, parameter source tables, substitution steps, unit checks, and result/margin tables. Do not name domain-specific formulas unless the user's task or evidence calls for them.
+公式重度章节预留公式块、符号表、参数来源表、代入步骤、单位检查和结果/裕量表的空间。除非用户的课题或证据明确要求，不要命名领域专属公式。

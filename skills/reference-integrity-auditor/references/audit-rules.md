@@ -1,23 +1,23 @@
-# Reference Audit Rules
+# 参考文献审计规则
 
-## Claims That Need Evidence
+## 需要证据支撑的声明
 
-- Equipment dimensions, pressure, flow, power, speed, accuracy, frequency, amplitude, service life, and efficiency.
-- Statements comparing methods, such as "better than", "lower than", "higher efficiency", or "more reliable".
-- Research-status claims, such as "few studies", "widely used", "mainstream", or "mature".
-- Named technologies, products, standards, patents, and algorithms.
-- Experimental conclusions and simulation results.
+- 设备尺寸、压力、流量、功率、转速、精度、频率、振幅、使用寿命和效率。
+- 方法比较类陈述，如"优于""低于""效率更高""更可靠"等。
+- 研究现状判断，如"研究较少""广泛使用""主流""成熟"等。
+- 具名技术、产品、标准、专利和算法。
+- 实验结论和仿真结果。
 
-## Claims That May Not Need External Evidence
+## 可不需要外部证据的声明
 
-- The user's task requirements when marked as user material.
-- Definitions derived directly from formulas shown in the text.
-- The author's own design decisions when written as assumptions or design choices.
-- Chapter organization descriptions.
+- 用户任务书中已标注为设计要求的条目。
+- 由正文公式直接推导出的定义。
+- 作者自身的设计决策，当写成设计假设或设计选择时。
+- 章节组织描述。
 
-## Severity
+## 严重程度分级
 
-- P0: fabricated-looking or likely false claim.
-- P1: important claim lacks source.
-- P2: source marker exists but cannot be resolved.
-- P3: formatting or consistency issue.
+- P0：疑似伪造或很可能为错误的声明。
+- P1：重要声明缺少来源。
+- P2：有 source marker 但无法解析为可用引用。
+- P3：格式或一致性问题。

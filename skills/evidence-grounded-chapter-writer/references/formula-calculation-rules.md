@@ -1,80 +1,80 @@
-# Formula And Calculation Rules
+# 公式与计算规则
 
-Use these rules for technical thesis chapters that contain formulas, parameters, modeling, derivation, quantitative design, experiment/simulation data, algorithms, optimization, verification, or performance calculation.
+当技术性论文章节涉及公式、参数、建模、推导、定量设计、实验/仿真数据、算法、优化、验证或性能计算时使用本规则。
 
-## Formula Format
+## 公式格式
 
-Use LaTeX math as the single source format:
+统一使用 LaTeX math 作为唯一公式格式：
 
-- Inline formula: `$p=F/A$`
-- Display formula: `\begin{equation} ... \end{equation}`
-- Multi-line derivation: `\begin{align} ... \end{align}`
+- 行内公式：`$p=F/A$`
+- 独立公式：`\begin{equation} ... \end{equation}`
+- 多行推导：`\begin{align} ... \end{align}`
 
-Prefer standard LaTeX syntax that transfers well to Markdown, LaTeX, and Word/MathType:
+使用标准 LaTeX 语法，确保在 Markdown、LaTeX 和 Word/MathType 之间可迁移：
 
-- Use `\frac{}`, `\sqrt{}`, `^`, `_`, `\mathrm{}`, `\cdot`, `\times`, Greek letters, and `align`.
-- Avoid custom macros, package-specific commands, or complex formatting commands unless the target document requires them.
-- Keep equation labels stable if using LaTeX, for example `\label{eq:pump-flow}`.
+- 使用 `\frac{}`、`\sqrt{}`、`^`、`_`、`\mathrm{}`、`\cdot`、`\times`、希腊字母和 `align`。
+- 除非目标文档要求，避免自定义宏、包专属命令或复杂格式化命令。
+- 使用 LaTeX 时保持公式标签稳定，例如 `\label{eq:pump-flow}`。
 
-## Engineering Calculation Chain
+## 工程计算链
 
-For each important calculation, write in this order:
+对每个重要计算，按以下顺序展开：
 
-1. State the design objective or calculation purpose.
-2. Give the formula and cite its source if it is not derived in the thesis.
-3. Define every symbol after the formula.
-4. Provide a parameter table.
-5. Substitute values with units.
-6. Give the result with reasonable precision.
-7. Check unit consistency.
-8. State the engineering margin or selection conclusion.
+1. 说明设计目标或计算目的。
+2. 给出公式并注明来源（若非论文内推导）。
+3. 在公式后定义每个符号。
+4. 提供参数表。
+5. 代入数值和单位。
+6. 给出结果并保留合理有效数字。
+7. 检查单位一致性。
+8. 给出工程裕量或选型结论。
 
-## Parameter Source Types
+## 参数来源类型
 
-Every original parameter must be classified:
+每个原始参数必须分类：
 
-| Source type | Marker | Examples |
+| 来源类型 | 标记 | 示例 |
 | --- | --- | --- |
-| Literature | `[参考文献]` plus `[文献题名]` source note | empirical coefficient, material property, published equation |
-| Verified standard/specification | `[参考文献]` plus standard name/number/version in body; working note may use `[标准规范: 标准号或规范名称]` | limit value, design code, acceptance requirement, recommended pressure |
-| User task material | `[用户材料: ...]` | design requirement, target value, boundary condition |
-| Manufacturer sample/manual | `[网络资料: ...]` or `[参考文献]` | rated parameter, product limit, catalog value |
-| Design assumption | `[设计假设: ...]` | safety factor, initial value, simplification |
-| Derived calculation | `[计算导出: 公式编号]` | area, torque, power, efficiency, index value |
-| Simulation/experiment | `[仿真结果: 软件/工况]` or `[实验结果: ...]` | response, error, fluctuation, measured metric |
+| 文献 | `[参考文献]` 加 `[文献题名]` 来源注释 | 经验系数、材料属性、已发表方程 |
+| 已核验标准/规范 | `[参考文献]` 加正文中的标准名称/标准号/版本；工作标注可用 `[标准规范: 标准号或规范名称]` | 限值、设计规范、验收要求、推荐压力 |
+| 用户任务材料 | `[用户材料: ...]` | 设计要求、目标值、边界条件 |
+| 厂商样本/手册 | `[网络资料: ...]` 或 `[参考文献]` | 额定参数、产品限值、目录值 |
+| 设计假设 | `[设计假设: ...]` | 安全系数、初值、简化 |
+| 计算导出 | `[计算导出: 公式编号]` | 面积、扭矩、功率、效率、指标值 |
+| 仿真/实验 | `[仿真结果: 软件/工况]` 或 `[实验结果: ...]` | 响应、误差、波动、实测指标 |
 
-Do not present a design assumption as a measured fact. Do not present a derived value without the formula and source values. Do not write a standard requirement as a final design basis until the standard number, version/year, issuing body, and applicable clause or scope are verified.
+不得将设计假设写成实测事实。不得在缺少公式和原始数值的情况下给出导出值。不得在标准号、版本/年份、发布机构和适用条款或范围未核验的情况下将标准要求写成最终设计依据。
 
-## Standards In Body Text
+## 正文中的标准规范
 
-Verified standards and specifications should be integrated into the thesis body when they support design parameters, limit values, selection basis, acceptance requirements, or safety margins. The sentence should name the standard, standard number, version/year, and applicable scope or clause when available, and keep a formal citation placeholder such as `[参考文献]`.
+已核验的标准规范应在支撑设计参数、限值、选型依据、验收要求或安全裕量时融入正文。句子中写明标准名称、标准号、版本/年份和适用范围或条款（如可获取），并保留正式引用占位符如 `[参考文献]`。
 
-Use `[标准规范: ...]` as a working note while drafting or auditing. Before final cleanup, either convert it into a formal citation-supported sentence or move it to `证据缺口清单` if the standard remains unverified.
+起草或审计期间使用 `[标准规范: ...]` 作为工作标注。格式最终清理前，将其转换为正式引用支撑的句子；若标准仍未核验，移入 `证据缺口清单`。
 
-## Symbol Table
+## 符号表
 
-After important formulas, include or update a symbol table:
+重要公式后附或更新符号表：
 
-| Symbol | Meaning | Unit | Value | Source |
+| 符号 | 含义 | 单位 | 值 | 来源 |
 | --- | --- | --- | --- | --- |
 
-Use consistent symbols across the chapter. If a symbol changes meaning between sections, rename it.
+整章使用一致的符号。若符号在不同节中含义改变，更换符号名。
 
-## Data Integrity
+## 数据完整性
 
-- Preserve all source values exactly unless unit conversion is explicitly shown.
-- Use SI units by default and state conversions.
-- Keep effective figures reasonable for engineering design.
-- If a numeric value has no source, keep it out of the body and record the missing parameter in `未写入正文的待补资料` or the project ledger.
-- If a formula is standard but no source is available, keep it as a formula plan outside the final body until the source or derivation basis is supplied.
+- 保留所有原始数值不变，除非显式展示了单位换算。
+- 默认使用国际单位制并注明换算。
+- 保持工程设计中合理的有效位数。
+- 没有来源的数值不得进入正文，在 `未写入正文的待补资料` 或 project ledger 中记录缺失参数。
+- 若公式为标准公式但没有可用来源，在获得来源或推导依据前将其作为公式计划保留在正文之外。
 
-## Formula Need Classification
+## 公式需求分级
 
-Do not assume that a chapter needs formulas only because it is not the introduction. Classify sections by task:
+不要仅因为某章不是引言就假定需要公式。按任务分类：
 
-- No formula required: purely narrative background, policy context, chapter organization, qualitative review.
-- Formula optional: conceptual design, qualitative comparison, requirement decomposition.
-- Formula recommended: performance index definition, method comparison, model description, data processing.
-- Formula required: quantitative design, parameter calculation, model derivation, algorithm derivation, experiment/simulation analysis, optimization, verification, component or scheme selection with rated limits.
+- 无需公式：纯叙述性背景、政策背景、章节组织、定性综述。
+- 可选公式：概念设计、定性比较、需求分解。
+- 建议公式：性能指标定义、方法比较、模型描述、数据处理。
+- 必须公式：定量设计、参数计算、模型推导、算法推导、实验/仿真分析、优化、验证、带额定限值的元件或方案选型。
 
-"Default mark" means marking the section's expected evidence/calculation needs in the fine outline. It does not mean inventing formulas in advance. For example, write "本节需要参数来源表和单位校核，具体公式待依据设计方案确定" rather than fabricating a calculation.
+"默认标注"指在细纲中标明该节的预期证据/计算需求，而非提前编造公式。例如写"本节需要参数来源表和单位校核，具体公式待依据设计方案确定"，而不是伪造计算过程。

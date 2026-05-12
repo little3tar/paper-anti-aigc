@@ -1,39 +1,40 @@
-# Source Policy For Thesis Workflow
+# 论文工作流来源策略
 
-## Priority
+## 来源优先级
 
-1. Zotero MCP or local literature MCP.
-2. User-supplied task books, notes, PDFs, exported reference files, and advisor comments.
-3. Official documents, verified standards/specifications, patents, journal pages, manufacturer pages, and university repositories.
-4. Web search results from reliable sources.
+1. Zotero MCP 或本地文献 MCP。
+2. Zotero 笔记与标注（用户对文献的个人批注和高亮）——仅作内部参考，读取前须征求用户同意。
+3. 用户提供的任务书、笔记、PDF、导出参考文献和导师意见。
+4. 官方文件、已核验标准/规范、专利、期刊页面、厂商页面和高校文库。
+5. 可靠来源的网络搜索结果。
 
-Treat standards and specifications as a separate source class. Industry standards, national standards, codes, procedures, acceptance requirements, and limit values are often absent from a user's Zotero library; when the thesis depends on them, actively search official standard platforms, regulator or ministry pages, standards publishers, professional associations, or other reliable sources.
+标准规范作为独立来源类型处理。行业标准、国家标准、规范、规程、验收要求和限值不一定存在于用户的 Zotero 文库中；当论文依赖此类依据时，应主动搜索官方标准平台、主管部门、标准发布机构、专业协会或其他可靠来源。
 
-Verified standards are formal thesis evidence. After verifying the standard name, number, version/year, issuing body, and applicable clause or scope, integrate the requirement into the thesis body as a design basis, parameter basis, acceptance basis, limit-value basis, or safety-margin basis, with a formal citation placeholder.
+已核验的标准规范作为正式论文证据。核验标准名称、标准号、版本/年份、发布机构和适用条款或范围后，将其作为设计依据、参数依据、验收依据、限值依据或安全裕量依据写入正文，并附带正式引用占位符。
 
-## Fallback Behavior
+## 回退行为
 
-If Zotero MCP is unavailable:
+当 Zotero MCP 不可用时：
 
-1. Check whether another MCP/resource exposes local literature.
-2. Ask whether the user can provide `.bib`, `.ris`, `.csv`, PDF folders, or reference lists when local-library accuracy is required.
-3. Use web search for missing public facts only.
-4. Use external search for standards/specifications when local literature does not contain the needed standard number, version, year, issuing body, or clause scope.
+1. 检查是否有其他 MCP/资源暴露了本地文献。
+2. 当需要本地文献准确性时，询问用户能否提供 `.bib`、`.ris`、`.csv`、PDF 文件夹或参考文献清单。
+3. 仅在缺失公开事实时使用网络搜索。
+4. 当本地文献不包含所需的标准号、版本、年份、发布机构或条款范围时，使用外部搜索查找标准/规范。
 
-## Stop Conditions
+## 停止条件
 
-Stop and ask the user when:
+以下情况停止并询问用户：
 
-- The requested output format affects file creation or document tooling.
-- The outline changes the thesis scope.
-- A chapter depends on unavailable experimental data, dimensions, pressure/flow values, or advisor-specific requirements.
-- A chapter depends on user-created materials such as drawings, measurements, experiment logs, simulation screenshots, program outputs, equipment selections, site photos, or advisor annotations.
-- The draft contains P0/P1 evidence problems after audit.
+- 请求的输出格式影响文件创建或文档工具选择。
+- 大纲改变了论文范围。
+- 某章依赖不可用的实验数据、尺寸、压力/流量值或导师特定要求。
+- 某章依赖用户自制材料，如图纸、测量数据、实验记录、仿真截图、程序输出、设备选型、现场照片或导师批注。
+- 草稿经审计后存在 P0/P1 证据问题。
 
-If the user explicitly authorized preauthorized continuous mode, do not stop for output format or workflow artifact updates; record the assumed decisions in the handoff or project ledger. Still stop for missing user-created data, unverifiable standards required for a final conclusion, unresolved P0/P1 issues in real submission work, and direct modification of a real thesis main file unless that modification was explicitly preauthorized.
+如果用户明确授权预授权连续模式，则不对输出格式和工作流产物更新暂停；在 handoff 或 project ledger 中记录假定的决策。但仍需在以下情况暂停：缺失用户自制数据、无法核验最终结论所需的标准、真实提交工作中未解决的 P0/P1 问题，以及直接修改真实论文主文件（除非该修改已被明确预授权）。
 
-## Evidence Gap Handling
+## 证据缺口处理
 
-Unsupported facts, parameters, formulas, standards, performance claims, and conclusions do not belong in the thesis body. Record them in `未写入正文的待补资料`, `证据缺口清单`, or the project ledger with the needed evidence type and likely source path. Write them into the body only after they are supported by local/Zotero evidence, user-provided material, confirmed design assumptions, verified standards/specifications, or reproducible derivation.
+无支撑的事实、参数、公式、标准、性能结论和定论不得进入论文正文。将其记录在 `未写入正文的待补资料`、`证据缺口清单` 或 project ledger 中，注明需要的证据类型和可能的来源路径。仅在获得本地/Zotero 证据、用户提供材料、已确认设计假设、已核验标准/规范或可复现推导支撑后，才将其写入正文。
 
-For unverified standards/specifications, record the needed standard name, candidate standard number, issuing body, year/version, clause range, and search source. Do not cite a standard as authoritative until the version and applicability are verified.
+对于未核验的标准/规范，记录所需的标准名称、候选标准号、发布机构、年份/版本、条款范围和搜索来源。在版本和适用性得到核验之前，不得将标准作为权威依据引用。
