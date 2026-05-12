@@ -25,7 +25,7 @@ def run_script(*args: str, cwd: Path | None = None) -> subprocess.CompletedProce
 class CheckerScriptTests(unittest.TestCase):
     def test_humanizer_checker_reports_aigc_rules(self) -> None:
         result = run_script(
-            "engineering-paper-humanizer/scripts/check_text.py",
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
             "tests/fixtures/sample_humanizer.md",
             "--format",
             "markdown",
@@ -39,7 +39,7 @@ class CheckerScriptTests(unittest.TestCase):
 
     def test_format_checker_reports_latex_errors(self) -> None:
         result = run_script(
-            "academic-format-cleaner/scripts/check_format.py",
+            "skills/academic-format-cleaner/scripts/check_format.py",
             "tests/fixtures/sample_format.tex",
             "--json",
         )
@@ -51,13 +51,13 @@ class CheckerScriptTests(unittest.TestCase):
         self.assertIn("LATEX-002", rule_ids)
 
     def test_format_dictionary_usage_points_to_format_generator(self) -> None:
-        result = run_script("academic-format-cleaner/scripts/generate_format_dict.py")
+        result = run_script("skills/academic-format-cleaner/scripts/generate_format_dict.py")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("generate_format_dict.py > format-dict.md", result.stdout)
         self.assertNotIn("generate_dict.py > dict.md", result.stdout)
 
     def test_git_snapshot_dry_run_does_not_init_git(self) -> None:
-        script = ROOT / "engineering-paper-humanizer/scripts/git_snapshot.py"
+        script = ROOT / "skills/engineering-paper-humanizer/scripts/git_snapshot.py"
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             target = tmp_path / "paper.md"
@@ -66,11 +66,11 @@ class CheckerScriptTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertFalse((tmp_path / ".git").exists())
             self.assertIn("模拟文件备份", result.stdout)
-            self.assertIn(".thesis-workflow/backups", result.stdout)
+            self.assertIn("最大保留", result.stdout)
 
     def test_git_snapshot_uses_git_backup_inside_repo(self) -> None:
         result = run_script(
-            "engineering-paper-humanizer/scripts/git_snapshot.py",
+            "skills/engineering-paper-humanizer/scripts/git_snapshot.py",
             "--dry-run",
             "tests/fixtures/sample_humanizer.md",
         )
@@ -81,7 +81,7 @@ class CheckerScriptTests(unittest.TestCase):
     def test_humanizer_checker_empty_file(self) -> None:
         """空文件不产生诊断。"""
         result = run_script(
-            "engineering-paper-humanizer/scripts/check_text.py",
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
             "tests/fixtures/empty.md",
             "--format",
             "markdown",
@@ -94,7 +94,7 @@ class CheckerScriptTests(unittest.TestCase):
     def test_humanizer_checker_section_filter(self) -> None:
         """--section 参数只检查指定章节。"""
         result = run_script(
-            "engineering-paper-humanizer/scripts/check_text.py",
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
             "tests/fixtures/sample_multisection.tex",
             "--section",
             "1",
@@ -109,7 +109,7 @@ class CheckerScriptTests(unittest.TestCase):
     def test_humanizer_checker_severity_filter(self) -> None:
         """--severity error 只返回 error 级别诊断。"""
         result = run_script(
-            "engineering-paper-humanizer/scripts/check_text.py",
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
             "tests/fixtures/sample_humanizer.md",
             "--format",
             "markdown",
@@ -125,7 +125,7 @@ class CheckerScriptTests(unittest.TestCase):
     def test_format_checker_markdown_math_style(self) -> None:
         """MD-MATH-001: 检测 Markdown 混合数学格式。"""
         result = run_script(
-            "academic-format-cleaner/scripts/check_format.py",
+            "skills/academic-format-cleaner/scripts/check_format.py",
             "tests/fixtures/sample_mixed_math.md",
             "--format",
             "markdown",
@@ -139,7 +139,7 @@ class CheckerScriptTests(unittest.TestCase):
     def test_format_checker_evidence_gap_marker(self) -> None:
         """MD-SOURCE-001: 检测正文中残留的证据缺口标记。"""
         result = run_script(
-            "academic-format-cleaner/scripts/check_format.py",
+            "skills/academic-format-cleaner/scripts/check_format.py",
             "tests/fixtures/sample_evidence_gap.md",
             "--format",
             "markdown",
@@ -153,7 +153,7 @@ class CheckerScriptTests(unittest.TestCase):
     def test_format_checker_no_aigc_conn(self) -> None:
         """格式检查器不应报告 AIGC-CONN（连接词检测属于 humanizer）。"""
         result = run_script(
-            "academic-format-cleaner/scripts/check_format.py",
+            "skills/academic-format-cleaner/scripts/check_format.py",
             "tests/fixtures/sample_humanizer.md",
             "--format",
             "markdown",
@@ -167,7 +167,7 @@ class CheckerScriptTests(unittest.TestCase):
     def test_humanizer_checker_json_output(self) -> None:
         """--json 输出为有效 JSON 且包含必要字段。"""
         result = run_script(
-            "engineering-paper-humanizer/scripts/check_text.py",
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
             "tests/fixtures/sample_humanizer.md",
             "--format",
             "markdown",
@@ -184,12 +184,278 @@ class CheckerScriptTests(unittest.TestCase):
     def test_git_snapshot_cleanup_dry_run(self) -> None:
         """--cleanup --dry-run 不实际删除任何备份。"""
         result = run_script(
-            "engineering-paper-humanizer/scripts/git_snapshot.py",
+            "skills/engineering-paper-humanizer/scripts/git_snapshot.py",
             "--cleanup",
             "--dry-run",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("模拟清理", result.stdout)
+
+    def test_git_snapshot_anchor_creates_marker(self) -> None:
+        """--anchor 创建锚点备份并生成 .anchor 标记文件。"""
+        script = ROOT / "skills/engineering-paper-humanizer/scripts/git_snapshot.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            target = tmp_path / "paper.md"
+            target.write_text("draft v1", encoding="utf-8")
+            result = run_script(str(script), "--anchor", str(target), cwd=tmp_path)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("锚点备份", result.stdout)
+            backup_dir = tmp_path / ".thesis-workflow" / "backups"
+            anchors = list(backup_dir.glob("*.anchor"))
+            self.assertGreater(len(anchors), 0, "锚点标记文件未创建")
+
+    def test_git_snapshot_max_backups_cli(self) -> None:
+        """--max-backups 参数可配置最大保留数。"""
+        script = ROOT / "skills/engineering-paper-humanizer/scripts/git_snapshot.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            target = tmp_path / "paper.md"
+            for i in range(7):
+                target.write_text(f"draft v{i}", encoding="utf-8")
+                run_script(str(script), "--max-backups", "3", str(target), cwd=tmp_path)
+            backup_dir = tmp_path / ".thesis-workflow" / "backups"
+            backups = list(backup_dir.glob("paper_*"))
+            self.assertLessEqual(len(backups), 3, f"应保留最多3个备份，实际: {len(backups)}")
+
+    def test_git_snapshot_anchor_immune_to_eviction(self) -> None:
+        """锚点备份不受自动淘汰影响。"""
+        script = ROOT / "skills/engineering-paper-humanizer/scripts/git_snapshot.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            target = tmp_path / "paper.md"
+            target.write_text("anchor version", encoding="utf-8")
+            run_script(str(script), "--anchor", "--max-backups", "1", str(target), cwd=tmp_path)
+            for i in range(3):
+                target.write_text(f"regular v{i}", encoding="utf-8")
+                run_script(str(script), "--max-backups", "1", str(target), cwd=tmp_path)
+            backup_dir = tmp_path / ".thesis-workflow" / "backups"
+            anchors = list(backup_dir.glob("*.anchor"))
+            self.assertGreater(len(anchors), 0, "锚点备份不应被淘汰")
+
+    def test_git_snapshot_dedup_across_all(self) -> None:
+        """内容去重应对比所有已有备份，非仅最近一次。"""
+        script = ROOT / "skills/engineering-paper-humanizer/scripts/git_snapshot.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            target = tmp_path / "paper.md"
+            target.write_text("state A", encoding="utf-8")
+            r1 = run_script(str(script), str(target), cwd=tmp_path)
+            target.write_text("state B", encoding="utf-8")
+            r2 = run_script(str(script), str(target), cwd=tmp_path)
+            target.write_text("state A", encoding="utf-8")
+            r3 = run_script(str(script), str(target), cwd=tmp_path)
+            self.assertIn("内容相同，跳过备份", r3.stdout)
+
+    def test_git_snapshot_rollback_needs_file(self) -> None:
+        """--rollback 不带目标文件时应给出提示。"""
+        script = ROOT / "skills/engineering-paper-humanizer/scripts/git_snapshot.py"
+        result = run_script(str(script), "--rollback")
+        self.assertIn("需要指定", result.stdout)
+
+    def test_git_snapshot_rollback_restores_target_file(self) -> None:
+        """--rollback 只恢复指定文件，不影响其他文件。"""
+        script = ROOT / "skills/engineering-paper-humanizer/scripts/git_snapshot.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            target = tmp_path / "paper.md"
+            other = tmp_path / "other.md"
+
+            target.write_text("original", encoding="utf-8")
+            other.write_text("other original", encoding="utf-8")
+
+            run_script(str(script), str(target), cwd=tmp_path)
+
+            target.write_text("modified", encoding="utf-8")
+            other.write_text("other modified", encoding="utf-8")
+
+            run_script(str(script), "--rollback", "--yes", str(target), cwd=tmp_path)
+
+            self.assertEqual(target.read_text(encoding="utf-8"), "original")
+            self.assertEqual(other.read_text(encoding="utf-8"), "other modified",
+                           "其他文件不应被回滚影响")
+
+    def test_plain_text_detects_markdown_headings(self) -> None:
+        """TXT-FMT-001: 检测纯文本中残留的 Markdown 标题标记。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_md_in_txt.txt",
+            "--format",
+            "plain",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("TXT-FMT-001", rule_ids)
+        self.assertIn("TXT-FMT-002", rule_ids)
+
+    def test_plain_text_detects_markdown_links_and_lists(self) -> None:
+        """TXT-FMT-005/TXT-FMT-006: 检测链接和列表标记残留。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_md_in_txt.txt",
+            "--format",
+            "plain",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("TXT-FMT-005", rule_ids)
+        self.assertIn("TXT-FMT-006", rule_ids)
+
+    def test_plain_text_detects_markdown_table(self) -> None:
+        """TXT-FMT-010: 检测纯文本中残留的表格管道符。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_md_in_txt.txt",
+            "--format",
+            "plain",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("TXT-FMT-010", rule_ids)
+
+    def test_plain_text_detects_fenced_code(self) -> None:
+        """TXT-FMT-011: 检测纯文本中残留的代码块围栏。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_md_in_txt.txt",
+            "--format",
+            "plain",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("TXT-FMT-011", rule_ids)
+
+    def test_fix_plain_text_strips_markdown(self) -> None:
+        """--fix --format plain 去除 Markdown 格式标记并输出纯文本。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            output = tmp_path / "output.txt"
+            result = run_script(
+                "skills/academic-format-cleaner/scripts/check_format.py",
+                "tests/fixtures/sample_md_in_txt.txt",
+                "--format",
+                "plain",
+                "--fix",
+                "--output",
+                str(output),
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(output.exists())
+            text = output.read_text(encoding="utf-8")
+            # 纯文本不应包含 Markdown 标记
+            self.assertNotIn("**", text)
+            self.assertNotIn("##", text)
+            self.assertNotIn("[链接文字]", text)
+            # 应保留纯文字内容
+            self.assertIn("测试标题", text)
+            self.assertIn("加粗文字", text)
+            # 表格应转换为 [表格] 标记
+            self.assertIn("[表格]", text)
+
+    def test_fix_plain_text_stdout(self) -> None:
+        """--fix --format plain 不指定 --output 时输出到 stdout。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_md_in_txt.txt",
+            "--format",
+            "plain",
+            "--fix",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        # stdout 应包含转换后的纯文本
+        self.assertIn("测试标题", result.stdout)
+        self.assertNotIn("##", result.stdout)
+
+    def test_latex_detects_empty_cite(self) -> None:
+        """LATEX-004: 检测空 \\cite{}。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_format.tex",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("LATEX-004", rule_ids)
+
+    def test_latex_detects_unescaped_underscore(self) -> None:
+        """LATEX-005: 检测中文正文中未转义的下划线。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_format.tex",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("LATEX-005", rule_ids)
+
+    def test_latex_detects_unescaped_ampersand(self) -> None:
+        """LATEX-006: 检测中文正文中未转义的 & 符号。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_format.tex",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("LATEX-006", rule_ids)
+
+    def test_latex_detects_missing_label(self) -> None:
+        """LATEX-007: 检测 \\section{} 后缺少 \\label{}。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_format.tex",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("LATEX-007", rule_ids)
+
+    def test_latex_detects_empty_item(self) -> None:
+        """STYLE-004: 检测空 \\item 行。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_format.tex",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("STYLE-004", rule_ids)
+
+    def test_latex_detects_begin_end_mismatch(self) -> None:
+        """LATEX-008: 检测 \\begin{} 与 \\end{} 不匹配。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_format.tex",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("LATEX-008", rule_ids)
+
+    def test_generate_format_dict_includes_all_rules(self) -> None:
+        """generate_format_dict.py 应包含所有规则类别，包括纯文本和新增 LaTeX 规则。"""
+        result = run_script("skills/academic-format-cleaner/scripts/generate_format_dict.py")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        # 应包含纯文本规则的格式列标记
+        self.assertIn("plain", result.stdout)
+        # 应包含 LaTeX 格式标记
+        self.assertIn("latex", result.stdout)
+        # 应有新增规则（通过其他分类展示）
+        self.assertIn("其他", result.stdout)
 
 
 if __name__ == "__main__":

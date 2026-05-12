@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 检查是否存在论文项目上下文
+THESIS_WORKFLOW_DIR=""
+if [ -d ".thesis-workflow" ]; then
+  THESIS_WORKFLOW_DIR="$(pwd)/.thesis-workflow"
+fi
+
+CONTEXT=""
+
+if [ -n "${THESIS_WORKFLOW_DIR:-}" ] && [ -f "${THESIS_WORKFLOW_DIR}/status.json" ]; then
+  STATUS=$(cat "${THESIS_WORKFLOW_DIR}/status.json" 2>/dev/null || echo "{}")
+  CONTEXT="当前论文工作流状态：${STATUS}"
+else
+  CONTEXT="论文写作技能已就绪。五个阶段：thesis-outline-planner → evidence-grounded-chapter-writer → reference-integrity-auditor → engineering-paper-humanizer → academic-format-cleaner。默认按顺序执行全部五步。用户明确指定"只运行X"时才允许局部执行。使用 thesis-writing-workflow 进行组合任务路由。"
+fi
+
+if [ -n "$CONTEXT" ]; then
+  ESCAPED=$(printf '%s' "$CONTEXT" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null || printf '%s' "$CONTEXT")
+  printf '{"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": %s}}\n' "$ESCAPED"
+fi
+
+exit 0

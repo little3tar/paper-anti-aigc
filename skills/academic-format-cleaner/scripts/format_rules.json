@@ -1,0 +1,276 @@
+{
+    "rules":  [
+                  {
+                      "id":  "CITE-001",
+                      "severity":  "error",
+                      "pattern":  "。\\s*\\\\cite\\{",
+                      "message":  "\\cite{} 出现在句号之后（应在句号内侧）",
+                      "fix":  "将 \\cite{} 移到句号前：...\\cite{xxx}。",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "CITE-002",
+                      "severity":  "error",
+                      "pattern":  "，\\s*\\\\cite\\{",
+                      "message":  "\\cite{} 出现在逗号之后（应在逗号内侧）",
+                      "fix":  "将 \\cite{} 移到逗号前：...\\cite{xxx}，",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "CITE-003",
+                      "severity":  "error",
+                      "pattern":  "(?<=[^\\s\\\\])\\s+\\\\cite\\{",
+                      "message":  "\\cite{} 前存在空格",
+                      "fix":  "删除 \\cite{} 前的空格，使其紧贴被引文字",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "LATEX-001",
+                      "severity":  "error",
+                      "pattern":  "(?<=\\d)%(?!\\s*$)",
+                      "message":  "裸百分号 % 未转义（会导致行尾截断）",
+                      "fix":  "改为 \\% 以正确显示百分号，避免行尾截断",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "LATEX-002",
+                      "severity":  "error",
+                      "pattern":  "\\\\(?:cite|label|ref|includegraphics)\\{[^}]*$",
+                      "message":  "LaTeX 命令花括号在行尾未闭合（疑似内部换行）",
+                      "fix":  "将命令参数合并到同一行，确保花括号在同一行闭合",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "STYLE-003",
+                      "severity":  "info",
+                      "pattern":  "\\\\item\\s*\\\\textbf\\{[^}]+[：:]\\}",
+                      "message":  "检测到内联标题垂直列表（\\item \\textbf{...：} 格式）",
+                      "fix":  "融合成连贯段落，禁止“名词+冒号+解释”的清单体",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "LATEX-003",
+                      "severity":  "warning",
+                      "pattern":  "\\$\\times\\$|\\times\\$",
+                      "message":  "LaTeX 数学模式占位符残留",
+                      "fix":  "补充正确的数学内容或删除占位符",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "CITE-004",
+                      "severity":  "error",
+                      "pattern":  "\\\\cite\\{[a-z]*(?:ref|temp|xxx|abc|123|001|002)\\d*\\}",
+                      "message":  "检测到疑似虚构的文献引用键名（ref/temp/xxx/abc/001 等占位符）",
+                      "fix":  "删除虚假引用，改为客观事实陈述；或替换为真实文献引用",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "CITE-005",
+                      "severity":  "error",
+                      "pattern":  "(?:等|et\\s+al\\.)\\s*\\\\cite\\{[^}]*\\}\\s*(?:20\\d{2}|19\\d{2})[^\\w\\.]*?(?:指出|的研究|的研究表明|的研究显示)",
+                      "message":  "检测到可能虚构的文献引用（作者名 + cite + 年份 + 指出/研究 结构）",
+                      "fix":  "确认引用键名是否对应真实文献，无真实依据时删除并改为客观陈述",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "CITE-006",
+                      "severity":  "warning",
+                      "pattern":  "(?:根据|依据)(?:\\w{2,}(?:等|et\\s+al\\.)[^,]{0,30}20\\d{2}[a-z]?[^\\w]的研究|[^,]{0,20}20\\d{2}[^\\w]年的研究)",
+                      "message":  "检测到可能虚构的年份式文献归因（如“根据张三2020年的研究”）",
+                      "fix":  "必须有真实的 \\cite{} 引用支撑，否则删除并改为客观陈述",
+                      "format":  [
+                                     "latex",
+                                     "markdown",
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-001",
+                      "severity":  "error",
+                      "pattern":  "^#{1,6}\\s+",
+                      "message":  "纯文本中残留 Markdown 标题标记（#）",
+                      "fix":  "去掉 # 标记和末尾 # 标记，保留标题文字",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-002",
+                      "severity":  "warning",
+                      "pattern":  "\\*\\*[^*\\n]+\\*\\*",
+                      "message":  "纯文本中残留 Markdown 加粗标记（**）",
+                      "fix":  "去掉 ** 标记",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-003",
+                      "severity":  "warning",
+                      "pattern":  "(?<!\\*)\\*(?!\\*)[^*\\s\\n][^*\\n]*[^*\\s\\n]\\*(?!\\*)",
+                      "message":  "纯文本中残留 Markdown 斜体标记（*text*）",
+                      "fix":  "去掉 * 标记",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-004",
+                      "severity":  "warning",
+                      "pattern":  "`[^`\\n]+`",
+                      "message":  "纯文本中残留 Markdown 行内代码标记（`）",
+                      "fix":  "去掉反引号",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-005",
+                      "severity":  "warning",
+                      "pattern":  "\\[[^\\]]+\\]\\([^)\\n]+\\)",
+                      "message":  "纯文本中残留 Markdown 链接语法 [text](url)",
+                      "fix":  "保留链接文字，去除 URL 和括号语法",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-006",
+                      "severity":  "warning",
+                      "pattern":  "^(?:\\s*(?:[-*+]|\\d+[.)])\\s+)",
+                      "message":  "纯文本中残留 Markdown 列表标记（- / * / 1.）",
+                      "fix":  "去掉列表标记符号，保留列表内容并适当缩进",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-007",
+                      "severity":  "warning",
+                      "pattern":  "^(?:\\s*>\\s*)+",
+                      "message":  "纯文本中残留 Markdown 引用标记（>）",
+                      "fix":  "去掉 > 标记，嵌套引用内容转为普通缩进文字",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-008",
+                      "severity":  "info",
+                      "pattern":  "!\\[[^\\]]*\\]\\([^)\\n]+\\)",
+                      "message":  "纯文本中残留 Markdown 图片语法 ![alt](url)",
+                      "fix":  "替换为 [图片: 描述文字] 或删除",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-009",
+                      "severity":  "info",
+                      "pattern":  "^(?:-{3,}|\\*{3,}|_{3,})\\s*$",
+                      "message":  "纯文本中残留 Markdown 水平线（---/***/___）",
+                      "fix":  "替换为单个空行",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-010",
+                      "severity":  "error",
+                      "pattern":  "^\\|.*\\|\\s*$",
+                      "message":  "纯文本中残留 Markdown 表格管道符（|...|）",
+                      "fix":  "转换为缩进文本格式或 [表格] 标记形式，表头与数据行用空行分隔",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-011",
+                      "severity":  "error",
+                      "pattern":  "^\\s*```",
+                      "message":  "纯文本中残留 Markdown 代码块围栏（```）",
+                      "fix":  "去掉围栏行，保留代码内容并适当缩进",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "TXT-FMT-012",
+                      "severity":  "error",
+                      "pattern":  "^\\s*~~~",
+                      "message":  "纯文本中残留 Markdown 代码块围栏（~~~）",
+                      "fix":  "去掉围栏行，保留代码内容并适当缩进",
+                      "format":  [
+                                     "plain"
+                                 ]
+                  },
+                  {
+                      "id":  "LATEX-004",
+                      "severity":  "error",
+                      "pattern":  "\\\\cite\\{\\s*\\}",
+                      "message":  "\\cite{} 为空引用，缺少引用键名",
+                      "fix":  "填入正确的引用键名，或删除此引用标记",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "LATEX-005",
+                      "severity":  "warning",
+                      "pattern":  "[\\u4e00-\\u9fff]\\s*_\\s*[\\u4e00-\\u9fff]",
+                      "message":  "中文正文中可能存在未转义的下划线（_ 在 LaTeX 中应用 \\_ 或放入数学模式）",
+                      "fix":  "将 _ 改为 \\_ 或确认其在数学模式内",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "LATEX-006",
+                      "severity":  "warning",
+                      "pattern":  "[\\u4e00-\\u9fff]\\s*&\\s*[\\u4e00-\\u9fff]",
+                      "message":  "中文正文中可能存在未转义的 & 符号（LaTeX 中应用 \\&）",
+                      "fix":  "将 & 改为 \\& 或确认其在表格/对齐环境内",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "LATEX-007",
+                      "severity":  "info",
+                      "pattern":  "\\\\section\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\}\\s*$",
+                      "message":  "\\section{} 后缺少 \\label{}，可能影响交叉引用",
+                      "fix":  "建议添加 \\label{sec:...} 以便交叉引用",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  },
+                  {
+                      "id":  "STYLE-004",
+                      "severity":  "warning",
+                      "pattern":  "^\\s*\\\\item\\s*$",
+                      "message":  "\\item 行无内容（疑似残留空列表条目）",
+                      "fix":  "补全条目内容或删除空 \\item",
+                      "format":  [
+                                     "latex"
+                                 ]
+                  }
+              ]
+}

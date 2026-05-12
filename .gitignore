@@ -1,13 +1,40 @@
+# ── 第一类：一定生成在 skills 仓库内的 ──────────────────────────
+# Python 字节码缓存
 **/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# 工具缓存目录
 .ruff_cache/
 .uv-cache/
-workflow-validation-*/
-.thesis-workflow/
-.humanizer-backups/
-*.bak
+.pytest_cache/
+
+# IDE / 桌面残留
+**/.DS_Store
+Thumbs.db
+
+# Claude Code 本地配置
+.claude/
+
+# ── 第二类：在仓库内运行脚本时输出的速查表 ──────────────────────
+# README 中演示的 `python generate_dict.py > dict.md` 等命令
+# 如果在 skills 根目录执行，产物会落在仓库内
 dict.md
 dict-*.md
 format-dict.md
 format-dict-*.md
+
+# ── 第三类：防御性规则（论文项目产物，正常不落在此处） ──────────
+# 这些文件属于论文项目根目录下的 .thesis-workflow/。
+# 仅当从 skills 目录运行脚本且未正确设置工作目录时才会意外生成于此。
+# 保留这些规则以防止开发/测试时的误提交。
+.thesis-workflow/
+.humanizer-backups/
+*.bak
+*.anchor
 **/references/main-tex-context.md
-.claude/
+
+node_modules
+package.json
+package-lock.json
+bun.lock
