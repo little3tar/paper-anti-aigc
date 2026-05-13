@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+"""PreToolUse 钩子：论文工作流阶段门控。
+
+三道防线：
+1. 主文件保护 — 阶段未完成时禁止写入 main.md/txt/tex
+2. P0/P1 阻塞 — 证据未清零时禁止写入 04/05 阶段产物
+3. 跳阶段确认 — 缺少上游产物时要求用户确认
+
+设计要点：
+- 所有 AI 需要看到的指引放在 permissionDecisionReason（AI 可见），
+  不在 systemMessage（仅用户可见，AI 看不到 — GitHub issue #26423）。
+- deny 用于硬性违规，ask 用于需要用户确认的边界情况。
+"""
+
+import json
+import os
+import sys
+
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+from pathlib import Path
+
+
+def find_workflow_dir() -> Path | None:
+    cwd = Path.cwd()
+    for parent in [cwd, *cwd.parents]:
+        candidate = parent / ".thesis-workflow"
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
+def read_status(workflow_dir: Path) -> dict | None:
+    status_path = workflow_dir / "status.json"
+    if not status_path.is_file():
+        return None
+    try:
+        return json.loads(status_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def read_main_file_path(workflow_dir: Path) -> set[str]:
+    main_files: set[str] = set()
+    for stem in ("main", "thesis", "dissertation", "paper"):
+        for ext in (".md", ".txt", ".tex"):
+            main_files.add(f"{stem}{ext}")
+    ctx_path = workflow_dir / "main-tex-context.md"
+    if ctx_path.is_file():
+        try:
+            import re
+            text = ctx_path.read_text(encoding="utf-8")
+            for line in text.splitlines():
+                s = line.strip()
+                if s.startswith("主文件:") or s.lower().startswith("main file:"):
+                    p = s.split(":", 1)[1].strip()
+                    if p:
+                        main_files.add(p)
+                m = re.search(r"`([^`]+\.(?:tex|md|txt))`", s)
+                if m:
+                    main_files.add(m.group(1))
+        except OSError:
+            pass
+    return main_files
+
+
+def is_main_thesis_file(file_path: str, workflow_dir: Path) -> bool:
+    if "/.thesis-workflow/" in file_path or file_path.startswith(".thesis-workflow"):
+        return False
+    if "/skills/" in file_path:
+        return False
+    fname = os.path.basename(file_path)
+    main_names = read_main_file_path(workflow_dir)
+    if fname in main_names:
+        return True
+    for stem in ("main", "thesis", "dissertation", "paper"):
+        for ext in (".md", ".txt", ".tex"):
+            if fname == f"{stem}{ext}":
+                return True
+    return False
+
+
+def is_stage_product(file_path: str, stage: str) -> bool:
+    products = {
+        "04": "04-humanized.md",
+        "05": "05-format-cleaned.md",
+        "02": "02-chapter-draft.md",
+    }
+    target = products.get(stage, "")
+    return bool(target) and file_path.endswith(target)
+
+
+def upstream_exists(workflow_dir: Path, filename: str) -> bool:
+    return (workflow_dir / filename).is_file()
+
+
+def make_deny(reason: str) -> dict:
+    """硬性拒绝。reason 写入 permissionDecisionReason（AI 可见）。"""
+    return {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": reason,
+        },
+    }
+
+
+def make_ask(reason: str) -> dict:
+    """要求用户确认。reason 写入 permissionDecisionReason（AI 和用户均可见）。"""
+    return {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "ask",
+            "permissionDecisionReason": reason,
+        },
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 防线
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def check_main_file_protection(file_path: str, workflow_dir: Path, status: dict | None):
+    """防线 1：主文件保护 — 阶段未完成禁止写入 main.md/txt/tex。"""
+    if not is_main_thesis_file(file_path, workflow_dir):
+        return None
+
+    if status is None:
+        return None
+
+    na = status.get("next_allowed", "")
+    p0 = status.get("p0_count", -1)
+    p1 = status.get("p1_count", -1)
+
+    if na in ("next-chapter", "format-cleaner"):
+        return None
+    if na == "humanizer" and p0 == 0 and p1 == 0:
+        return None
+
+    reason = (
+        f"论文工作流未完成全部五个阶段，禁止直接写入主文件 ({os.path.basename(file_path)})。"
+        f"当前状态: next_allowed={na}, P0={p0}, P1={p1}。"
+        f"草稿应写入 .thesis-workflow/02-chapter-draft.md。"
+        f"最终文本在全部阶段完成、用户显式确认后方可写入主文件。"
+        f"详见 workflow §输出与文件安全 和 §阶段产物职责分离。"
+    )
+    return make_deny(reason)
+
+
+def check_evidence_gate(file_path: str, workflow_dir: Path, status: dict | None):
+    """防线 2：P0/P1 阻塞 — 证据未清零禁止写入 04/05 产物。"""
+    if status is None:
+        return None
+
+    na = status.get("next_allowed", "")
+    p0 = status.get("p0_count", -1)
+    p1 = status.get("p1_count", -1)
+
+    if p0 == 0 and p1 == 0:
+        return None
+    if na != "fix-evidence":
+        return None
+
+    target_stage = None
+    if is_stage_product(file_path, "04"):
+        target_stage = "04-humanized.md"
+    elif is_stage_product(file_path, "05"):
+        target_stage = "05-format-cleaned.md"
+
+    if target_stage is None:
+        return None
+
+    reason = (
+        f"P0/P1 未清零（P0={p0}, P1={p1}），禁止写入 {target_stage}。"
+        f"当前 next_allowed={na}，必须先运行 reference-integrity-auditor 补齐证据。"
+        f"审计通过、P0/P1 清零、status.json 中 next_allowed 变为 humanizer 后，"
+        f"方可进入润色和格式清理阶段。详见 workflow §审计退回修复闭环。"
+    )
+    return make_deny(reason)
+
+
+def check_skip_stage_confirm(file_path: str, workflow_dir: Path, status: dict | None):
+    """防线 3：跳阶段确认 — 缺少上游产物时要求用户确认。
+
+    使用 ask（而非 deny），因为用户可能已直接指定写作范围。
+    """
+    if is_stage_product(file_path, "02") and not upstream_exists(workflow_dir, "01-outline.md"):
+        reason = (
+            "你正要写入 02-chapter-draft.md，但 01-outline.md 不存在。"
+            "请确认：是否已通过 thesis-outline-planner 完成大纲规划？"
+            "若用户已直接指定写作范围可继续；若未完成大纲，建议先规划大纲以便证据追踪和后续审计。"
+        )
+        return make_ask(reason)
+
+    return None
+
+
+def main():
+    try:
+        raw = sys.stdin.read()
+        data = json.loads(raw)
+    except (json.JSONDecodeError, OSError):
+        print("{}")
+        return
+
+    tool_name = data.get("tool_name", "")
+    if tool_name not in ("Write", "Edit", "MultiEdit"):
+        print("{}")
+        return
+
+    tool_input = data.get("tool_input", {})
+    file_path = tool_input.get("file_path", "") or ""
+    if not file_path:
+        print("{}")
+        return
+
+    workflow_dir = find_workflow_dir()
+    if workflow_dir is None:
+        print("{}")
+        return
+
+    status = read_status(workflow_dir)
+
+    # 防线 1：主文件保护（deny — AI 可见 permissionDecisionReason）
+    result = check_main_file_protection(file_path, workflow_dir, status)
+    if result is not None:
+        print(json.dumps(result, ensure_ascii=False))
+        return
+
+    # 防线 2：P0/P1 阻塞（deny — AI 可见 permissionDecisionReason）
+    result = check_evidence_gate(file_path, workflow_dir, status)
+    if result is not None:
+        print(json.dumps(result, ensure_ascii=False))
+        return
+
+    # 防线 3：跳阶段确认（ask — AI 和用户均可见 permissionDecisionReason）
+    result = check_skip_stage_confirm(file_path, workflow_dir, status)
+    if result is not None:
+        print(json.dumps(result, ensure_ascii=False))
+        return
+
+    print("{}")
+
+
+if __name__ == "__main__":
+    main()

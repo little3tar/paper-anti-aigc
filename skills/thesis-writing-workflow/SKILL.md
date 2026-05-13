@@ -337,6 +337,40 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
    - 更新 `.thesis-workflow/ledger/chapter-status.md` 和 `operations-log.md`，记录写入时间、备份路径和最终版本号。
 5. **交付清单**：在输出中列出主文件路径、备份路径、各阶段产物路径和推荐下一步（如：编译 LaTeX、提交导师审阅）。
 
+## 主文件输出后的修改回环
+
+全流程完成、文本写入 `main.md` / `main.txt` 后，用户审阅时可能发现需要修改。此时 `status.json` 中 `next_allowed` 为 `"next-chapter"`，PreToolUse 钩子已放行主文件写入。修改后的内容仍须经过润色和格式审核，不得因为"工作流已完成"就直接交付未处理的文本。
+
+### 修改分级与处理路径
+
+收到修改请求后，先判断修改幅度，按对应路径处理：
+
+| 级别 | 判断标准 | 处理路径 |
+|---|---|---|
+| **L1 微调** | 错别字、标点修正、单个术语替换、数字勘误 | 直接改 `main.md`，无需重跑阶段。改后运行 `check_text.py` 和 `check_format.py` 确认无新增问题。 |
+| **L2 局部重写** | 1-3 个句子重写、段落内结构调整、表述优化 | ① 先改 `main.md` ② 运行 `check_text.py` 复查 AI 腔指标 ③ 运行 `check_format.py` 复查格式 ④ 若检查未通过 → 对变更段落重跑 humanizer → 再跑 format-cleaner → 更新 `main.md` |
+| **L3 内容变更** | 新增段落、删除段落、数据/结论改动、结构调整 | ① 先改 `02-chapter-draft.md`（内容权威源必须同步） ② 如变更涉及证据/数据，更新 `calculation-records.md` 和 `ledger/facts.md` ③ 对变更部分重跑 humanizer（阶段 4） ④ 重跑 format-cleaner（阶段 5） ⑤ 将处理后的文本更新到 `main.md` ⑥ 更新 `ledger/chapter-status.md` 和 `operations-log.md` |
+
+### 修改回环的产物更新
+
+| 修改级别 | 更新 `02-chapter-draft.md` | 更新 `04-humanized.md` | 更新 `05-format-cleaned.md` | 重跑检查脚本 |
+|---|---|---|---|---|
+| L1 | 不需要 | 不需要 | 不需要 | 建议（确认无新增问题） |
+| L2 | 不需要 | 追加本轮变更记录 | 追加本轮变更记录 | 必须 |
+| L3 | 必须 | 追加本轮变更记录 | 追加本轮变更记录 | 必须 |
+
+### 回环中的备份
+
+- L2 / L3 修改前，先通过 `git_snapshot.py <主文件>` 创建备份。
+- L3 修改前额外备份 `02-chapter-draft.md`：`git_snapshot.py .thesis-workflow/02-chapter-draft.md`。
+- 多次回环时，每次修改前均备份，不覆盖之前的备份。
+
+### 禁止事项
+
+- 不得因为"工作流已完成"就将 L2/L3 级修改直接写入 `main.md` 而不重跑检查和润色。
+- L3 级修改不得只改 `main.md` 而不同步 `02-chapter-draft.md`——草稿是内容权威源，主文件是输出快照。
+- 回环中不得修改 `status.json` 的 `next_allowed`——该字段只由审计阶段的正式流程更新。
+
 ## 输出与文件安全
 
 - 区分“内容确认”和“文件更新”。真实论文工作流中，`.thesis-workflow/` 内运行产物应随每次相关阶段运行主动创建或更新；但总大纲、章节细纲、P0/P1 处理方案和真实论文主文件修改仍需要用户确认。
@@ -426,7 +460,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 - 所有计算类数值（缸径、推力、流量、功率等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。正文和 ledger 中只引用计算记录 ID（如 C3-01），不复制数值。
 - `ledger/facts.md` 只记录参数名、类型、来源和关联计算记录 ID。`main-tex-context.md` 引用 `ledger/facts.md`，不复制参数表。
-- 数值变更时只需修改 `calculation-records.md` 一处。审计时对照计算记录核验正文数值。
+- 数值变更/公式修正/代入纠错/标准选型调整时，只需更新 `calculation-records.md` 一处（旧记录标 `superseded`，追加新行，不原地编辑）。正文和 ledger 中引用计算记录 ID，数值自动跟随最新有效记录，无需多处同步。审计时对照计算记录核验正文数值。
 
 ## 阶段产物职责分离
 
