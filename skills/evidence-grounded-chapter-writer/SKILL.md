@@ -79,7 +79,7 @@ description: >-
    - 将 `[此处插入图片：...]` 和 `[此处插入表格：...]` 放在正文第一次需要出现图表的位置；尾部清单只能汇总，不能替代正文插入点。
    - 对于占位符中的简单流程图、架构图、算法框图，在输出"图片与表格占位符清单"时附加对应的 Mermaid 代码块或 Python matplotlib 脚本作为可渲染附件，不要仅留空白占位符。复杂示意图（需自由绘制）使用提示词模板。
    - 公式统一用 LaTeX math，便于在 Markdown、LaTeX 和 Word/MathType 流程之间迁移。
-   - 工程计算段按“公式、符号表、参数来源表、代入、结果、单位检查、设计裕量”展开。
+   - 工程计算段按”公式、符号表、参数来源表、代入、结果、单位检查、设计裕量”展开。计算链先写入 `.thesis-workflow/calculation-records.md`（完整底稿），再选取关键步骤写入正文段落（计算叙述）。规则见 `references/calculation-records-rules.md`。
    - 缺少证据或参数时，不把 unsupported fact、parameter、formula 或 conclusion 写入正文；记录到 `未写入正文的待补资料`、`证据缺口清单` 或 project ledger。
    - 后续章节需要用户自制材料时，直接列入 `待用户补充的信息`，例如图纸、结构尺寸、实验记录、仿真截图、程序输出、设备选型依据、现场照片或导师批注；不要用常识替用户补造。
    - 用户已提供且确认的参数，按四级消化规则处理：优先找外部来源；找不到则尝试公式推导；无法推导则用工程语言解释选取依据；最后手段才是 `[设计假设: 基于 Mxx]`。正文中不得出现 `[用户材料: ...]` 或 `[Mxx]` 标记。
@@ -157,7 +157,9 @@ description: >-
 | --- | --- |
 | `references/citation-key-rules.md` | Source marker 规则 |
 | `references/formula-calculation-rules.md` | 公式和参数规则 |
+| `references/calculation-records-rules.md` | 计算链落盘与溯源规则 |
 | `references/literature-notes-cache-rules.md` | 文献笔记分批缓存规则 |
+| `references/figure-data-manifest-rules.md` | 图表数据溯源规则 |
 | `references/project-ledger-rules.md` | 项目台账规则 |
 | `references/experiment-planning-rules.md` | 仿真、实验、计算验证的协议规划和 mock 数据边界 |
 | `references/literature-review-rules.md` | 文献综述的 evidence map、段落蓝图和反罗列规则 |

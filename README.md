@@ -99,6 +99,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 ├── materials-inventory.md     ← 用户材料编目清单
 ├── literature-notes.md        ← 文献笔记临时缓存（写作创建，审计通过后清空）
 ├── figure-data-manifest.md    ← 图表数据溯源清单（数据文件、生成脚本、输出格式）
+├── calculation-records.md     ← 计算底稿（公式代入、参数来源、标准选型、状态）
 ├── status.json                ← 门控状态（p0_count、p1_count、next_allowed）
 │
 ├── 01-outline.md              ← 阶段 1：大纲 + 文献池 + 图表计划 + 证据需求判断
@@ -162,6 +163,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 | --- | --- | --- |
 | `literature-notes.md` | Zotero 文献笔记/标注分批缓存，写作和审计阶段引用 | 写作创建 → 审计校验 → 审计通过后清空 |
 | `figure-data-manifest.md` | 图表级数据溯源：数据文件路径、真实/mock、生成脚本、输出格式 | 大纲建框架 → 写作填充 → 审计校验；持久保留 |
+| `calculation-records.md` | 计算底稿：公式、代入过程、参数来源、标准选型、状态 | 写作创建 → 审计校验 → 参数变更时标 superseded 追加新行 |
 
 #### status.json（门控）
 
