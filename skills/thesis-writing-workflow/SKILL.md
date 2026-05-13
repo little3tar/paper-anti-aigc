@@ -357,7 +357,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 - 论文真实主文件优先使用用户提供或项目中可明确识别的现有主文件名；无法判断时先确认。若用户始终没有指定，才按目标格式使用 `main.tex`、`main.md` 或 `main.txt`。
 - 推荐运行产物默认文件名按任务选择：`.thesis-workflow/01-outline.md`、`.thesis-workflow/02-chapter-draft.md`、`.thesis-workflow/03-reference-audit.md`、`.thesis-workflow/04-humanized.md`、`.thesis-workflow/05-format-cleaned.md`，不要把这些运行产物写进 skill 仓库。
 - Project ledger 默认放在 `.thesis-workflow/project-ledger.md`；按 `main-tex-context-template.md` 生成的项目上下文默认放在 `.thesis-workflow/main-tex-context.md`。
-- 文献笔记缓存默认放在 `.thesis-workflow/literature-notes.md`（临时文件，审计通过后清空，全章完成后删除）。
+- 文献笔记缓存默认放在 `.thesis-workflow/literature-notes.md`（临时文件，审计通过后清空，全章完成后清空保留，不删除）。
 - 每次直接修改用户论文主文件前，先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <文件>` 创建备份。脚本优先使用 Git 分支备份，回退到 `.thesis-workflow/backups/` 下的文件复制备份。不要把备份写进 skill 仓库。
 - 直接修改真实论文主文件后，即使已经写回主文件，也要把本轮修改结果另存到 `.thesis-workflow/` 对应阶段产物中，便于审阅、回退和追踪。例如润色写入 `04-humanized.md`，格式清理写入 `05-format-cleaned.md`。
 - `.thesis-workflow/` 内运行产物默认主动更新，但不对每次更新创建备份；重要确认版、主文件结构大改、用户原始材料变更和真实主文件修改才创建备份或快照。重大确认版本建议使用 `--anchor` 参数创建锚点备份，锚点备份永不自动淘汰。
