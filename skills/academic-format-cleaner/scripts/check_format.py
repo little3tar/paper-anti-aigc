@@ -216,7 +216,7 @@ def _convert_md_table_block(lines: list[str]) -> list[str]:
 
     # 窄表格（≤3 列）：逐行 key-value
     if len(rows) >= 2 and len(rows[0]) <= 3:
-        result: list[str] = ["[表格]"]
+        result: list[str] = []
         header = rows[0]
         for row in rows[1:]:
             for j, cell in enumerate(row):
@@ -225,20 +225,22 @@ def _convert_md_table_block(lines: list[str]) -> list[str]:
             result.append("")
         return result
 
-    # 宽表格：对齐文本
-    col_count = max(len(r) for r in rows)
-    col_widths = [0] * col_count
+    # 宽表格：单空格分隔，每行末尾无空格
+    result: list[str] = []
     for row in rows:
-        for j, cell in enumerate(row):
-            col_widths[j] = max(col_widths[j], len(cell))
-    result = ["[表格]"]
-    for row in rows:
-        padded = []
-        for j, cell in enumerate(row):
-            padded.append(cell.ljust(col_widths[j]))
-        result.append("  ".join(padded))
+        result.append(" ".join(row).rstrip())
     result.append("")
     return result
+
+
+def _is_chart_block(fence_lang: str) -> bool:
+    """判断是否为图表代码块（Mermaid / Python matplotlib / Graphviz DOT）。"""
+    lang = fence_lang.strip().lower()
+    if lang in ("mermaid", "dot", "graphviz"):
+        return True
+    if "mermaid" in lang or "dot" in lang:
+        return True
+    return False
 
 
 def strip_to_plain_text(text: str) -> str:
@@ -259,6 +261,8 @@ def strip_to_plain_text(text: str) -> str:
     lines = text.splitlines()
     result: list[str] = []
     i = 0
+    # 初始化图表标志
+    fence_is_chart = False
     in_fence = False
     fence_marker = ""
     in_table = False
@@ -268,22 +272,36 @@ def strip_to_plain_text(text: str) -> str:
         line = lines[i]
         stripped = line.strip()
 
-        # 处理代码块围栏
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            marker = stripped[:3]
+        # 处理代码块围栏（含引用块内围栏 > ```）
+        fence_match = re.match(r"^(> )?\s*(```|~~~)", stripped)
+        if fence_match:
+            marker = fence_match.group(2)
             if not in_fence:
+                fence_lang = stripped[fence_match.end():].strip().lower()
+                is_chart = _is_chart_block(fence_lang)
+                if is_chart:
+                    result.append(f"[图表代码：{fence_lang} — 可在对应工具中渲染]")
                 in_fence = True
                 fence_marker = marker
+                fence_is_chart = is_chart
+                if is_chart:
+                    result.append(re.sub(r"^>\s?", "", line, count=1))
                 i += 1
                 continue
             elif marker == fence_marker:
+                if fence_is_chart:
+                    result.append(re.sub(r"^>\s?", "", line, count=1))
                 in_fence = False
                 fence_marker = ""
+                fence_is_chart = False
                 i += 1
                 continue
 
         if in_fence:
-            result.append(line)
+            if fence_is_chart:
+                result.append(re.sub(r"^>\s?", "", line, count=1))
+            else:
+                result.append(line)
             i += 1
             continue
 
@@ -317,15 +335,32 @@ def strip_to_plain_text(text: str) -> str:
         table_lines = lines[table_start:]
         result.extend(_convert_md_table_block(table_lines))
 
-    # 清理连续空行（最多保留一个）
+    # 清理空行：连续空行合并为一个；仅在标题/表格/图表块前保留一个空行
+    _heading_pat = re.compile(r"^\d+(?:\.\d+)*\s")
     cleaned: list[str] = []
     prev_empty = False
-    for r_line in result:
+    for j, r_line in enumerate(result):
         is_empty = r_line == ""
-        if is_empty and prev_empty:
-            continue
-        cleaned.append(r_line)
-        prev_empty = is_empty
+        if is_empty:
+            if prev_empty:
+                continue
+            # 检查下一个非空行是否为标题/表格/图表
+            next_is_break = False
+            for k in range(j + 1, len(result)):
+                nxt = result[k]
+                if nxt == "":
+                    continue
+                next_is_break = bool(_heading_pat.match(nxt)) or nxt in ("[表格]",) or nxt.startswith("[图表代码：")
+                break
+            if next_is_break:
+                cleaned.append("")
+                prev_empty = True
+            else:
+                # 非结构分隔的空行，跳过
+                prev_empty = False
+        else:
+            cleaned.append(r_line)
+            prev_empty = False
 
     return "\n".join(cleaned)
 
@@ -336,10 +371,15 @@ def _strip_md_line(line: str) -> str:
     indent_str = line[:indent]
     stripped = line[indent:]
 
-    # 标题：去掉 # 标记
+    # [此处插入表格/图片：...] → 提取标题文字
+    ph_match = re.match(r"^\[此处插入(?:表格|图片)：([^\]]+)\]$", stripped)
+    if ph_match:
+        return ph_match.group(1)
+
+    # 标题：去掉 # 标记，不保留原始缩进
     heading_match = re.match(r"^(#{1,6})\s+(.*?)(?:\s+#{1,6})?\s*$", stripped)
     if heading_match:
-        return indent_str + heading_match.group(2)
+        return heading_match.group(2)
 
     # 引用：去掉 > 标记
     if stripped.startswith(">"):
@@ -563,6 +603,13 @@ def check_file(
             for rule in rules:
                 if rule["id"] == "LATEX-001":
                     continue
+                # 纯文本中图表代码块围栏合法，跳过 TXT-FMT-011
+                if rule["id"] == "TXT-FMT-011" and target_format == "plain":
+                    sf = line_for_check.strip()
+                    if sf.startswith("```mermaid") or sf.startswith("```dot") or sf in ("```",):
+                        nearby = any("[图表代码：" in lines[j] for j in range(max(0, i-30), min(len(lines), i+2)))
+                        if nearby:
+                            continue
                 for m in rule["_compiled"].finditer(line_for_check):
                     if target_format == "latex" and is_in_math_env(
                         line_for_check, m.start()
