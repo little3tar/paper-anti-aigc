@@ -1,9 +1,11 @@
 ---
 name: thesis-writing-workflow
 description: >-
-  用于协调整套中文工程类毕业论文工作流。用户要求 complete thesis writing process、
-  staged agent workflow、从任务书到大纲和章节、source audit、humanized revision、final format cleanup、
-  approval checkpoints、output format confirmation、project ledger 或 multi-skill orchestration 时使用。
+  用于协调整套中文工程类毕业论文工作流。用户要求完整写论文/跑一遍论文流程/从头写论文、
+  按流程来/该用哪个 skill/接下来做什么、complete thesis writing process、
+  staged agent workflow、从任务书到大纲和章节、source audit、humanized revision、
+  final format cleanup、approval checkpoints、output format confirmation、
+  project ledger 或 multi-skill orchestration 时使用。
   默认按序执行全部五个阶段，用户明确指定范围时才允许局部执行。
 ---
 

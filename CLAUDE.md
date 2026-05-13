@@ -36,3 +36,14 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 ## Git
 
 提交格式：`type(scope): description`。`improve-workflow` 是当前工作分支。
+
+### 合并策略
+
+工作分支合并到 `main` 时使用 `git merge --no-ff`（非快进合并），不用 squash：
+
+```bash
+git checkout main
+git merge --no-ff improve-workflow -m "merge: <简述>"
+```
+
+`--no-ff` 确保始终产生一个双亲 merge commit，分支的提交历史完整保留在 `git log --graph` 中可见。不使用 `--squash`（会压成一次提交丢失分支链），不使用 `reset --hard` 后重新开始（会丢失 reflog 追溯）。

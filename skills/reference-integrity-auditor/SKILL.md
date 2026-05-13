@@ -1,9 +1,10 @@
 ---
 name: reference-integrity-auditor
 description: >-
-  用于审计中文工程类论文草稿的证据完整性。用户需要检查 unsupported claims、weak citations、
-  fabricated-looking literature、missing evidence、P0/P1、source marker、title-based citation markers、
-  标准规范来源、公式/计算可复现性或来源可靠性时使用。应在章节写作之后、润色和格式清理之前运行。
+  用于审计中文工程类论文草稿的证据完整性。用户要求审计/检查证据、查引用/来源、
+  查有没有缺文献/缺参数、检查公式能不能复现、unsupported claims、weak citations、
+  fabricated-looking literature、P0/P1 问题、source marker 一致性、标准规范来源核验时使用。
+  应在章节写作之后、润色和格式清理之前运行。
 ---
 
 # Reference Integrity Auditor

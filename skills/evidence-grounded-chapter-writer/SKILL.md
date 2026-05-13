@@ -1,10 +1,11 @@
 ---
 name: evidence-grounded-chapter-writer
 description: >-
-  用于基于证据撰写、扩写或修订中文工程类毕业论文章节。用户要求 draft、expand、revise、
-  continue 某一章或某一节，并需要 Zotero-first literature retrieval、source marker、
-  citation placeholders、图表占位、公式/参数计划、calculation chains、evidence gap lists
-  或 approval checkpoints 时使用。应在大纲或章节目标明确后运行。
+  用于基于证据撰写、扩写或修订中文工程类毕业论文章节。用户要求写第X章/写某一节、
+  继续写/接着写、扩写/展开这一段、修改/修订草稿、draft/expand/revise/continue 某一章，
+  并需要 Zotero-first literature retrieval、source marker、citation placeholders、
+  图表占位、公式/参数计划、calculation chains、evidence gap lists 或 approval checkpoints 时使用。
+  应在大纲或章节目标明确后运行。
 ---
 
 # Evidence Grounded Chapter Writer

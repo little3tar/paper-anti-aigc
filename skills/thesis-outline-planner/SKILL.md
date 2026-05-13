@@ -1,9 +1,10 @@
 ---
 name: thesis-outline-planner
 description: >-
-  用于规划证据驱动的中文工程类毕业论文大纲。用户希望把任务书、design brief、research proposal、
-  导师要求或 thesis topic 转成章节结构、literature-backed workflow、任务到章节映射、图表计划、
-  Zotero-first 文献池、source marker 策略或 staged approval process 时使用。应在章节写作前运行。
+  用于规划证据驱动的中文工程类毕业论文大纲。用户要求出大纲/列提纲/规划论文结构、
+  把任务书转成章节、design brief/research proposal/导师要求/论文题目转成章节规划、
+  建立文献池、literature-backed workflow、任务到章节映射、图表计划、Zotero-first 文献池
+  或 staged approval process 时使用。应在章节写作前运行。
 ---
 
 # Thesis Outline Planner

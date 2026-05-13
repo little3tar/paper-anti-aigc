@@ -1,8 +1,9 @@
 ---
 name: engineering-paper-humanizer
 description: >-
-  用于中文工程类论文正文润色与去 AI 味。用户提到论文润色、中文工程论文改写、减少机器感、
-  humanize thesis prose、academic Chinese polishing、模板化套话、中文引号或破折号问题时使用。
+  用于中文工程类论文正文润色与去 AI 味。用户要求润色文本、润色一段/一章、先润色再写入、
+  改写论文段落、优化表述、改得自然一点、降低 AI 痕迹、减少机器感/模板化套话、处理中文引号
+  或破折号、humanize thesis prose、academic Chinese polishing 时使用。
   适用于 LaTeX、Markdown、plain text 中的正文内容；不处理 citation placement、BibTeX/LaTeX
   命令或 Markdown 格式问题，这些交给 academic-format-cleaner。
 ---

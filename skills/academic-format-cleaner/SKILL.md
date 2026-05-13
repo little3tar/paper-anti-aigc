@@ -1,10 +1,10 @@
 ---
 name: academic-format-cleaner
 description: >-
-  用于学术文档的格式层清理。用户提到论文格式检查、LaTeX 报错、citation placement、
-  Markdown/tex/txt format rules、BibTeX/LaTeX 引用、百分号转义、命令断行、列表格式、
-  代码块或数学环境保护时使用。适用于 LaTeX、Markdown 和纯文本草稿的格式收尾；
-  不处理正文润色或去 AI 味，这些交给 engineering-paper-humanizer。
+  用于学术文档的格式层清理。用户要求清理/检查/修复格式、修一下格式、整理格式、
+  查格式问题、论文格式检查、LaTeX 报错/命令断行/百分号转义、citation placement、
+  BibTeX/LaTeX 引用格式、列表格式、代码块或数学环境保护时使用。
+  适用于 LaTeX、Markdown 和纯文本草稿的格式收尾；不处理正文润色或去 AI 味，这些交给 engineering-paper-humanizer。
 ---
 
 # Academic Format Cleaner
