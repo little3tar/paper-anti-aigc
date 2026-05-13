@@ -62,11 +62,8 @@ description: >-
    - 关键信息缺失时，只问最小必要确认问题。
 
 3. **确认输出格式**
-   - 独立一次性问答未指定时，默认在对话中输出 Markdown；真实论文工作流中应同步更新 `.thesis-workflow/01-outline.md`。
-   - 单独运行本 skill 时，若当前目录、用户指定目录或已识别的论文项目根目录中存在 `.thesis-workflow/`，或用户明确处于论文 workflow 项目中，结束时必须更新 `.thesis-workflow/01-outline.md` 和必要的 `project-ledger.md`；不要因为用户没有再次说“生成文件”而跳过更新。
-   - 只有当交付格式影响工作时才问：“请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
-   - 进入论文项目工作流后，默认写入或更新论文项目根目录下的 `.thesis-workflow/01-outline.md`；不要写入 skill 仓库。若当前目录无法判断论文项目根目录，先确认保存位置。
-   - 未指定拆分方式时，把主要计划、文献池、证据缺口和下一步建议统一写入一个默认主文件，例如 `.thesis-workflow/01-outline.md`。
+   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/01-outline.md`。
+   - 只有当交付格式影响工作时才问：”请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
    - 如果用户要求 Word 文档，先以 `.tex`、`.md` 或 `.txt` 完成并确认计划，再通过 pandoc 或 `python-docx` 转换为 `.docx`。
 
 4. **建立文献池**

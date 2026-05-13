@@ -50,27 +50,15 @@ description: >-
 4. **中文化规则**：清理无主语动作句、权威感套话、引导式开场、口号式尾部否定、碎片化标题和堆叠句。
 5. **文本级自检**：运行 `scripts/check_text.py` 定位正文表达问题。
 
-不处理这些问题：
-
-- `\cite{}` 位置、LaTeX 百分号转义、命令参数断行。
-- Markdown frontmatter、代码块围栏、标题层级等格式问题。
-- 图表、公式、代码环境内部内容。
-- 公式变量、参数字母、单位、数值、编号、推导步骤和计算结果。
-- 缺来源结论、伪造文献、P0/P1 审计问题。
-- **`[文献题名]`、`[网络资料: ...]`、`[标准规范: ...]`、`[Mxx]`、`[参考文献]` 等 source marker 和引用占位符的方括号及括号内题名/标记文字。** 这些 marker 的题名是后续 bibliography 解析的关键依据，润色时保留原样，不修改、不缩写、不翻译、不删除。即使 marker 位于被润色段落中间，也只改 marker 前后的连接文字，不动 marker 本身。
-
-这些交给 `academic-format-cleaner` 或 `reference-integrity-auditor`。
+不处理：LaTeX 命令、Markdown 格式结构、公式/代码环境内部内容、变量/数值/单位、缺来源结论——这些交给 format-cleaner 或 auditor。**source marker 方括号及题名文字绝对不动**，只改 marker 前后的连接词。
 
 ## 核心原则
 
-1. **保留原意**：术语、物理量、结论方向和已有数据不随意替换。
-2. **不编造数据**：没有来源的数字、实验条件和性能提升不能补写。
-3. **不编造文献**：无真实文献依据时，删除模糊归因，改为客观陈述或放入证据缺口。
-4. **工程表达优先**：用限制、代价、参数和工况说话，而不是用宏大叙事升华。
-5. **标点服务语义**：引号只用于真实引用、特指术语、语义距离；破折号默认改成逗号、分号、句号或自然连接词。
-6. **公式数据保护**：润色时只改公式前后的说明文字，不改 LaTeX 数学环境、参数符号、单位、数值和计算结论。
-7. **证据边界保护**：润色前先检查正文是否含 `[待补来源: ...]`、`needs-source`、P0/P1 或其他缺来源内容。此类内容应移出正文，放入证据缺口或项目台账；润色只处理已有来源、用户材料、已确认设计假设或可复现推导支撑的正文。
-8. **Source marker 保护**：`[文献题名]`、`[网络资料: ...]`、`[标准规范: ...]`、`[Mxx]`、`[参考文献]` 等方括号标记是工作稿中的引用锚点，题名是后续 bibliography 解析的原始依据。润色时**不动 marker 的方括号，不动方括号内的题名/标记文字**——不缩写、不翻译、不删减、不扩写。只改 marker 前后的连接词和句式，若 marker 所在句子需要大幅重写，删除整个句子但保留 marker 原样插入到改写后的等价位置。
+1. **工程表达优先**：用限制、代价、参数和工况说话，而不是用宏大叙事升华。
+2. **标点服务语义**：引号只用于真实引用、特指术语、语义距离；破折号默认改成逗号、分号、句号或自然连接词。
+3. **公式数据保护**：只改公式前后的说明文字，不改 LaTeX 数学环境、参数符号、单位、数值和计算结论。
+4. **证据边界保护**：含 `[待补来源: ...]`、`needs-source`、P0/P1 的内容移出正文，放入证据缺口或台账。润色只处理已有来源支撑的正文。
+5. **Source marker 保护**：`[文献题名]`、`[Mxx]`、`[参考文献]` 等方括号标记不动方括号、不动题名文字——不缩写、不翻译、不删减。只改 marker 前后的连接词和句式。
 
 ## 工作流程
 
@@ -85,11 +73,11 @@ description: >-
 
 如果 `03-reference-audit.md` 不存在但 `status.json` 存在且 P0/P1 已清零，可继续但需在输出中注明”审计报告缺失，润色边界由 humanizer 自行判断”。
 
-如果用户要求直接修改论文主文件，修改前先通过 `scripts/git_snapshot.py <主文件>` 创建备份（优先 Git 分支，回退到 `.thesis-workflow/backups/`），并在输出中说明备份位置。重要确认版本使用 `--anchor` 创建锚点备份。修改完成后，即使已经写回主文件，也要把本轮润色结果另存或同步到 `.thesis-workflow/04-humanized.md`。若只在对话中返回改写文本且没有进入论文项目工作流，则不需要创建备份或产物文件。
+如果用户要求直接修改论文主文件，修改前先通过 `scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮润色结果另存到 `.thesis-workflow/04-humanized.md`。
 
-单独运行本 skill 时，若当前目录、用户指定目录或已识别的论文项目根目录中存在 `.thesis-workflow/`，或用户明确处于论文 workflow 项目中，结束时必须更新 `.thesis-workflow/04-humanized.md` 和必要的 `project-ledger.md`；不要因为用户没有再次说”生成文件”而跳过更新。若 P0/P1 仍未解决，不生成可提交润色稿，只把可润色段落、禁止润色段落和证据缺口写入阶段产物。
+文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/04-humanized.md`。
 
-如用户提供了项目级上下文文件，例如论文主文件地图、术语表、已确认参数表或 project ledger，先读取这些项目文件以保持术语、章节关系和参数一致。项目特定事实不要写入本 skill 目录；需要建立上下文时，可参考 `assets/main-tex-context-template.md` 在论文项目根目录的 `.thesis-workflow/main-tex-context.md` 创建项目本地文件。
+如用户提供了项目级上下文文件（如 project ledger），先读取。需要建立主文件结构地图时，参考 `assets/main-tex-context-template.md` 在论文项目根目录创建 `.thesis-workflow/main-tex-context.md`。
 
 ### 2. 运行文本检查
 
@@ -151,4 +139,4 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE> --format plain
 | `references/rewrite-guide.md` | 中文工程论文改写规则 |
 | `references/punctuation-guide.md` | 引号和破折号专项规则 |
 | `references/optional-checks.md` | 可选质量评判 |
-| `assets/main-tex-context-template.md` | 项目级 `main.tex` 地图模板；只作为创建项目本地上下文的参考 |
+| `assets/main-tex-context-template.md` | 论文主文件结构地图模板；只作为创建项目本地上下文的参考 |

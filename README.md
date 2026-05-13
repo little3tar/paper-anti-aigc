@@ -97,6 +97,8 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 ├── project-ledger.md          ← 项目台账（已确认事实、公式、来源、决策、图表、章节状态）
 ├── main-tex-context.md        ← 论文主文件结构地图（章节标题、引用方案、模板、关键参数表）
 ├── materials-inventory.md     ← 用户材料编目清单
+├── literature-notes.md        ← 文献笔记临时缓存（写作创建，审计通过后清空）
+├── figure-data-manifest.md    ← 图表数据溯源清单（数据文件、生成脚本、输出格式）
 ├── status.json                ← 门控状态（p0_count、p1_count、next_allowed）
 │
 ├── 01-outline.md              ← 阶段 1：大纲 + 文献池 + 图表计划 + 证据需求判断
@@ -153,6 +155,13 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 | `03-reference-audit.md` | reference-integrity-auditor | P0/P1 分类、source marker 一致性、公式可复现性审计、来源可靠性评估 | 审计完成后 |
 | `04-humanized.md` | engineering-paper-humanizer | 降 AI 腔润色后的正文 | 润色完成后 |
 | `05-format-cleaned.md` | academic-format-cleaner | 引用位置修正、命令保护、数学块清理、残留标记清除 | 格式清理完成后 |
+
+#### 工作辅助文件
+
+| 文件 | 用途 | 生命周期 |
+| --- | --- | --- |
+| `literature-notes.md` | Zotero 文献笔记/标注分批缓存，写作和审计阶段引用 | 写作创建 → 审计校验 → 审计通过后清空 |
+| `figure-data-manifest.md` | 图表级数据溯源：数据文件路径、真实/mock、生成脚本、输出格式 | 大纲建框架 → 写作填充 → 审计校验；持久保留 |
 
 #### status.json（门控）
 

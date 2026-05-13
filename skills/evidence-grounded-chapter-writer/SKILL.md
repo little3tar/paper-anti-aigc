@@ -33,13 +33,10 @@ description: >-
 
 1. **确认写作目标**
    - 确认章节编号、节范围、预期字数、引用样式和输出格式。
-   - 独立一次性问答未指定输出格式时，默认在对话中输出 Markdown；真实论文工作流中应同步更新 `.thesis-workflow/02-chapter-draft.md`。
-   - 单独运行本 skill 时，若当前目录、用户指定目录或已识别的论文项目根目录中存在 `.thesis-workflow/`，或用户明确处于论文 workflow 项目中，结束时必须更新 `.thesis-workflow/02-chapter-draft.md` 和必要的 `project-ledger.md`；不要因为用户没有再次说“生成文件”而跳过更新。
-   - 只有当格式会影响工作时才问：“请确认本章输出格式：直接对话 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
-   - 进入论文项目工作流后，默认写入或更新论文项目根目录下的 `.thesis-workflow/02-chapter-draft.md`；不要写入 skill 仓库。若当前目录无法判断论文项目根目录，先确认保存位置。
-   - 未指定拆分方式时，把章节细纲、证据表、正文、图表占位符、待补材料和后处理建议统一写入一个默认主文件，例如 `.thesis-workflow/02-chapter-draft.md`。
-   - 如果需要直接修改已有论文主文件，修改前先备份该主文件；复制备份默认放在 `.thesis-workflow/backups/`，备份位置和文件名写入 handoff 或 project ledger。修改完成后仍要把本轮章节结果另存或同步到 `.thesis-workflow/02-chapter-draft.md`。
-   - 如果存在 project ledger，先读取；如果 `.thesis-workflow/` 已存在或任务会跨多个章节，主动创建或更新 `.thesis-workflow/project-ledger.md`，只有保存位置或是否使用文件不明确时才询问。
+   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/02-chapter-draft.md`。
+   - 只有当格式会影响工作时才问：”请确认本章输出格式：直接对话 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
+   - 如果需要直接修改已有论文主文件，修改前先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <主文件>` 备份。修改完成后仍要把本轮章节结果另存或同步到 `.thesis-workflow/02-chapter-draft.md`。
+   - 如果存在 project ledger，先读取。
 
 2. **生成章节细纲并等待确认（强制门控）**
    - 把章节拆成节、小节和段落级写作点。

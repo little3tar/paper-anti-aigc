@@ -63,9 +63,8 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 ## 工作流程
 
 1. 先判断用户要求的是格式检查，而不是正文润色、证据审计或章节写作。
-2. 如需直接修改论文主文件，修改前先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <主文件>` 创建备份（优先 Git 分支，回退到 `.thesis-workflow/backups/`），并在输出中说明备份位置。修改完成后，即使已经写回主文件，也要把本轮格式清理结果另存或同步到 `.thesis-workflow/05-format-cleaned.md`。若只返回修复片段且没有进入论文项目工作流，不需要创建备份。
-   用户要求生成独立格式清理稿但未指定目录时，默认写入 `.thesis-workflow/05-format-cleaned.md`，不要写入 skill 仓库。
-   单独运行本 skill 时，若当前目录、用户指定目录或已识别的论文项目根目录中存在 `.thesis-workflow/`，或用户明确处于论文 workflow 项目中，结束时必须更新 `.thesis-workflow/05-format-cleaned.md` 和必要的 `project-ledger.md`；不要因为用户没有再次说“生成文件”而跳过更新。若 P0/P1 或缺来源定论仍未解决，不生成最终清理稿，只把阻塞项和可安全清理部分写入阶段产物。
+2. 如需直接修改论文主文件，修改前先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮格式清理结果另存或同步到 `.thesis-workflow/05-format-cleaned.md`。
+   文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/05-format-cleaned.md`。
 3. 如有目标文件，运行格式检查脚本：
 
    ```bash
@@ -77,19 +76,11 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 4. 根据逐行诊断修复格式问题；不要改写技术结论、实验数据、公式推导或文献含义。
 5. **核对 marker 内容完整性**：若上游存在润色稿（`.thesis-workflow/04-humanized.md`）和原始草稿（`.thesis-workflow/02-chapter-draft.md`），提取两份文件中所有 `[文献题名]` marker 的题名列表进行比较。题名被缩写、翻译、改写或缺失的，标记为 P2 并从原始草稿恢复正确题名。若润色稿不存在则跳过此步。
 6. 复查同一文件，直到 `error` 清零；`warning` 和 `info` 按学校模板、论文规范和用户偏好处理。
-6. 如果用户提供的是片段而不是文件，直接给出修复后的片段，并简短说明改动类型。
+7. 如果用户提供的是片段而不是文件，直接给出修复后的片段，并简短说明改动类型。
 
 ## 不处理的内容
 
-不要在本 skill 中处理：
-
-- AI 腔、套话、宣传式表达。
-- 中文正文是否自然。
-- 引号、破折号背后的语义重写。
-- 数据、结论、文献内容的实质性改写。
-- P0/P1 证据缺口、伪造文献或缺来源定论。
-
-遇到正文润色需求时切换到 `engineering-paper-humanizer`；遇到证据问题时先用 `reference-integrity-auditor`。
+本 skill 只处理格式层。AI 腔、正文润色、证据审计分别交给 humanizer 和 auditor。
 
 ## 参考文件
 
