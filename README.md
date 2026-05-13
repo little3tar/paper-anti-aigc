@@ -94,16 +94,30 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 ```text
 .thesis-workflow/
-├── project-ledger.md          ← 项目台账（已确认事实、公式、来源、决策、图表、章节状态）
-├── main-tex-context.md        ← 论文主文件结构地图（章节标题、引用方案、模板、关键参数表）
+├── project-ledger.md          ← 台账索引文件（指向 ledger/ 各文件）
+├── main-tex-context.md        ← 论文主文件结构地图（引用 ledger/，不复制参数）
 ├── materials-inventory.md     ← 用户材料编目清单
+├── literature-notes.md        ← 文献笔记临时缓存（写作创建，审计通过后清空）
+├── literature-pool.md         ← 文献池全表（60条，6组分类，含 ZoteroKey 映射）
+├── figure-data-manifest.md    ← 图表数据溯源清单（数据文件、生成脚本、输出格式）
+├── calculation-records.md     ← 数值唯一权威源（公式代入、参数来源、标准选型）
+├── operations-log.md          ← 操作日志（项目检查、章节清除等一次性操作，只追加）
 ├── status.json                ← 门控状态（p0_count、p1_count、next_allowed）
 │
-├── 01-outline.md              ← 阶段 1：大纲 + 文献池 + 图表计划 + 证据需求判断
-├── 02-chapter-draft.md        ← 阶段 2：章节细纲 + 证据表 + 正文草稿 + 图表占位符 + 证据缺口清单
-├── 03-reference-audit.md      ← 阶段 3：审计报告（P0/P1 分类、公式可复现性、来源一致性）
-├── 04-humanized.md            ← 阶段 4：润色稿（降 AI 腔后）
-├── 05-format-cleaned.md       ← 阶段 5：格式清理稿（引用位置、命令保护、残留标记清除）
+├── ledger/                    ← 项目台账（拆分后，各子文件独立读写）
+│   ├── facts.md               ←   已确认设计参数、引用标准、MC51 公开数据
+│   ├── decisions.md           ←   已确认决策（输出格式/路径/引用方案）
+│   ├── chapter-status.md      ←   各章 6 阶段完成状态
+│   └── questions.md           ←   结构化待确认问题
+│
+├── outlines/                  ← 章节细纲（段落级写作点，每章一份）
+│   └── ch2-detailed.md        ←   第2章细纲
+│
+├── 01-outline.md              ← 阶段 1：总大纲（章→节→小节）+ 文献池分组摘要
+├── 02-chapter-draft.md        ← 阶段 2：章节正文草稿（内容权威源）
+├── 03-reference-audit.md      ← 阶段 3：审计报告 + 文献修正记录
+├── 04-humanized.md            ← 阶段 4：润色操作记录（非全文副本）
+├── 05-format-cleaned.md       ← 阶段 5：格式修复记录（非全文副本）
 │
 ├── evidence/                  ← 用户提供材料的物理存放
 │   ├── task-book/             ←   任务书、设计说明、开题报告
@@ -115,32 +129,24 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 │   ├── standards-specs/       ←   用户提供的标准规范文件
 │   └── zotero-export/         ←   Zotero 导出的 .bib 文件（文献信息校验基准）
 │
-├── ledger/                    ← （可选）项目台账拆分为独立文件
-│   ├── facts.md               ←   已确认任务要求、约束、术语
-│   ├── formulas.md            ←   已确认公式、符号定义、推导说明
-│   ├── sources.md             ←   文献来源及 source marker
-│   ├── decisions.md           ←   用户确认的大纲、术语、输出格式等决策
-│   ├── figures-tables.md      ←   图表占位符、所需数据、生成状态
-│   └── chapter-status.md      ←   各章节在各阶段的完成状态
-│
 ├── backups/                   ← 主文件备份（普通备份保留最近 5 个，锚点备份不限）
 └── validation/                ← workflow 验证产物（仅验证模式使用）
 ```
 
 ### 各文件/目录说明
 
-#### 项目台账（project-ledger.md）
+#### 项目台账（ledger/）
 
-贯穿全流程的持久化记录，各阶段启动前读取、结束后更新。
+已拆分为 `ledger/` 子目录。索引文件 `project-ledger.md` 指向各子文件。
 
-| 分区 | 记录内容 | 关键字段 |
+| 文件 | 记录内容 | 关键字段 |
 | --- | --- | --- |
-| `facts` | 已确认任务要求、研究对象、约束条件、术语 | ID、Fact、Type、Source、Status |
-| `formulas` | 已确认公式、符号定义、假设、推导说明 | ID、Formula、Purpose、Symbols、Source |
-| `sources` | Zotero/本地/网络/用户来源及 source marker | Marker、Title、Authors/Year、Source type、Used in |
-| `decisions` | 大纲选择、术语选择、输出格式等用户确认决策 | Date、Decision、Reason、Scope |
-| `figures-tables` | 图表占位符、所需数据、生成状态 | ID、Placeholder、Needed content、Source/data、Status |
-| `chapter-status` | 各章在各阶段的完成状态 | Chapter、Outline、Evidence、Draft、Audit、Humanize、Format |
+| `ledger/facts.md` | 已确认设计参数、引用标准、MC51公开数据 | 参数、来源、性质(A/B/C)、计算记录ID |
+| `ledger/decisions.md` | 输出格式、文件路径、引用方案等用户确认决策 | 日期、决策、理由、影响范围 |
+| `ledger/chapter-status.md` | 各章 7×6 阶段完成状态 | 章节、大纲、细纲、草稿、审计、润色、格式 |
+| `ledger/questions.md` | 结构化待确认问题 | 编号、问题、阻塞章节、优先级、状态 |
+
+**数值单一权威源**：计算类数值（缸径、推力等）只在 `calculation-records.md` 中定义。`ledger/facts.md` 只记录参数名和关联计算记录 ID，不复制数值。
 
 状态标签：`confirmed`、`draft`、`needs-source`、`needs-user-data`、`derived`、`superseded`。
 
@@ -148,22 +154,40 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 | 文件 | 产生阶段 | 内容 | 更新时机 |
 | --- | --- | --- | --- |
-| `01-outline.md` | thesis-outline-planner | 任务理解、文献池、总章节规划、任务-章节映射、图表计划、证据需求判断 | 大纲确认后 |
-| `02-chapter-draft.md` | evidence-grounded-chapter-writer | 章节细纲、证据表、公式与参数计划、正文草稿、图表占位符清单、证据缺口清单 | 每章草稿完成后 |
-| `03-reference-audit.md` | reference-integrity-auditor | P0/P1 分类、source marker 一致性、公式可复现性审计、来源可靠性评估 | 审计完成后 |
-| `04-humanized.md` | engineering-paper-humanizer | 降 AI 腔润色后的正文 | 润色完成后 |
-| `05-format-cleaned.md` | academic-format-cleaner | 引用位置修正、命令保护、数学块清理、残留标记清除 | 格式清理完成后 |
+| `01-outline.md` | thesis-outline-planner | 总大纲（章→节→小节）+ 文献池分组摘要 | 大纲确认后 |
+| `literature-pool.md` | thesis-outline-planner | 文献池全表（60条，6组，含 ZoteroKey） | 大纲确认后 |
+| `outlines/chX-detailed.md` | evidence-grounded-chapter-writer | 章节细纲（段落级写作点） | 细纲确认后 |
+| `02-chapter-draft.md` | evidence-grounded-chapter-writer | 章节正文草稿（内容权威源） | 每章草稿完成后 |
+| `03-reference-audit.md` | reference-integrity-auditor | 审计报告 + 文献修正记录 | 审计完成后 |
+| `04-humanized.md` | engineering-paper-humanizer | 润色操作记录（非全文副本，最终文本写入 main.md/txt） | 润色完成后 |
+| `05-format-cleaned.md` | academic-format-cleaner | 格式修复记录（非全文副本，最终文本写入 main.md/txt） | 格式清理完成后 |
+| `operations-log.md` | 各阶段 | 批量操作/项目检查/章节清除记录（只追加） | 批量操作后 |
+
+#### 工作辅助文件
+
+| 文件 | 用途 | 生命周期 |
+| --- | --- | --- |
+| `literature-notes.md` | Zotero 文献笔记/标注分批缓存，写作和审计阶段引用 | 写作创建 → 审计校验 → 审计通过后清空 |
+| `figure-data-manifest.md` | 图表级数据溯源：数据文件路径、真实/mock、生成脚本、输出格式 | 大纲建框架 → 写作填充 → 审计校验；持久保留 |
+| `calculation-records.md` | 计算底稿：公式、代入过程、参数来源、标准选型、状态 | 写作创建 → 审计校验 → 参数变更时标 superseded 追加新行 |
 
 #### status.json（门控）
 
 ```json
 {
+  "stage": "audited",
+  "timestamp": "2026-05-13T22:00:00",
   "p0_count": 0,
   "p1_count": 0,
-  "next_allowed": "humanizer"
+  "green_paragraphs": ["§2.1", "§3.2"],
+  "blocked_paragraphs": ["§2.3"],
+  "next_allowed": "humanizer",
+  "notes": ""
 }
 ```
 
+- `stage`：当前所处阶段（`audited` / `humanized` / `format-cleaned`）
+- `p0_count` / `p1_count`：P0/P1 问题计数
 - `next_allowed` 取值：`"fix-evidence"` / `"humanizer"` / `"format-cleaner"` / `"next-chapter"`
 - P0/P1 > 0 时，`next_allowed` 强制为 `"fix-evidence"`，humanizer 和 format-cleaner **硬性阻断**
 - 前一章未完成 humanizer+format-cleaner 时，**禁止开始下一章**
@@ -187,9 +211,21 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 修改论文主文件前由 `git_snapshot.py` 自动创建。优先使用 Git 分支备份，回退到文件复制备份。普通备份保留最近 5 个（可配置），锚点备份（`--anchor`）永不自动淘汰。
 
-#### ledger/（可选拆分）
+#### ledger/（台账子目录）
 
-当项目规模较大时，`project-ledger.md` 可按分区拆分为 `ledger/` 下的独立文件，便于并行章节各自读写。
+`project-ledger.md` 已拆分为 `ledger/` 下的独立文件（facts/decisions/chapter-status/questions），各自独立读写。`project-ledger.md` 为汇总索引。
+
+#### outlines/（章节细纲）
+
+每章的段落级细纲独立存储（`chX-detailed.md`），写作前由 chapter-writer 生成并经用户确认。总大纲 `01-outline.md` 只保留到小节标题层级。
+
+#### literature-pool.md（文献池全表）
+
+从 `01-outline.md` 分离的 60 条文献全表，6 组分类，含 ZoteroKey 映射。大纲中只保留分组摘要。
+
+#### operations-log.md（操作日志）
+
+批量操作、项目检查和重大变更记录。只追加，不修改已有记录。
 
 #### validation/
 

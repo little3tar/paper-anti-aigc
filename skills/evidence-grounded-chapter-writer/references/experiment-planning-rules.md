@@ -44,7 +44,7 @@
 
 ## 图表数据清单
 
-`figures/data-manifest.md` 格式：
+`.thesis-workflow/figure-data-manifest.md` 格式（详见 `references/figure-data-manifest-rules.md`）：
 
 | Figure | Data file | Real/mock | Source | Script | Outputs |
 |---|---|---|---|---|---|

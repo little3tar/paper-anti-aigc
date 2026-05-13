@@ -1,9 +1,10 @@
 ---
 name: reference-integrity-auditor
 description: >-
-  用于审计中文工程类论文草稿的证据完整性。用户需要检查 unsupported claims、weak citations、
-  fabricated-looking literature、missing evidence、P0/P1、source marker、title-based citation markers、
-  标准规范来源、公式/计算可复现性或来源可靠性时使用。应在章节写作之后、润色和格式清理之前运行。
+  用于审计中文工程类论文草稿的证据完整性。用户要求审计/检查证据、查引用/来源、
+  查有没有缺文献/缺参数、检查公式能不能复现、unsupported claims、weak citations、
+  fabricated-looking literature、P0/P1 问题、source marker 一致性、标准规范来源核验时使用。
+  应在章节写作之后、润色和格式清理之前运行。
 ---
 
 # Reference Integrity Auditor
@@ -18,6 +19,7 @@ description: >-
 | "status.json 不写也没关系" | 门控文件是 humanizer 和 format-cleaner 的强制检查点 |
 | "这个标准是常识，不用核验" | 凡涉及限值、验收、安全裕量的标准必须核验版本和条文 |
 | "marker 存在就行，题名对不对不重要" | 须对照 Zotero 库或 `.bib` 导出抽查题名/作者/年份准确性 |
+| "文献笔记缓存里有，但获取状态是'无笔记'，我再试一次" | 标记为 `无笔记` 或 `获取失败` 的条目直接跳过，不重试。笔记缺失不自动升级为 P0/P1 |
 
 本 skill 用来检查论文大纲、章节草稿或小节草稿是否真的被来源支撑。它应在风格润色之前运行，避免文本变得更流畅但证据仍然薄弱。
 
@@ -30,11 +32,8 @@ description: >-
 
 1. **确定审计范围**
    - 判断用户需要逐段审计、source marker 审计、来源清单审计，还是可直接修订的问题列表。
-   - 独立一次性问答未指定输出格式时，默认在对话中输出 Markdown 审计报告；真实论文工作流中每轮审计后应同步更新 `.thesis-workflow/03-reference-audit.md`。
-   - 单独运行本 skill 时，若当前目录、用户指定目录或已识别的论文项目根目录中存在 `.thesis-workflow/`，或用户明确处于论文 workflow 项目中，结束时必须更新 `.thesis-workflow/03-reference-audit.md` 和必要的 `project-ledger.md`；不要因为用户没有再次说“生成文件”而跳过更新。
-   - 进入论文项目工作流后，默认写入或更新论文项目根目录下的 `.thesis-workflow/03-reference-audit.md`；不要写入 skill 仓库。若当前目录无法判断论文项目根目录，先确认保存位置。
-   - 未指定拆分方式时，把主要问题、逐段审计、公式审计、source marker 问题和待补资料统一写入一个默认主文件，例如 `.thesis-workflow/03-reference-audit.md`。
-   - 如果存在 project ledger，读取后对照已确认事实、公式、来源和设计决策。
+   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/03-reference-audit.md`。
+   - 如果存在 project ledger（`ledger/` 目录），读取 `ledger/facts.md` 和 `ledger/decisions.md` 后对照已确认事实、公式、来源和设计决策。
 
 2. **切分草稿**
    - 按标题和段落切分。
@@ -71,6 +70,23 @@ description: >-
    - 检查图表占位符是否位于正文相关插入点，而不只是尾部清单。
    - **文献信息准确性抽查**：对照 Zotero 文献库或 `.bib` 导出文件（默认路径 `.thesis-workflow/evidence/zotero-export/`），随机抽查 20%（不少于 5 条）的 `[文献题名]` marker，核对题名、作者、年份是否与原始记录一致。题名被缩写、改写或包含转录错误（如特殊字符丢失、大小写错误）→ 标记 P2，需从原始记录修正。若 `.bib` 文件不存在，抽查 Zotero MCP 可检索到的条目。若 Zotero MCP 和 `.bib` 均不可用，在审计报告中标注"文献信息准确性未经核验"并建议用户提供导出文件。
 
+5b. **对照文献笔记缓存校验正文 claim（⭐）**
+   - 检查 `.thesis-workflow/literature-notes.md` 是否存在。
+   - 如存在，读取缓存中与当前审计段落相关的文献条目。
+   - **仅读取状态为 `已获取` 的条目**；标记为 `无笔记` 或 `获取失败` 的条目直接跳过，不重试获取。
+   - 对照缓存中的标注内容，验证正文 claim 一致性：
+     - 正文声称的定量结论（如"A 比 B 精度高 15%"）在标注中无对应数据 → 标记 P1
+     - 正文引用的结论方向与标注内容相反 → 标记 P0
+     - 正文 claim 在标注中有直接支撑 → 在审计报告中标记为"已验证（缓存）"
+   - 标记为 `无笔记` 的文献无法交叉校验 → 在审计报告中标注"文献笔记缺失，无法交叉校验"，**不自动升级为 P0/P1**。确需原文核实的内容放入审计报告的"建议补充检索结果"栏。
+   - 如某条待校验 claim 对应的文献笔记不在缓存中且状态非 `无笔记`/`获取失败`，可尝试通过 Zotero MCP 补获取（延续写作阶段的用户授权）。补获取同样每篇最多 1 次，失败后标记 `获取失败` 并跳过。
+
+5c. **对照计算记录核验正文数据**
+   - 检查 `.thesis-workflow/calculation-records.md` 是否存在（计算章）。如存在，对照核验正文中的数值、公式和选型结论是否与 records 一致。
+   - 正文提到但 records 中无对应记录的计算结论 → 标记 P1。
+   - 正文数值与 records 底稿不一致 → 标记 P1。
+   - records 中引用的标准，检查其核验状态。`核验失败` 的标准仍在正文中用作设计依据 → 标记 P0。
+
 6. **分类问题**
    - `P0`：疑似伪造、实质错误或可能改变论文结论的问题。
    - `P1`：重要事实、参数、公式、性能判断或文献归因缺来源或来源不匹配。
@@ -91,11 +107,12 @@ description: >-
 2. `逐段证据审查表`
 3. `公式与计算审查表`
 4. `用户材料交叉校验结果`（对照 materials-inventory.md 的一致性检查，含推导值对比、解释合理性评价、设计假设必要性判断）
-5. `source marker 与来源清单问题`
-6. `建议补充检索结果`（审计过程中主动检索到的候选文献，含题名、来源类型、检索词、可支撑段落）
-7. `需要补充的资料`
-8. `可直接进入后处理的部分`
-9. `建议的下一步确认问题`
+5. `计算记录核验结果`（对照 calculation-records.md 的正文数据一致性，含数值偏差和所用标准核验状态）
+6. `source marker 与来源清单问题`
+7. `建议补充检索结果`（审计过程中主动检索到的候选文献，含题名、来源类型、检索词、可支撑段落）
+8. `需要补充的资料`
+9. `可直接进入后处理的部分`
+10. `建议的下一步确认问题`
 
 交接给 `engineering-paper-humanizer` 时，额外给出两个短清单：
 
@@ -121,6 +138,19 @@ description: >-
 
 - `p0_count` / `p1_count` 任一 > 0 时，`next_allowed` 设为 `"fix-evidence"`（必须退回补证据，禁止进入 humanizer，禁止开始下一章）。
 - 仅当 P0/P1 全部解决后，`next_allowed` 设为 `"humanizer"`，润色和格式清理完成后设为 `"next-chapter"`。
+
+### 文献笔记缓存清理
+
+审计报告完成且 `status.json` 写入后，根据审计结果清理 `.thesis-workflow/literature-notes.md`：
+
+- `next_allowed = "humanizer"` 或 `"next-chapter"`（审计通过）→ 清空缓存内容，保留文件头和下一章占位：
+  ```markdown
+  # 文献笔记缓存
+
+  > 上一章已完成。等待下一章写作。
+  ```
+- `next_allowed = "fix-evidence"`（审计未通过）→ **保留**缓存内容，供修复阶段继续使用。修复完成并重新审计通过后再清空。
+- 全部章节完成后 → 清空缓存内容，保留文件（不删除），方便后续修改或增补章节时复用。
 
 不要编造缺失来源。需要来源时，在 evidence gap section 中说明证据类型和可检索关键词，不要伪造参考文献，也不要把缺来源定论留在正文中。
 

@@ -1,9 +1,11 @@
 ---
 name: thesis-writing-workflow
 description: >-
-  用于协调整套中文工程类毕业论文工作流。用户要求 complete thesis writing process、
-  staged agent workflow、从任务书到大纲和章节、source audit、humanized revision、final format cleanup、
-  approval checkpoints、output format confirmation、project ledger 或 multi-skill orchestration 时使用。
+  用于协调整套中文工程类毕业论文工作流。用户要求完整写论文/跑一遍论文流程/从头写论文、
+  按流程来/该用哪个 skill/接下来做什么、complete thesis writing process、
+  staged agent workflow、从任务书到大纲和章节、source audit、humanized revision、
+  final format cleanup、approval checkpoints、output format confirmation、
+  project ledger 或 multi-skill orchestration 时使用。
   默认按序执行全部五个阶段，用户明确指定范围时才允许局部执行。
 ---
 
@@ -13,11 +15,13 @@ description: >-
 
 | AI的想法 | 正确做法 |
 |---|---|
-| "用户说'完整跑一遍'，全自动" | 预授权模式也须记录检查点，P0/P1 仍为阻塞项 |
-| "用户没说生成文件，不创建" | 进入论文工作流后默认主动更新 `.thesis-workflow/` |
-| "备份太麻烦，直接改主文件" | 修改主文件前必须 `git_snapshot.py` 备份 |
-| "某阶段产物已存在，跳过" | 阶段开始前读取上游产物，阶段结束后更新本阶段产物 |
-| "用户要 Word，直接生成 docx" | 先以 .tex/.md/.txt 完成内容并确认，再通过 pandoc 转换 |
+| “用户说'完整跑一遍'，全自动” | 预授权模式也须记录检查点，P0/P1 仍为阻塞项 |
+| “用户没说生成文件，不创建” | 进入论文工作流后默认主动更新 `.thesis-workflow/` |
+| “备份太麻烦，直接改主文件” | 修改主文件前必须 `git_snapshot.py` 备份 |
+| “从 humanizer 开始更快 / 做完大纲就停” | 未指定范围时必须跑完 1→5；模糊说法需确认是只做一步还是继续后续 |
+| “预授权模式，细纲也跳过确认” | 预授权只跳过文件生成/格式询问，细纲内容确认不跳过 |
+| “用户说'写第X章'，细纲不用确认” | 必须输出细纲并等待用户显式确认，才能进入正文写作 |
+| “用户给了电机型号，直接写成'MC51 采用 XX 电机'” | 用户提供的型号/参数必须先确认 A/B/C 分类，B 类禁止用 A 类语气写成产品定论 |
 
 本 skill 是完整 thesis workflow 的 router。它不替代各阶段 skills，而是决定下一步该调用哪个 skill、何时暂停确认、何时阻止下游润色或格式收尾。
 
@@ -26,16 +30,6 @@ description: >-
 **默认必须按 1→2→3→4→5 顺序执行全部五个阶段。** 用户要求”写论文””帮我跑一遍””完整论文写作”等未明确指定范围的请求，一律按完整流程执行，不跳过任何步骤。
 
 仅当用户消息中**明确写出**”只运行 X””只做 X””只做第 X 步””只跑 X 和 Y”等限定词时，才将执行范围限制到用户指定的阶段。模糊说法如”先做大纲””从审计开始””润色一下”不算明确指定范围——这些情况下仍需确认：是只做这一步，还是从这一步开始并完成后续所有步骤。
-
-新增 Red Flag：
-
-| AI的想法 | 正确做法 |
-|---|---|
-| “用户说'帮我写论文'，从 humanizer 开始更快” | 未指定范围时必须跑完 1→2→3→4→5，不自行决定入口 |
-| “用户说'先做大纲'，做完就停” | 反问用户：只做大纲，还是做完大纲后继续写章节 |
-| “预授权模式，细纲也跳过确认” | 预授权只跳过文件生成/格式询问，细纲内容确认不跳过 |
-| “用户说'写第X章'，细纲不用确认” | 必须输出细纲并等待用户显式确认，才能进入正文写作 |
-| “用户给了电机型号，直接写成'MC51 采用 XX 电机'” | 用户提供的型号/参数必须先确认是 A 类（产品规格）、B 类（设计选择）还是 C 类（待推导），B 类禁止用 A 类语气写成产品定论 |
 
 ### 例外场景（仅用户明确指定范围时）
 
@@ -51,23 +45,24 @@ description: >-
 
 | 阶段 | 最低输入前提 | 可选输入 | 阻塞条件 | 默认输出 |
 | --- | --- | --- | --- | --- |
-| `thesis-outline-planner` | 任务书、设计说明、导师要求或明确论文题目 | 已有文献、Zotero 导出、学校模板 | 研究对象或任务边界完全不明 | `.thesis-workflow/01-outline.md` 或对话 Markdown |
-| `evidence-grounded-chapter-writer` | 已确认的大纲、章节目标或用户指定写作范围 | project ledger、文献池、用户材料、图表/参数 | 缺少章节目标，或关键用户自有数据不可替代 | `.thesis-workflow/02-chapter-draft.md` 或对话 Markdown |
-| `reference-integrity-auditor` | 已有大纲、章节草稿或小节草稿 | 来源清单、ledger、标准规范、用户材料 | 没有可审计文本 | `.thesis-workflow/03-reference-audit.md` 或对话 Markdown |
-| `engineering-paper-humanizer` | 待润色文本，且证据状态可接受或已明确为 validation mode | 审计报告、术语表、学校风格要求 | P0/P1 > 0 或 status.json 不存在，且非 validation mode | `.thesis-workflow/04-humanized.md`、原主文件或对话 Markdown |
-| `academic-format-cleaner` | 待清理文本或文件 | 学校模板、引用样式、LaTeX/Markdown 约束 | 正文仍含未处理 P0/P1、缺来源定论或 status.json 不存在 | `.thesis-workflow/05-format-cleaned.md`、原主文件或对话 Markdown |
+| `thesis-outline-planner` | 任务书、设计说明、导师要求或明确论文题目 | 已有文献、Zotero 导出、学校模板 | 研究对象或任务边界完全不明 | `.thesis-workflow/01-outline.md`（大纲）+ `literature-pool.md`（文献池全表） |
+| `evidence-grounded-chapter-writer` | 已确认的大纲、章节目标或用户指定写作范围 | ledger/（事实+决策）、文献池、用户材料、图表/参数 | 缺少章节目标，或关键用户自有数据不可替代 | `.thesis-workflow/02-chapter-draft.md`；细纲写入 `outlines/chX-detailed.md` |
+| `reference-integrity-auditor` | 已有大纲、章节草稿或小节草稿 | 来源清单、ledger/、标准规范、用户材料、calculation-records.md | 没有可审计文本 | `.thesis-workflow/03-reference-audit.md` |
+| `engineering-paper-humanizer` | 待润色文本，且证据状态可接受或已明确为 validation mode | 审计报告、术语表、学校风格要求 | P0/P1 > 0 或 status.json 不存在，且非 validation mode | `.thesis-workflow/04-humanized.md`（润色操作记录，非全文副本） |
+| `academic-format-cleaner` | 待清理文本或文件 | 学校模板、引用样式、LaTeX/Markdown 约束 | 正文仍含未处理 P0/P1、缺来源定论或 status.json 不存在 | `.thesis-workflow/05-format-cleaned.md`（格式操作记录，非全文副本） |
 
 ## 强制串行规则
 
 每个阶段启动前，必须检查上游产物：
 
-1. 读取 `.thesis-workflow/project-ledger.md`，确认上游阶段状态为 `confirmed`。
+1. 读取 `.thesis-workflow/ledger/chapter-status.md`（如存在），确认上游阶段状态为 `confirmed`。首次运行（`ledger/` 目录尚不存在）时跳过此检查。
 2. 读取目标阶段依赖的上游产物（如 `01-outline.md`、`02-chapter-draft.md`、`03-reference-audit.md`）。
-3. 若上游产物不存在或状态非 `confirmed`，且用户未明确声明跳过，**拒绝执行**并提示先运行上游阶段。
-4. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**，提示先运行 `reference-integrity-auditor`。
-5. `academic-format-cleaner` 额外检查 `status.json`：若 `next_allowed` 不为 `"humanizer"` 或 `"format-cleaner"`，**强制拒绝**。
-6. 跨章阻塞规则：前一章的 `status.json` 中 `next_allowed` 为 `"fix-evidence"` 时，**禁止开始下一章写作**。必须先将 P0/P1 清零并完成 humanizer+format-cleaner，`next_allowed` 变为 `"next-chapter"` 后才能进入下一章。
-7. 细纲确认阻塞规则：在 `project-ledger.md` 的 `chapter-status` 中，当前章细纲状态非 `confirmed` 时，**禁止进入正文写作**（即 `evidence-grounded-chapter-writer` 的步骤 3 和步骤 4）。细纲状态为 `draft` 时不得继续。
+3. 读取 `.thesis-workflow/ledger/facts.md` 和 `ledger/decisions.md`（如存在），获取已确认设计参数和决策。
+4. 若上游产物不存在或状态非 `confirmed`，且用户未明确声明跳过，**拒绝执行**并提示先运行上游阶段。
+5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**，提示先运行 `reference-integrity-auditor`。
+6. `academic-format-cleaner` 额外检查 `status.json`：若 `next_allowed` 不为 `"humanizer"` 或 `"format-cleaner"`，**强制拒绝**。
+7. 跨章阻塞规则：前一章的 `status.json` 中 `next_allowed` 为 `"fix-evidence"` 时，**禁止开始下一章写作**。必须先将 P0/P1 清零并完成 humanizer+format-cleaner，`next_allowed` 变为 `"next-chapter"` 后才能进入下一章。
+8. 细纲确认阻塞规则：在 `ledger/chapter-status.md` 中，当前章细纲状态非 `confirmed` 时，**禁止进入正文写作**（即 `evidence-grounded-chapter-writer` 的步骤 3 和步骤 4）。细纲状态为 `draft` 时不得继续。
 
 ## 审计退回修复闭环
 
@@ -101,7 +96,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 **循环规则**：
 - 每一轮审计必须更新 `03-reference-audit.md`，记录本轮新发现和已修复项。
-- `project-ledger.md` 记录每条 P0/P1 的修复决策和来源。
+- `ledger/questions.md` 或 `03-reference-audit.md` 记录每条 P0/P1 的修复决策和来源。
 - 同一问题最多循环 3 轮；3 轮后仍未解决，将对应段落移出正文放入 `证据缺口清单`，在论文中显式标注为"待补证据"后继续。
 - 用户可在任意一轮确认"该项接受当前状态"，标记为 `accepted-by-user` 后放行。
 
@@ -132,7 +127,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 >
 > 请逐项确认（或给我一个整体分类），我会据此确定各参数的写作语气。"
 
-- 用户明确分类 → 记录到 `materials-inventory.md` 和 `project-ledger.md`，后续写作严格遵循
+- 用户明确分类 → 记录到 `materials-inventory.md` 和 `ledger/facts.md`，后续写作严格遵循
 - 用户不确定 → 默认按 B 类处理（"本文选取..."），保守表述，等待用户后续确认
 - 用户未回复此项 → 标记为 `[分类待确认]`，写作前再次询问，不可默认写成 A 类产品定论
 
@@ -168,7 +163,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 **Step 3 — 提取并纳入规划**
 
 - 从材料中提取设计要求、已知参数、约束条件、导师意见
-- 写入 `project-ledger.md` 对应分区，内部标注来源 `[Mxx]` 和数据性质（A/B/C）
+- 写入 `ledger/facts.md`，内部标注来源 `[Mxx]` 和数据性质（A/B/C）
 - 标记哪些参数可直接用于规划，哪些需要后续找外部来源或推导
 - A 类参数标注外部引用目标；B 类参数标注选取依据和推导章节；C 类参数标注需要的计算步骤
 
@@ -266,7 +261,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 - Stage 1 不通过 → 退回当前阶段修复，阻断消息示例："格式检查未通过：X 个 error、Y 个 warning。请修复后重新运行 `check_format.py`。"
 - Stage 2 不通过 → 根据问题类型退回对应上游阶段，阻断消息示例："去 AI 化未达标：全文三段式密度为 X 处/千字（阈值 2）。请返回 humanizer 进一步改写。"
-- 两次 Review 均通过 → 在 `project-ledger.md` 记录放行，进入全流程完成仪式。
+- 两次 Review 均通过 → 在 `ledger/chapter-status.md` 记录放行，进入全流程完成仪式。
 
 ## 多章节并行编排（可选）
 
@@ -309,8 +304,10 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
    - **前置条件**：`.thesis-workflow/02-chapter-draft.md` 存在且章节草稿已完成，或用户提供了待审计文本。
    - 审计 unsupported claims、source marker consistency 和来源可靠性。
    - 审计公式、单位、参数来源、代入步骤和计算可复现性。
+   - 对照 `.thesis-workflow/literature-notes.md` 缓存中的文献笔记/标注交叉校验正文 claim（缓存存在且条目状态为 `已获取` 时）。
    - Review-gated mode 下，如 P0/P1 仍存在则暂停。Validation mode 下，只有把 unsupported 正文内容移入 evidence-gap lists 或 ledger 后，才允许继续。
    - **阻断规则**：P0/P1 > 0 时 `status.json` 写 `"next_allowed": "fix-evidence"`，下游 humanizer 和 format-cleaner 必须拒绝，且**禁止开始下一章**。
+   - **缓存清理**：审计通过后清空 `literature-notes.md`（保留文件头占位）；审计未通过则保留供修复阶段使用。
 
 4. **`engineering-paper-humanizer`**
    - **前置条件**：`.thesis-workflow/status.json` 存在且 `p0_count` 和 `p1_count` 均为 0，或当前为 validation mode。
@@ -339,26 +336,67 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 4. **写入主文件**（用户确认后）：
    - 先通过 `git_snapshot.py <主文件>` 创建备份。
    - 将合并后的最终文本写入主文件。
-   - 更新 `.thesis-workflow/project-ledger.md`，记录写入时间、备份路径和最终版本号。
+   - 更新 `.thesis-workflow/ledger/chapter-status.md` 和 `operations-log.md`，记录写入时间、备份路径和最终版本号。
 5. **交付清单**：在输出中列出主文件路径、备份路径、各阶段产物路径和推荐下一步（如：编译 LaTeX、提交导师审阅）。
+
+## 主文件输出后的修改回环
+
+全流程完成、文本写入 `main.md` / `main.txt` 后，用户审阅时可能发现需要修改。此时 `status.json` 中 `next_allowed` 为 `"next-chapter"`，PreToolUse 钩子已放行主文件写入。修改后的内容仍须经过润色和格式审核，不得因为"工作流已完成"就直接交付未处理的文本。
+
+### 修改分级与处理路径
+
+收到修改请求后，先判断修改幅度，按对应路径处理：
+
+| 级别 | 判断标准 | 处理路径 |
+|---|---|---|
+| **L1 微调** | 错别字、标点修正、单个术语替换、数字勘误 | 直接改 `main.md`，无需重跑阶段。改后运行 `check_text.py` 和 `check_format.py` 确认无新增问题。 |
+| **L2 局部重写** | 1-3 个句子重写、段落内结构调整、表述优化 | ① 先改 `main.md` ② 运行 `check_text.py` 复查 AI 腔指标 ③ 运行 `check_format.py` 复查格式 ④ 若检查未通过 → 对变更段落重跑 humanizer → 再跑 format-cleaner → 更新 `main.md` |
+| **L3 内容变更** | 新增段落、删除段落、数据/结论改动、结构调整 | ① 先改 `02-chapter-draft.md`（内容权威源必须同步） ② 如变更涉及证据/数据，更新 `calculation-records.md` 和 `ledger/facts.md` ③ 对变更部分重跑 humanizer（阶段 4） ④ 重跑 format-cleaner（阶段 5） ⑤ 将处理后的文本更新到 `main.md` ⑥ 更新 `ledger/chapter-status.md` 和 `operations-log.md` |
+
+### 修改回环的产物更新
+
+| 修改级别 | 更新 `02-chapter-draft.md` | 更新 `04-humanized.md` | 更新 `05-format-cleaned.md` | 重跑检查脚本 |
+|---|---|---|---|---|
+| L1 | 不需要 | 不需要 | 不需要 | 建议（确认无新增问题） |
+| L2 | 不需要 | 追加本轮变更记录 | 追加本轮变更记录 | 必须 |
+| L3 | 必须 | 追加本轮变更记录 | 追加本轮变更记录 | 必须 |
+
+### 回环中的备份
+
+- L2 / L3 修改前，先通过 `git_snapshot.py <主文件>` 创建备份。
+- L3 修改前额外备份 `02-chapter-draft.md`：`git_snapshot.py .thesis-workflow/02-chapter-draft.md`。
+- 多次回环时，每次修改前均备份，不覆盖之前的备份。
+
+### 禁止事项
+
+- 不得因为"工作流已完成"就将 L2/L3 级修改直接写入 `main.md` 而不重跑检查和润色。
+- L3 级修改不得只改 `main.md` 而不同步 `02-chapter-draft.md`——草稿是内容权威源，主文件是输出快照。
+- 回环中不得修改 `status.json` 的 `next_allowed`——该字段只由审计阶段的正式流程更新。
 
 ## 输出与文件安全
 
 - 区分“内容确认”和“文件更新”。真实论文工作流中，`.thesis-workflow/` 内运行产物应随每次相关阶段运行主动创建或更新；但总大纲、章节细纲、P0/P1 处理方案和真实论文主文件修改仍需要用户确认。
-- 单独运行任一 thesis skill 时也遵循同一规则：若当前目录、用户指定目录或已识别的论文项目根目录中存在 `.thesis-workflow/`，或用户明确处于论文 workflow 项目中，则该 skill 运行结束必须更新对应阶段产物和必要的 `project-ledger.md`；不要因为用户没有再次说“生成文件”而跳过更新。
+- 单独运行任一 thesis skill 时也遵循同一规则：若当前目录、用户指定目录或已识别的论文项目根目录中存在 `.thesis-workflow/`，或用户明确处于论文 workflow 项目中，则该 skill 运行结束必须更新对应阶段产物和必要的 `ledger/` 文件；不要因为用户没有再次说”生成文件”而跳过更新。
 - 用户只要求一次性在对话中返回内容，且没有进入论文项目工作流时，可以不创建文件；一旦创建或使用 `.thesis-workflow/`，后续阶段默认读取并更新其中的相关产物。
-- 阶段开始前先读取已有上游产物，至少包括 `.thesis-workflow/project-ledger.md` 和 `.thesis-workflow/main-tex-context.md`；若目标阶段依赖大纲、草稿或审计报告，也读取对应的 `01-outline.md`、`02-chapter-draft.md` 或 `03-reference-audit.md`。
-- 阶段结束后更新本阶段产物和 `project-ledger.md`。大纲阶段更新 `01-outline.md`，章节写作阶段更新 `02-chapter-draft.md`，证据审计阶段更新 `03-reference-audit.md`，润色阶段更新 `04-humanized.md`，格式清理阶段更新 `05-format-cleaned.md`。
-- `project-ledger.md` 在确认新事实、参数、公式、来源、设计假设、用户材料或决策时更新。`main-tex-context.md` 只在论文主文件结构、章节标题、引用方案、模板、关键参数表或主文件路径变化时更新。
+- 阶段开始前先读取已有上游产物。若 `.thesis-workflow/ledger/` 存在，读取其中的 facts/decisions/chapter-status；若 `main-tex-context.md` 存在，读取项目结构地图。若目标阶段依赖大纲、草稿或审计报告，也读取对应的 `01-outline.md`、`02-chapter-draft.md` 或 `03-reference-audit.md`。
+- 阶段结束后更新本阶段产物和 `ledger/` 对应文件（facts/decisions/chapter-status）。大纲阶段更新 `01-outline.md` 和 `literature-pool.md`，章节写作阶段更新 `02-chapter-draft.md`，证据审计阶段更新 `03-reference-audit.md`，润色阶段更新 `04-humanized.md`（操作记录），格式清理阶段更新 `05-format-cleaned.md`（操作记录）。
+- `ledger/facts.md` 和 `ledger/decisions.md` 在确认新事实、参数、公式、来源、设计假设、用户材料或决策时更新。`ledger/chapter-status.md` 在每个阶段完成时更新。`main-tex-context.md` 只在论文主文件结构、章节标题、引用方案、模板或主文件路径变化时更新。
 - 用户要求生成文件但未指定目录时，默认创建或使用论文项目根目录下的 `.thesis-workflow/`。如果当前工作目录位于 skill 仓库内，不能把运行产物写进 skill 仓库；应使用用户论文项目根目录，无法判断时先确认。
 - 用户要求生成文件但未指定拆分方式时，将主要内容统一写入 `.thesis-workflow/` 内的默认主文件。中间表格、证据清单和待补材料作为主文件内的独立章节，除非用户指定拆成多个文件。
 - 论文真实主文件优先使用用户提供或项目中可明确识别的现有主文件名；无法判断时先确认。若用户始终没有指定，才按目标格式使用 `main.tex`、`main.md` 或 `main.txt`。
 - 推荐运行产物默认文件名按任务选择：`.thesis-workflow/01-outline.md`、`.thesis-workflow/02-chapter-draft.md`、`.thesis-workflow/03-reference-audit.md`、`.thesis-workflow/04-humanized.md`、`.thesis-workflow/05-format-cleaned.md`，不要把这些运行产物写进 skill 仓库。
+- Project ledger 已拆分为 `ledger/` 子目录：`ledger/facts.md`（设计参数）、`ledger/decisions.md`（决策记录）、`ledger/chapter-status.md`（章节进展）、`ledger/questions.md`（待确认问题）。汇总索引文件为 `.thesis-workflow/project-ledger.md`。
+- 文献池独立文件：`.thesis-workflow/literature-pool.md`（60条文献全表，6组分类，含 ZoteroKey 映射）。
+- 章节细纲独立存放：`.thesis-workflow/outlines/chX-detailed.md`（每章一份，段落级写作点）。大纲文件 `01-outline.md` 只保留到小节标题层级。
+- 批量操作日志：`.thesis-workflow/operations-log.md`（项目检查、章节清除等一次性操作记录，只追加不修改）。
 - Project ledger 默认放在 `.thesis-workflow/project-ledger.md`；按 `main-tex-context-template.md` 生成的项目上下文默认放在 `.thesis-workflow/main-tex-context.md`。
+- 文献笔记缓存默认放在 `.thesis-workflow/literature-notes.md`（临时文件，审计通过后清空）。
+- 图表数据溯源清单默认放在 `.thesis-workflow/figure-data-manifest.md`（持久文件，数据文件路径、生成脚本、输出格式）。
+- 计算记录默认放在 `.thesis-workflow/calculation-records.md`（计算底稿，正文数值的唯一权威数据源）。
 - 每次直接修改用户论文主文件前，先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <文件>` 创建备份。脚本优先使用 Git 分支备份，回退到 `.thesis-workflow/backups/` 下的文件复制备份。不要把备份写进 skill 仓库。
-- 直接修改真实论文主文件后，即使已经写回主文件，也要把本轮修改结果另存到 `.thesis-workflow/` 对应阶段产物中，便于审阅、回退和追踪。例如润色写入 `04-humanized.md`，格式清理写入 `05-format-cleaned.md`。
+- 直接修改真实论文主文件（`main.md` / `main.txt`）后，将本轮变更清单（改了什么、为什么改）写入 `.thesis-workflow/` 对应阶段产物（`04-humanized.md` 或 `05-format-cleaned.md`）。这些产物是操作记录，不存全文副本——全文以 `main.md` / `main.txt` 为唯一权威输出。
 - `.thesis-workflow/` 内运行产物默认主动更新，但不对每次更新创建备份；重要确认版、主文件结构大改、用户原始材料变更和真实主文件修改才创建备份或快照。重大确认版本建议使用 `--anchor` 参数创建锚点备份，锚点备份永不自动淘汰。
-- 以下 `.thesis-workflow/` 产物在关键节点应额外备份：`project-ledger.md`（每次确认后）、`01-outline.md`（总大纲确认后）、`02-chapter-draft.md`（细纲确认后）。备份命令同主文件：`git_snapshot.py .thesis-workflow/01-outline.md --anchor`。
+- 以下 `.thesis-workflow/` 产物在关键节点应额外备份：`ledger/` 目录（每次确认后）、`01-outline.md`（总大纲确认后）、`02-chapter-draft.md`（细纲确认后）。备份命令同主文件：`git_snapshot.py .thesis-workflow/01-outline.md --anchor`。
 - 普通备份默认保留最近 5 个，超出自动淘汰（可通过 `GIT_SNAPSHOT_MAX_BACKUPS` 环境变量或 `--max-backups N` 参数调整）。锚点备份不受此限制。
 - 多轮项目中，把输出格式、主文件路径、备份位置和已确认的文件生成授权记录到 project ledger 或 handoff。
 
@@ -416,9 +454,23 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 ## Project Ledger
 
-多轮 thesis 项目中，建议维护专用 project ledger，记录已确认事实、来源、公式、参数、设计决策和待补证据。具体规则遵循 `references/project-ledger-rules.md`。
+多轮 thesis 项目中，维护拆分后的 project ledger（`ledger/` 子目录），记录已确认事实、来源、公式、参数、设计决策和待补证据。索引文件为 `.thesis-workflow/project-ledger.md`。具体规则遵循 `references/project-ledger-rules.md`。
 
 不要把项目特定事实、公式或数据写进 skill 文件夹。Skills 只保存可复用工作流规则。
+
+## 数据单一权威源
+
+- 所有计算类数值（缸径、推力、流量、功率等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。正文和 ledger 中只引用计算记录 ID（如 C3-01），不复制数值。
+- `ledger/facts.md` 只记录参数名、类型、来源和关联计算记录 ID。`main-tex-context.md` 引用 `ledger/facts.md`，不复制参数表。
+- 数值变更/公式修正/代入纠错/标准选型调整时，只需更新 `calculation-records.md` 一处（旧记录标 `superseded`，追加新行，不原地编辑）。正文和 ledger 中引用计算记录 ID，数值自动跟随最新有效记录，无需多处同步。审计时对照计算记录核验正文数值。
+
+## 阶段产物职责分离
+
+- `02-chapter-draft.md`：章节正文草稿（**内容权威源**）。初稿不直接写入主文件。
+- `03-reference-audit.md`：审计报告 + 文献修正记录（不存正文副本）。
+- `04-humanized.md`：润色操作记录 + 变更清单（**不存全文副本**）。最终润色后文本写入 `main.md` / `main.txt`。
+- `05-format-cleaned.md`：格式修复记录 + 变更清单（**不存全文副本**）。最终清理后文本写入 `main.md` / `main.txt`。
+- `main.md` / `main.txt`：唯一对外输出文件。`main.md` 为 Markdown 中间格式，`main.txt` 为纯文本最终交付格式。
 
 ## Source Policy
 

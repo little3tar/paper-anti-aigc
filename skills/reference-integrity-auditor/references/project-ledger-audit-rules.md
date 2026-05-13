@@ -1,24 +1,24 @@
-# Project Ledger Audit Rules
+# 项目台账审计规则
 
-Use this when a thesis project keeps ledger files such as `facts.md`, `formulas.md`, `sources.md`, `decisions.md`, `figures-tables.md`, and `chapter-status.md`.
+当论文项目维护了 `ledger/` 子目录（`facts.md`、`decisions.md`、`chapter-status.md`、`questions.md`）时使用本规则。台账结构定义见 workflow router 的同名参考文件 `project-ledger-rules.md`。
 
-## Audit Against Ledger
+## 对照台账审计
 
-Check the draft against confirmed ledger entries:
+对照已确认的台账条目检查草稿：
 
-- Facts in the draft should not contradict `facts.md`.
-- Formulas, symbols, assumptions, and scope should match `formulas.md`.
-- Citation placeholders and source notes should be resolvable in `sources.md` when the source is already known.
-- Chapter structure and approved choices should match `decisions.md`.
-- Figure/table placeholders should match `figures-tables.md` or be added as proposed updates.
+- 草稿中的设计参数不应与 `ledger/facts.md` 矛盾。
+- 输出格式、路径、引用方案等决策应与 `ledger/decisions.md` 一致。
+- 章节进展状态应与 `ledger/chapter-status.md` 反映的实际进度相符。
+- 已确认的设计参数在正文中的表述应与 `ledger/facts.md` 中的性质和来源一致。
+- 正文数值应与 `calculation-records.md` 中的对应记录一致（计算记录是数值单一权威源）。
 
-## Finding Types
+## 发现类型
 
-- `ledger-missing`: the draft introduces a new fact, parameter, formula, or source that should be added to the ledger.
-- `ledger-conflict`: the draft contradicts a confirmed ledger entry.
-- `ledger-stale`: the ledger contains a superseded value still used in the draft.
-- `ledger-unresolved`: the draft relies on an entry marked `needs-source` or `needs-user-data`.
+- `ledger-missing`：草稿引入了新的设计参数或决策，应添加到 `ledger/` 对应文件中。
+- `ledger-conflict`：草稿与已确认的台账条目矛盾。
+- `ledger-stale`：台账中包含已废弃的值，草稿仍在使用。
+- `ledger-unresolved`：草稿依赖标记为 `needs-source` 或 `needs-user-data` 的条目。
 
-## Rule
+## 规则
 
-Do not silently update confirmed ledger entries during audit. Report proposed changes and ask for confirmation unless the user explicitly requested direct file edits.
+审计期间不要静默更新已确认的台账条目。报告建议的更改并征求确认，除非用户明确要求直接编辑文件。

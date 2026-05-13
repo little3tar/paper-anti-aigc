@@ -1,103 +1,80 @@
-# Project Ledger Rules
+# 项目台账规则
 
-Default location: `.thesis-workflow/project-ledger.md` in the thesis project root. Do not create or update a project ledger inside the reusable skill directory.
+默认位置：论文项目根目录下的 `.thesis-workflow/ledger/` 子目录，汇总索引为 `.thesis-workflow/project-ledger.md`。不要在可复用的 skill 目录中创建或更新项目台账。
 
-Use a project ledger for long thesis projects where confirmed facts, data, formulas, sources, and decisions must survive across chapters and agent sessions. In an active thesis workflow, the ledger is a normal running artifact: read it at the start of each stage and update it at the end when the stage changes confirmed information or open evidence gaps.
+项目台账用于长期论文项目，需要已确认的事实、数据、公式、来源和决策跨章节和跨 Agent 会话保留。在活跃的论文工作流中，台账是常规运行产物：每个阶段开始时读取，阶段结束时若变更了已确认信息或开放证据缺口则更新。
 
-## Location
+## 存放位置
 
-Do not write project-specific data into skill folders. Store it in the user's thesis workspace. The default is one file:
+不要将项目特定数据写入 skill 文件夹。保存在用户的论文工作区中。默认结构：
 
 ```text
 .thesis-workflow/
-  project-ledger.md
+  ledger/
+    facts.md          ← 已确认的设计参数、引用标准、公开数据
+    decisions.md      ← 已确认的决策（输出格式/路径/引用方案等）
+    chapter-status.md ← 章节进展追踪（7章 × 6阶段）
+    questions.md      ← 结构化待确认问题
+  project-ledger.md   ← 汇总索引（指向 ledger/ 各文件）
 ```
 
-If the project becomes too large, the same sections may be split into separate files under `.thesis-workflow/ledger/`, for example:
+## 数值型参数规则
 
-```text
-.thesis-workflow/ledger/
-  facts.md
-  formulas.md
-  sources.md
-  decisions.md
-  figures-tables.md
-  chapter-status.md
-```
+计算类数值（缸径、推力、流量等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。`ledger/facts.md` 只记录参数名、类型、来源和关联计算记录 ID，不复制数值。正文中引用计算记录 ID（如 C3-01）。
 
-If the user does not want files, keep the same sections in the chat handoff.
+## 何时询问
 
-## When To Ask
+仅在论文项目根目录或用户是否愿意保留工作流文件不明确时询问。若 `.thesis-workflow/` 已存在，或用户已要求运行论文工作流，则直接创建或更新 `.thesis-workflow/ledger/` 下相关文件，无需单独确认。
 
-Ask only when the thesis project root or the user's willingness to keep workflow files is unclear. If `.thesis-workflow/` already exists, or the user has asked to run the thesis workflow, create or update `.thesis-workflow/project-ledger.md` without a separate confirmation prompt.
+需要确认时，询问：
 
-When a confirmation is needed, ask:
+"是否创建 `.thesis-workflow/ledger/` 目录，用于保存已确认的内容、数据、公式、来源和章节状态？"
 
-"是否创建 `.thesis-workflow/project-ledger.md`，用于保存已确认的内容、数据、公式、来源和章节状态？"
+如果用户已明确预授权确认或文件生成，直接创建台账并将授权记录在 `decisions.md` 或交接报告中，不再重复询问。
 
-If the user has explicitly preauthorized confirmations or file generation, create the ledger and record the authorization in `decisions.md` or the handoff report instead of asking again.
+如果文件已存在，在规划、起草、审计、润色或格式清理前先读取。每个相关阶段结束后更新；未确认项使用 `draft`、`needs-source` 或 `needs-user-data`，不要将其呈现为已确认事实。
 
-If files already exist, read them before planning, drafting, auditing, humanizing, or format cleanup. Update them after each relevant stage; use `draft`, `needs-source`, or `needs-user-data` for unconfirmed items instead of presenting them as confirmed facts.
+## 台账内容
 
-## Ledger Contents
+### `ledger/facts.md`
 
-### `facts.md`
+已确认的设计参数、引用标准、产品公开规格（A 类数据）。
 
-Confirmed task requirements, object descriptions, known constraints, terminology, and user-approved statements.
+推荐列：
 
-Recommended columns:
+| 参数 | 来源 | 性质 | 计算记录 |
+| --- | --- | --- | --- |
 
-| ID | Fact | Type | Source | Status | Notes |
-| --- | --- | --- | --- | --- | --- |
+### `ledger/decisions.md`
 
-### `formulas.md`
+用户批准的输出格式选择、文件路径决策、引用方案等。
 
-Confirmed formulas, symbol definitions, assumptions, and derivation notes.
+推荐列：
 
-Recommended columns:
+| 日期 | 决策 | 理由 | 影响范围 |
+| --- | --- | --- | --- |
 
-| ID | Formula | Purpose | Symbols | Source | Applies to | Status |
-| --- | --- | --- | --- | --- | --- | --- |
+### `ledger/chapter-status.md`
 
-### `sources.md`
+章节级状态。
 
-Zotero/local/web/user sources and title-based source markers.
+推荐列：
 
-Recommended columns:
-
-| Marker | Title | Authors/Year | Source type | Search keyword | Used in | Notes |
-| --- | --- | --- | --- | --- | --- | --- |
-
-### `decisions.md`
-
-User-approved outline choices, design choices, terminology choices, and output format decisions.
-
-Recommended columns:
-
-| Date | Decision | Reason | Scope | Open issues |
-| --- | --- | --- | --- | --- |
-
-### `figures-tables.md`
-
-Planned figures, tables, required data, and generation status.
-
-Recommended columns:
-
-| ID | Placeholder | Needed content | Source/data | Target chapter | Status |
-| --- | --- | --- | --- | --- | --- |
-
-### `chapter-status.md`
-
-Chapter-level status.
-
-Recommended columns:
-
-| Chapter | Outline | Evidence | Draft | Audit | Humanize | Format | Notes |
+| 章节 | 大纲 | 细纲 | 草稿 | 审计 | 润色 | 格式 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-## Status Labels
+### `ledger/questions.md`
 
-Use these labels:
+结构化待确认问题及其优先级和阻塞状态。
+
+推荐列：
+
+| 编号 | 问题 | 阻塞章节 | 优先级 | 状态 |
+| --- | --- | --- | --- | --- |
+
+## 状态标签
+
+使用以下标签：
 
 - `confirmed`
 - `draft`
@@ -106,4 +83,4 @@ Use these labels:
 - `derived`
 - `superseded`
 
-Never overwrite confirmed data silently. Add a new row or mark the old row as `superseded`.
+永远不要静默覆盖已确认数据。新增一行或将旧行标记为 `superseded`。

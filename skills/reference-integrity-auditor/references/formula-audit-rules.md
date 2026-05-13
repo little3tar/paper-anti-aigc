@@ -1,43 +1,43 @@
-# Formula And Calculation Audit Rules
+# 公式与计算审计规则
 
-Use this checklist when auditing engineering thesis chapters with formulas, parameters, or calculations.
+审计包含公式、参数或计算的工程论文章节时使用本清单。
 
-## Audit Checklist
+## 审计清单
 
-For each formula block or calculation sequence, check:
+对每个公式块或计算序列，逐项检查：
 
-1. Formula purpose is stated.
-2. Formula source is cited or derivation is shown.
-3. Every symbol is defined.
-4. Units are provided for physical quantities.
-5. Original parameters have source markers.
-6. Design assumptions are marked as assumptions.
-7. Substitution process is shown for key results.
-8. Result can be reproduced from preceding values.
-9. Unit conversion is explicit.
-10. Component selection includes margin or rated-capacity check.
+1. 公式用途已说明。
+2. 公式来源已引用或推导已展示。
+3. 每个符号已定义。
+4. 物理量附带单位。
+5. 原始参数有 source marker。
+6. 设计假设已标明为假设。
+7. 关键结果展示了代入过程。
+8. 结果可从前文数值复现。
+9. 单位换算已显式写出。
+10. 元件选型包含裕量或额定能力检查。
 
-## Severity
+## 严重程度分级
 
-- P0: formula or result contradicts stated values, or appears fabricated.
-- P1: key result lacks formula, source value, or reproducible substitution.
-- P2: symbol/unit/source marker is incomplete but result is probably recoverable.
-- P3: formatting issue such as inconsistent equation numbering or table style.
+- P0：公式或结果与已有数值矛盾，或疑似伪造。
+- P1：关键结果缺少公式、原始数值或可复现的代入步骤。
+- P2：符号/单位/source marker 不完整但结果大概率可恢复。
+- P3：格式问题，如公式编号不一致或表格样式不规范。
 
-## Red Flags
+## 红色警戒
 
-- A result is given directly after qualitative text with no formula.
-- A parameter appears in a table but has no source type.
-- The same symbol means different things in adjacent sections.
-- Unit conversion changes magnitude without explanation.
-- Selection conclusion says "满足要求" but no rated pressure, rated flow, safety factor, or margin is shown.
-- Literature claims and author conclusions are mixed without clear boundary.
+- 定性文字后直接给出计算结果，中间没有公式。
+- 参数出现在表格中但没有标注来源类型。
+- 同一符号在相邻章节表示不同含义。
+- 单位换算改变了量级但没有解释。
+- 选型结论写"满足要求"但未给出额定压力、额定流量、安全系数或裕量。
+- 文献结论与作者结论混在一起，边界不清。
 
-## Audit Output Table
+## 审计输出表格
 
-Use this table when possible:
+尽量使用以下表格：
 
-| Location | Formula/parameter | Problem | Severity | Required fix |
+| 位置 | 公式/参数 | 问题 | 严重程度 | 需修复内容 |
 | --- | --- | --- | --- | --- |
 
-Do not silently correct formulas unless asked. When correction is necessary, show the original problem and the corrected calculation chain.
+除非用户要求，不要静默修正公式。需要修正时，展示原问题和修正后的计算链。

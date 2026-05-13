@@ -1,9 +1,10 @@
 ---
 name: thesis-outline-planner
 description: >-
-  用于规划证据驱动的中文工程类毕业论文大纲。用户希望把任务书、design brief、research proposal、
-  导师要求或 thesis topic 转成章节结构、literature-backed workflow、任务到章节映射、图表计划、
-  Zotero-first 文献池、source marker 策略或 staged approval process 时使用。应在章节写作前运行。
+  用于规划证据驱动的中文工程类毕业论文大纲。用户要求出大纲/列提纲/规划论文结构、
+  把任务书转成章节、design brief/research proposal/导师要求/论文题目转成章节规划、
+  建立文献池、literature-backed workflow、任务到章节映射、图表计划、Zotero-first 文献池
+  或 staged approval process 时使用。应在章节写作前运行。
 ---
 
 # Thesis Outline Planner
@@ -62,11 +63,8 @@ description: >-
    - 关键信息缺失时，只问最小必要确认问题。
 
 3. **确认输出格式**
-   - 独立一次性问答未指定时，默认在对话中输出 Markdown；真实论文工作流中应同步更新 `.thesis-workflow/01-outline.md`。
-   - 单独运行本 skill 时，若当前目录、用户指定目录或已识别的论文项目根目录中存在 `.thesis-workflow/`，或用户明确处于论文 workflow 项目中，结束时必须更新 `.thesis-workflow/01-outline.md` 和必要的 `project-ledger.md`；不要因为用户没有再次说“生成文件”而跳过更新。
-   - 只有当交付格式影响工作时才问：“请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
-   - 进入论文项目工作流后，默认写入或更新论文项目根目录下的 `.thesis-workflow/01-outline.md`；不要写入 skill 仓库。若当前目录无法判断论文项目根目录，先确认保存位置。
-   - 未指定拆分方式时，把主要计划、文献池、证据缺口和下一步建议统一写入一个默认主文件，例如 `.thesis-workflow/01-outline.md`。
+   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/01-outline.md`（总大纲，章→节→小节层级）和 `.thesis-workflow/literature-pool.md`（文献池全表，6组分类）。章节细纲在写作阶段生成，存放于 `.thesis-workflow/outlines/chX-detailed.md`。
+   - 只有当交付格式影响工作时才问：”请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
    - 如果用户要求 Word 文档，先以 `.tex`、`.md` 或 `.txt` 完成并确认计划，再通过 pandoc 或 `python-docx` 转换为 `.docx`。
 
 4. **建立文献池**
@@ -77,6 +75,12 @@ description: >-
    - 对已核验标准，规划其进入正文的位置和用途，例如设计依据、参数依据、验收依据、限值依据或安全裕量依据。
    - 文献数量按任务规模分层：真实完整论文计划 30-50 篇，单章或小节 5-10 篇，workflow validation 或 minimal dry-run 2-5 篇。
    - 记录每个来源的题名、作者/年份、来源类型、检索词和可支撑章节。
+   - **Zotero 笔记/标注参考**：检索到文献后，通过 Zotero MCP 检查该文献是否有用户的笔记或标注。如有，主动询问用户：
+     > "检测到以下文献在 Zotero 中有笔记/标注：[文献题名列表]。是否允许我参考这些笔记内容，用于更准确地提取文献关键发现和支撑论点？"
+     - 用户同意 → 读取笔记/标注，优先用标注中的核心结论替代从题名推测的内容
+     - 用户不同意 → 仅使用题名、摘要等公开元数据
+     - 这是**一次性询问**，同批文献只问一次
+     - 笔记内容是用户个人理解，用作内部参考，**不替代对文献原文的核实**
    - **题名转录规则**：从 Zotero 或 `.bib` 文件获取的文献，题名、作者、年份必须原样转录，保留特殊字符（希腊字母、上下标、变音符号）。英文题名保留原始大小写。Web 搜索获取的文献同样原样记录检索到的题名；不确定准确性时在题名后标注 `[题名待核验]` 并在 project ledger 中备注。
    - **保留校验基准**：如通过 Zotero MCP 获取文献，建议将 Zotero 文献库导出为 `.bib` 文件放入 `.thesis-workflow/evidence/zotero-export/` 目录，作为后续审计阶段的文献信息校验基准。
 
@@ -92,7 +96,7 @@ description: >-
 6. **请求确认**
    - 以明确确认问题收尾：“请确认是否按此总大纲进入第 X 章细纲设计；如需调整，请指出章节、研究重点或输出格式。”
    - 除非用户已经要求继续，否则不要直接进入完整章节写作。
-   - 对多轮项目，若 `.thesis-workflow/` 已存在或用户已进入论文工作流，主动创建或更新 `.thesis-workflow/project-ledger.md`，记录已确认事实、来源、公式和设计决策；只有保存位置或是否使用文件不明确时才询问。
+   - 对多轮项目，若 `.thesis-workflow/` 已存在或用户已进入论文工作流，主动创建或更新 `.thesis-workflow/ledger/` 下相关文件（facts/decisions/chapter-status/questions）及 `literature-pool.md`，记录已确认事实、来源、公式和设计决策；只有保存位置或是否使用文件不明确时才询问。
 
 ## 证据规则
 
@@ -122,12 +126,12 @@ Zotero/local source marker 保留原题名。中文来源使用原中文题名�
 除非用户指定其他格式，使用：
 
 1. `任务理解`
-2. `资料检索计划与文献池`
-3. `论文总章节规划`
+2. `资料检索计划与文献池`（全表写入 `literature-pool.md`，大纲只保留分组摘要）
+3. `论文总章节规划`（到小节标题层级；段落级细纲后续写入 `outlines/chX-detailed.md`）
 4. `任务书要求与章节对应关系`
 5. `建议图表与附录`
 6. `公式/数据/证据需求判断`
-7. `项目台账建议`
+7. `项目台账`（指向 `ledger/` 目录）
 8. `待确认问题`
 9. `下一步建议`
 
