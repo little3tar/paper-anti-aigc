@@ -1,21 +1,21 @@
 # 项目台账审计规则
 
-当论文项目维护了 `facts.md`、`formulas.md`、`sources.md`、`decisions.md`、`figures-tables.md` 和 `chapter-status.md` 等台账文件时使用本规则。
+当论文项目维护了 `ledger/` 子目录（`facts.md`、`decisions.md`、`chapter-status.md`、`questions.md`）时使用本规则。台账结构定义见 workflow router 的同名参考文件 `project-ledger-rules.md`。
 
 ## 对照台账审计
 
 对照已确认的台账条目检查草稿：
 
-- 草稿中的事实不应与 `facts.md` 矛盾。
-- 公式、符号、假设和适用范围应与 `formulas.md` 一致。
-- 引用占位符和来源注释应能在 `sources.md` 中解析（当来源已知时）。
-- 章节结构和已批准的选择应与 `decisions.md` 一致。
-- 图表占位符应与 `figures-tables.md` 匹配，或作为建议更新加入。
+- 草稿中的设计参数不应与 `ledger/facts.md` 矛盾。
+- 输出格式、路径、引用方案等决策应与 `ledger/decisions.md` 一致。
+- 章节进展状态应与 `ledger/chapter-status.md` 反映的实际进度相符。
+- 已确认的设计参数在正文中的表述应与 `ledger/facts.md` 中的性质和来源一致。
+- 正文数值应与 `calculation-records.md` 中的对应记录一致（计算记录是数值单一权威源）。
 
 ## 发现类型
 
-- `ledger-missing`：草稿引入了新的事实、参数、公式或来源，应添加到台账中。
-- `ledger-conflict`：草稿与已确认的台账条目不矛盾。
+- `ledger-missing`：草稿引入了新的设计参数或决策，应添加到 `ledger/` 对应文件中。
+- `ledger-conflict`：草稿与已确认的台账条目矛盾。
 - `ledger-stale`：台账中包含已废弃的值，草稿仍在使用。
 - `ledger-unresolved`：草稿依赖标记为 `needs-source` 或 `needs-user-data` 的条目。
 

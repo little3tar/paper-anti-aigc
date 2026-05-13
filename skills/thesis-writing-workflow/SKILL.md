@@ -53,14 +53,14 @@ description: >-
 
 每个阶段启动前，必须检查上游产物：
 
-1. 读取 `.thesis-workflow/ledger/chapter-status.md`，确认上游阶段状态为 `confirmed`。
+1. 读取 `.thesis-workflow/ledger/chapter-status.md`（如存在），确认上游阶段状态为 `confirmed`。首次运行（`ledger/` 目录尚不存在）时跳过此检查。
 2. 读取目标阶段依赖的上游产物（如 `01-outline.md`、`02-chapter-draft.md`、`03-reference-audit.md`）。
-3. 读取 `.thesis-workflow/ledger/facts.md` 和 `ledger/decisions.md`，获取已确认设计参数和决策。
-3. 若上游产物不存在或状态非 `confirmed`，且用户未明确声明跳过，**拒绝执行**并提示先运行上游阶段。
-4. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**，提示先运行 `reference-integrity-auditor`。
-5. `academic-format-cleaner` 额外检查 `status.json`：若 `next_allowed` 不为 `"humanizer"` 或 `"format-cleaner"`，**强制拒绝**。
-6. 跨章阻塞规则：前一章的 `status.json` 中 `next_allowed` 为 `"fix-evidence"` 时，**禁止开始下一章写作**。必须先将 P0/P1 清零并完成 humanizer+format-cleaner，`next_allowed` 变为 `"next-chapter"` 后才能进入下一章。
-7. 细纲确认阻塞规则：在 `ledger/chapter-status.md` 中，当前章细纲状态非 `confirmed` 时，**禁止进入正文写作**（即 `evidence-grounded-chapter-writer` 的步骤 3 和步骤 4）。细纲状态为 `draft` 时不得继续。
+3. 读取 `.thesis-workflow/ledger/facts.md` 和 `ledger/decisions.md`（如存在），获取已确认设计参数和决策。
+4. 若上游产物不存在或状态非 `confirmed`，且用户未明确声明跳过，**拒绝执行**并提示先运行上游阶段。
+5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**，提示先运行 `reference-integrity-auditor`。
+6. `academic-format-cleaner` 额外检查 `status.json`：若 `next_allowed` 不为 `"humanizer"` 或 `"format-cleaner"`，**强制拒绝**。
+7. 跨章阻塞规则：前一章的 `status.json` 中 `next_allowed` 为 `"fix-evidence"` 时，**禁止开始下一章写作**。必须先将 P0/P1 清零并完成 humanizer+format-cleaner，`next_allowed` 变为 `"next-chapter"` 后才能进入下一章。
+8. 细纲确认阻塞规则：在 `ledger/chapter-status.md` 中，当前章细纲状态非 `confirmed` 时，**禁止进入正文写作**（即 `evidence-grounded-chapter-writer` 的步骤 3 和步骤 4）。细纲状态为 `draft` 时不得继续。
 
 ## 审计退回修复闭环
 
@@ -342,7 +342,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 - 区分“内容确认”和“文件更新”。真实论文工作流中，`.thesis-workflow/` 内运行产物应随每次相关阶段运行主动创建或更新；但总大纲、章节细纲、P0/P1 处理方案和真实论文主文件修改仍需要用户确认。
 - 单独运行任一 thesis skill 时也遵循同一规则：若当前目录、用户指定目录或已识别的论文项目根目录中存在 `.thesis-workflow/`，或用户明确处于论文 workflow 项目中，则该 skill 运行结束必须更新对应阶段产物和必要的 `ledger/` 文件；不要因为用户没有再次说”生成文件”而跳过更新。
 - 用户只要求一次性在对话中返回内容，且没有进入论文项目工作流时，可以不创建文件；一旦创建或使用 `.thesis-workflow/`，后续阶段默认读取并更新其中的相关产物。
-- 阶段开始前先读取已有上游产物，至少包括 `.thesis-workflow/ledger/`（facts/decisions/chapter-status）和 `.thesis-workflow/main-tex-context.md`；若目标阶段依赖大纲、草稿或审计报告，也读取对应的 `01-outline.md`、`02-chapter-draft.md` 或 `03-reference-audit.md`。
+- 阶段开始前先读取已有上游产物。若 `.thesis-workflow/ledger/` 存在，读取其中的 facts/decisions/chapter-status；若 `main-tex-context.md` 存在，读取项目结构地图。若目标阶段依赖大纲、草稿或审计报告，也读取对应的 `01-outline.md`、`02-chapter-draft.md` 或 `03-reference-audit.md`。
 - 阶段结束后更新本阶段产物和 `ledger/` 对应文件（facts/decisions/chapter-status）。大纲阶段更新 `01-outline.md` 和 `literature-pool.md`，章节写作阶段更新 `02-chapter-draft.md`，证据审计阶段更新 `03-reference-audit.md`，润色阶段更新 `04-humanized.md`（操作记录），格式清理阶段更新 `05-format-cleaned.md`（操作记录）。
 - `ledger/facts.md` 和 `ledger/decisions.md` 在确认新事实、参数、公式、来源、设计假设、用户材料或决策时更新。`ledger/chapter-status.md` 在每个阶段完成时更新。`main-tex-context.md` 只在论文主文件结构、章节标题、引用方案、模板或主文件路径变化时更新。
 - 用户要求生成文件但未指定目录时，默认创建或使用论文项目根目录下的 `.thesis-workflow/`。如果当前工作目录位于 skill 仓库内，不能把运行产物写进 skill 仓库；应使用用户论文项目根目录，无法判断时先确认。
@@ -358,7 +358,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 - 图表数据溯源清单默认放在 `.thesis-workflow/figure-data-manifest.md`（持久文件，数据文件路径、生成脚本、输出格式）。
 - 计算记录默认放在 `.thesis-workflow/calculation-records.md`（计算底稿，正文数值的唯一权威数据源）。
 - 每次直接修改用户论文主文件前，先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <文件>` 创建备份。脚本优先使用 Git 分支备份，回退到 `.thesis-workflow/backups/` 下的文件复制备份。不要把备份写进 skill 仓库。
-- 直接修改真实论文主文件后，即使已经写回主文件，也要把本轮修改结果另存到 `.thesis-workflow/` 对应阶段产物中，便于审阅、回退和追踪。例如润色写入 `04-humanized.md`，格式清理写入 `05-format-cleaned.md`。
+- 直接修改真实论文主文件（`main.md` / `main.txt`）后，将本轮变更清单（改了什么、为什么改）写入 `.thesis-workflow/` 对应阶段产物（`04-humanized.md` 或 `05-format-cleaned.md`）。这些产物是操作记录，不存全文副本——全文以 `main.md` / `main.txt` 为唯一权威输出。
 - `.thesis-workflow/` 内运行产物默认主动更新，但不对每次更新创建备份；重要确认版、主文件结构大改、用户原始材料变更和真实主文件修改才创建备份或快照。重大确认版本建议使用 `--anchor` 参数创建锚点备份，锚点备份永不自动淘汰。
 - 以下 `.thesis-workflow/` 产物在关键节点应额外备份：`ledger/` 目录（每次确认后）、`01-outline.md`（总大纲确认后）、`02-chapter-draft.md`（细纲确认后）。备份命令同主文件：`git_snapshot.py .thesis-workflow/01-outline.md --anchor`。
 - 普通备份默认保留最近 5 个，超出自动淘汰（可通过 `GIT_SNAPSHOT_MAX_BACKUPS` 环境变量或 `--max-backups N` 参数调整）。锚点备份不受此限制。

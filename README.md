@@ -175,12 +175,19 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 ```json
 {
+  "stage": "audited",
+  "timestamp": "2026-05-13T22:00:00",
   "p0_count": 0,
   "p1_count": 0,
-  "next_allowed": "humanizer"
+  "green_paragraphs": ["§2.1", "§3.2"],
+  "blocked_paragraphs": ["§2.3"],
+  "next_allowed": "humanizer",
+  "notes": ""
 }
 ```
 
+- `stage`：当前所处阶段（`audited` / `humanized` / `format-cleaned`）
+- `p0_count` / `p1_count`：P0/P1 问题计数
 - `next_allowed` 取值：`"fix-evidence"` / `"humanizer"` / `"format-cleaner"` / `"next-chapter"`
 - P0/P1 > 0 时，`next_allowed` 强制为 `"fix-evidence"`，humanizer 和 format-cleaner **硬性阻断**
 - 前一章未完成 humanizer+format-cleaner 时，**禁止开始下一章**
