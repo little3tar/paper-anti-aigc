@@ -56,6 +56,20 @@
 - 表格前后各留一个空行，与正文分隔
 - 表头行与分隔行不保留在纯文本中
 
+### 图表代码块保护
+
+Mermaid、Python matplotlib、Graphviz DOT 等图表代码块在纯文本转换时**保留围栏和完整代码**，不剥离。转换后在块前插入渲染说明：
+
+```
+[图表代码：图X-X 标题 — 可在 mermaid.live 或对应工具中渲染]
+```mermaid
+flowchart TD
+    ...
+```
+```
+
+此规则涵盖 Mermaid（` ```mermaid `）、Python matplotlib（` ```python ` 中含 `matplotlib` 或 `plt.`）、Graphviz DOT（` ```dot `）。渲染说明中写明图表编号和标题，方便后续在 Word 中重新插入或引用。
+
 ### 自动转换
 
 使用 `check_format.py --fix --format plain` 自动完成 Markdown → 纯文本剥离：
