@@ -62,7 +62,7 @@ description: >-
    - 关键信息缺失时，只问最小必要确认问题。
 
 3. **确认输出格式**
-   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/01-outline.md`。
+   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/01-outline.md`（总大纲，章→节→小节层级）和 `.thesis-workflow/literature-pool.md`（文献池全表，6组分类）。章节细纲在写作阶段生成，存放于 `.thesis-workflow/outlines/chX-detailed.md`。
    - 只有当交付格式影响工作时才问：”请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
    - 如果用户要求 Word 文档，先以 `.tex`、`.md` 或 `.txt` 完成并确认计划，再通过 pandoc 或 `python-docx` 转换为 `.docx`。
 
@@ -95,7 +95,7 @@ description: >-
 6. **请求确认**
    - 以明确确认问题收尾：“请确认是否按此总大纲进入第 X 章细纲设计；如需调整，请指出章节、研究重点或输出格式。”
    - 除非用户已经要求继续，否则不要直接进入完整章节写作。
-   - 对多轮项目，若 `.thesis-workflow/` 已存在或用户已进入论文工作流，主动创建或更新 `.thesis-workflow/project-ledger.md`，记录已确认事实、来源、公式和设计决策；只有保存位置或是否使用文件不明确时才询问。
+   - 对多轮项目，若 `.thesis-workflow/` 已存在或用户已进入论文工作流，主动创建或更新 `.thesis-workflow/ledger/` 下相关文件（facts/decisions/chapter-status/questions）及 `literature-pool.md`，记录已确认事实、来源、公式和设计决策；只有保存位置或是否使用文件不明确时才询问。
 
 ## 证据规则
 
@@ -125,12 +125,12 @@ Zotero/local source marker 保留原题名。中文来源使用原中文题名�
 除非用户指定其他格式，使用：
 
 1. `任务理解`
-2. `资料检索计划与文献池`
-3. `论文总章节规划`
+2. `资料检索计划与文献池`（全表写入 `literature-pool.md`，大纲只保留分组摘要）
+3. `论文总章节规划`（到小节标题层级；段落级细纲后续写入 `outlines/chX-detailed.md`）
 4. `任务书要求与章节对应关系`
 5. `建议图表与附录`
 6. `公式/数据/证据需求判断`
-7. `项目台账建议`
+7. `项目台账`（指向 `ledger/` 目录）
 8. `待确认问题`
 9. `下一步建议`
 

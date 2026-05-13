@@ -32,7 +32,7 @@ description: >-
 1. **确定审计范围**
    - 判断用户需要逐段审计、source marker 审计、来源清单审计，还是可直接修订的问题列表。
    - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/03-reference-audit.md`。
-   - 如果存在 project ledger，读取后对照已确认事实、公式、来源和设计决策。
+   - 如果存在 project ledger（`ledger/` 目录），读取 `ledger/facts.md` 和 `ledger/decisions.md` 后对照已确认事实、公式、来源和设计决策。
 
 2. **切分草稿**
    - 按标题和段落切分。

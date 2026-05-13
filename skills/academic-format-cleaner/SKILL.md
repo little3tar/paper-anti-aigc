@@ -63,8 +63,8 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 ## 工作流程
 
 1. 先判断用户要求的是格式检查，而不是正文润色、证据审计或章节写作。
-2. 如需直接修改论文主文件，修改前先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮格式清理结果另存或同步到 `.thesis-workflow/05-format-cleaned.md`。
-   文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/05-format-cleaned.md`。
+2. 如需直接修改论文主文件，修改前先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮格式修复记录（变更清单，非全文副本）写入 `.thesis-workflow/05-format-cleaned.md`，最终清理后文本写入 `main.md` / `main.txt`。
+   文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/05-format-cleaned.md`（格式修复记录，非全文副本）。
 3. 如有目标文件，运行格式检查脚本：
 
    ```bash

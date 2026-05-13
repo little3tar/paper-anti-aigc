@@ -73,11 +73,11 @@ description: >-
 
 如果 `03-reference-audit.md` 不存在但 `status.json` 存在且 P0/P1 已清零，可继续但需在输出中注明”审计报告缺失，润色边界由 humanizer 自行判断”。
 
-如果用户要求直接修改论文主文件，修改前先通过 `scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮润色结果另存到 `.thesis-workflow/04-humanized.md`。
+如果用户要求直接修改论文主文件，修改前先通过 `scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮润色操作记录（变更清单，非全文副本）写入 `.thesis-workflow/04-humanized.md`，最终润色后文本写入 `main.md` / `main.txt`。
 
-文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/04-humanized.md`。
+文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/04-humanized.md`（润色操作记录，非全文副本）。
 
-如用户提供了项目级上下文文件（如 project ledger），先读取。需要建立主文件结构地图时，参考 `assets/main-tex-context-template.md` 在论文项目根目录创建 `.thesis-workflow/main-tex-context.md`。
+如用户提供了项目级上下文文件（`ledger/` 目录），先读取 `ledger/facts.md` 和 `ledger/decisions.md`。
 
 ### 2. 运行文本检查
 
@@ -127,7 +127,7 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE> --format plain
 
 ### 6. 输出
 
-返回改写后的文本，并附简短说明。若用户给的是文件并要求直接修改文件，先备份、再修改文件，修改后运行 `check_text.py` 复查，并把本轮润色结果另存或同步到 `.thesis-workflow/04-humanized.md`。若用户要求生成独立润色稿但未指定目录，默认写入 `.thesis-workflow/04-humanized.md`；直接修改原文时仍写回同一个主文件或用户指定文件，同时保留该阶段产物，不主动拆成多个文件。
+返回改写后的文本，并附简短说明。若用户给的是文件并要求直接修改文件，先备份、再修改文件，修改后运行 `check_text.py` 复查，并把本轮润色变更清单写入 `.thesis-workflow/04-humanized.md`（非全文副本），最终润色后文本写入 `main.md` / `main.txt`。
 
 ## 参考文件
 
