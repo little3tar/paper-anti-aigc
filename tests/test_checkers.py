@@ -34,8 +34,18 @@ class CheckerScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         diagnostics = json.loads(result.stdout)
         rule_ids = {item["rule"] for item in diagnostics}
-        self.assertIn("AIGC-001", rule_ids)
-        self.assertIn("AIGC-015", rule_ids)
+        # 关键 AIGC 规则均应命中
+        for rid in ("AIGC-001", "AIGC-002", "AIGC-007", "AIGC-012", "AIGC-015",
+                     "AIGC-022", "AIGC-046", "AIGC-052", "AIGC-061", "AIGC-064"):
+            self.assertIn(rid, rule_ids, f"应命中 {rid}")
+        # 三段式聚合诊断
+        self.assertIn("AIGC-AGG-ERR", rule_ids)
+        # 去重验证：AIGC-052 已覆盖的"值得注意的是"不应再报 AIGC-CONN
+        conn_hits = [d for d in diagnostics if d["rule"] == "AIGC-CONN"]
+        aigc052_lines = {d["line"] for d in diagnostics if d["rule"] == "AIGC-052"}
+        for c in conn_hits:
+            self.assertNotIn(c["line"], aigc052_lines,
+                              f"AIGC-CONN L{c['line']} 不应与 AIGC-052 重叠")
 
     def test_format_checker_reports_latex_errors(self) -> None:
         result = run_script(
@@ -357,8 +367,12 @@ class CheckerScriptTests(unittest.TestCase):
             # 应保留纯文字内容
             self.assertIn("测试标题", text)
             self.assertIn("加粗文字", text)
-            # 表格应转换为 [表格] 标记
-            self.assertIn("[表格]", text)
+            # 表格应转换为纯文本格式（空格分隔）
+            self.assertIn("参数", text)
+            self.assertIn("流量", text)
+            self.assertIn("压力", text)
+            self.assertIn("100", text)
+            self.assertIn("L/min", text)
 
     def test_fix_plain_text_stdout(self) -> None:
         """--fix --format plain 不指定 --output 时输出到 stdout。"""
@@ -450,12 +464,122 @@ class CheckerScriptTests(unittest.TestCase):
         """generate_format_dict.py 应包含所有规则类别，包括纯文本和新增 LaTeX 规则。"""
         result = run_script("skills/academic-format-cleaner/scripts/generate_format_dict.py")
         self.assertEqual(result.returncode, 0, result.stderr)
-        # 应包含纯文本规则的格式列标记
         self.assertIn("plain", result.stdout)
-        # 应包含 LaTeX 格式标记
         self.assertIn("latex", result.stdout)
-        # 应有新增规则（通过其他分类展示）
         self.assertIn("其他", result.stdout)
+
+    # ── PUNCT 规则 ─────────────────────────────────────────
+
+    def test_humanizer_detects_ascii_quotes(self) -> None:
+        """PUNCT-001: 检测中文正文中的 ASCII 直双引号。"""
+        result = run_script(
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_punct.md",
+            "--format", "markdown", "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("PUNCT-001", rule_ids)
+
+    def test_humanizer_detects_em_dash(self) -> None:
+        """PUNCT-002: 检测中文正文中的破折号/异常 dash。"""
+        result = run_script(
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_punct.md",
+            "--format", "markdown", "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("PUNCT-002", rule_ids)
+
+    def test_humanizer_no_punct_in_latex_comments(self) -> None:
+        """LaTeX 注释行内的标点不应触发 PUNCT 规则。"""
+        result = run_script(
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_multisection.tex",
+            "--section", "2", "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        # 第 2 节是注释区，不应有大量诊断
+        self.assertLessEqual(len(diagnostics), 5,
+                             f"注释区内诊断应很少，实际: {len(diagnostics)}")
+
+    # ── 连接词泛滥检测 ────────────────────────────────────
+
+    def test_humanizer_connective_detection(self) -> None:
+        """AIGC-CONN: 检测段首/句首连接词泛滥。"""
+        result = run_script(
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_humanizer.md",
+            "--format", "markdown", "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        # sample_humanizer.md 中"值得注意的是"被 AIGC-052 覆盖，不应重复报 CONN
+        self.assertNotIn("AIGC-CONN", rule_ids,
+                         "被 AIGC 规则覆盖的词不应再报 AIGC-CONN")
+
+    # ── burstiness 粗评 ────────────────────────────────────
+
+    def test_humanizer_burstiness_no_false_positive(self) -> None:
+        """BURST-001: 短段落不应误报 burstiness 警告。"""
+        # sample_humanizer.md 只有 5 行，不够触发 BURST-001
+        result = run_script(
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_humanizer.md",
+            "--format", "markdown", "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertNotIn("BURST-001", rule_ids,
+                         "短文不应触发段内句长方差警告")
+
+    # ── 引号平衡检测 ──────────────────────────────────────
+
+    def test_humanizer_quote_balance(self) -> None:
+        """PUNCT-005/PUNCT-006: 检测引号不平衡。"""
+        result = run_script(
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_punct.md",
+            "--format", "markdown", "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        # 第 7 行有引号不平衡（左引号缺失），应触发 PUNCT-005 或 PUNCT-006
+        self.assertTrue(
+            "PUNCT-005" in rule_ids or "PUNCT-006" in rule_ids,
+            f"引号不平衡行应触发 PUNCT-005 或 PUNCT-006，实际命中: {rule_ids}",
+        )
+
+    # ── generate_dict ──────────────────────────────────────
+
+    def test_generate_dict_includes_all_categories(self) -> None:
+        """generate_dict.py 应包含所有规则类别。"""
+        result = run_script("skills/engineering-paper-humanizer/scripts/generate_dict.py")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("AI 高频词与敏感短语", result.stdout)
+        self.assertIn("标点与格式问题", result.stdout)
+        self.assertIn("连接词泛滥检测", result.stdout)
+
+    # ── CITE 规则补充 ─────────────────────────────────────
+
+    def test_format_detects_cite_not_after_period(self) -> None:
+        """CITE-001: 检测句号后 \\cite{}（应移到句号前）。"""
+        result = run_script(
+            "skills/academic-format-cleaner/scripts/check_format.py",
+            "tests/fixtures/sample_format.tex",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        self.assertIn("CITE-001", rule_ids)
 
 
 if __name__ == "__main__":

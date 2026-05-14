@@ -1,6 +1,6 @@
 # Paper Anti-AIGC
 
-一套面向中文工程类毕业论文的 AI 辅助写作工作流与 Skills，根据自己对于论文写作的理解，在 Codex 的帮助下创建，并参考成型项目优化，覆盖任务书解析、大纲规划、证据驱动章节撰写、来源审计、正文润色到格式收尾六个阶段。支持 Claude Code 等兼容 `SKILL.md` 的工具。
+一套面向中文工程类毕业论文的 AI 辅助写作工作流与 Skills，根据自己对于论文写作的理解，在 Codex 的帮助下创建，并参考成型项目优化，覆盖大纲规划、证据驱动章节撰写、来源审计、正文润色到格式收尾五个阶段（任务书解析融入大纲规划阶段）。支持 Claude Code 等兼容 `SKILL.md` 的工具。
 
 > 本项目仅供学术写作组织、证据核验、表达润色和格式自检参考。请遵守所在学校或机构的学术诚信规范。
 
@@ -143,7 +143,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 | --- | --- | --- |
 | `ledger/facts.md` | 已确认设计参数、引用标准、MC51公开数据 | 参数、来源、性质(A/B/C)、计算记录ID |
 | `ledger/decisions.md` | 输出格式、文件路径、引用方案等用户确认决策 | 日期、决策、理由、影响范围 |
-| `ledger/chapter-status.md` | 各章 7×6 阶段完成状态 | 章节、大纲、细纲、草稿、审计、润色、格式 |
+| `ledger/chapter-status.md` | 各章阶段完成状态（6 列：大纲/细纲/草稿/审计/润色/格式） | 章节、大纲、细纲、草稿、审计、润色、格式 |
 | `ledger/questions.md` | 结构化待确认问题 | 编号、问题、阻塞章节、优先级、状态 |
 
 **数值单一权威源**：计算类数值（缸径、推力等）只在 `calculation-records.md` 中定义。`ledger/facts.md` 只记录参数名和关联计算记录 ID，不复制数值。
@@ -186,7 +186,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 }
 ```
 
-- `stage`：当前所处阶段（`audited` / `humanized` / `format-cleaned`）
+- `stage`：当前所处阶段（`planned` / `written` / `audited` / `humanized` / `format-cleaned`）。`planned` 和 `written` 为信息性标记；门控逻辑主要关注后三个阶段。
 - `p0_count` / `p1_count`：P0/P1 问题计数
 - `next_allowed` 取值：`"fix-evidence"` / `"humanizer"` / `"format-cleaner"` / `"next-chapter"`
 - P0/P1 > 0 时，`next_allowed` 强制为 `"fix-evidence"`，humanizer 和 format-cleaner **硬性阻断**
@@ -198,10 +198,10 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 所有材料在 `materials-inventory.md` 中编目：
 
-| ID | 文件名 | 类型 | 路径 | 提取的关键信息 | 适用章节 | 消化方式 |
-| --- | --- | --- | --- | --- | --- | --- |
-| M01 | task-book.pdf | 任务书 | evidence/task-book/ | 设计目标、约束 | 全文 | 规划输入 |
-| M02 | motor-datasheet.pdf | 数据表 | reference-materials/ | 额定 15kW | §2.3 | 待查外部源 |
+| ID | 文件名 | 类型 | 路径 | 提取的关键信息 | 数据性质 | 适用章节 | 消化方式 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| M01 | task-book.pdf | 任务书 | evidence/task-book/ | 设计目标、约束 | — | 全文 | 规划输入 |
+| M02 | motor-datasheet.pdf | 数据表 | reference-materials/ | 额定 15kW | A | §2.3 | 待查外部源 |
 
 > 用户材料仅供内部参考，**不作为正式引用进入正文**。正文中不得出现 `[用户材料: ...]` 或 `[Mxx]` 标记。
 

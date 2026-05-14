@@ -35,7 +35,6 @@ from _shared import (
     is_markdown_structured_row,
     is_allowed_dash_context,
     strip_latex_comment,
-    SEVERITY_ICONS,
     format_text,
     setup_windows_utf8,
 )
@@ -301,6 +300,22 @@ def check_file(
                             }
                         )
         diagnostics.extend(connective_hits)
+
+        # 去重：已被具体 AIGC 规则命中的词不再报 AIGC-CONN
+        _aigc_flagged: set[tuple[int, str]] = set()
+        for d in diagnostics:
+            if d["rule"].startswith("AIGC-") and d["rule"] != "AIGC-CONN":
+                for w in connectives_words:
+                    if w in d["message"] or w in d.get("context", ""):
+                        _aigc_flagged.add((d["line"], w))
+        if _aigc_flagged:
+            diagnostics = [
+                d for d in diagnostics
+                if d["rule"] != "AIGC-CONN" or not any(
+                    d["line"] == line and w in d["message"]
+                    for line, w in _aigc_flagged
+                )
+            ]
 
     # 突发性粗评（段落内句长方差）
     burstiness_warnings = check_burstiness(

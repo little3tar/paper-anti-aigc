@@ -44,7 +44,6 @@ from _shared import (  # noqa: E402
     mask_inline_code,
     strip_latex_comment,
     is_markdown_table_separator,
-    SEVERITY_ICONS,
     format_text,
     setup_windows_utf8,
 )
