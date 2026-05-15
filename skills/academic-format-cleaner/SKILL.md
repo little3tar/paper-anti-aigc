@@ -2,9 +2,10 @@
 name: academic-format-cleaner
 description: >-
   用于学术文档的格式层清理。用户要求清理/检查/修复格式、修一下格式、整理格式、
-  查格式问题、论文格式检查、LaTeX 报错/命令断行/百分号转义、citation placement、
+  查格式问题、检查以下文本格式（粘贴文本）、论文格式检查、LaTeX 报错/命令断行/百分号转义、citation placement、
   BibTeX/LaTeX 引用格式、列表格式、代码块或数学环境保护时使用。
   适用于 LaTeX、Markdown 和纯文本草稿的格式收尾；不处理正文润色或去 AI 味，这些交给 engineering-paper-humanizer。
+  用户在消息中直接粘贴待检查文本时，自动进入独立模式，跳过工作流门控。
 ---
 
 # Academic Format Cleaner
@@ -16,7 +17,7 @@ description: >-
 | "格式问题很少，目测一下就行" | 必须运行 check_format.py，依赖脚本输出判断 |
 | "`[待补来源]` 标记先留着" | 残留标记必须清理或移入证据缺口，不得留到最终稿 |
 | "引用位置差不多就行" | `\cite{}` 须紧贴被引文字，位于中文句号、逗号内侧 |
-| "P0/P1 还在，但只做格式检查没事" | 格式清理前检查 status.json，P0/P1 > 0 时拒绝继续 |
+| "P0/P1 还在，但只做格式检查没事" | 工作流模式下检查 status.json，P0/P1 > 0 时拒绝继续；独立模式（用户粘贴文本）不受此限 |
 | "部分格式问题不在脚本检测范围" | 脚本未覆盖的问题按本 skill 规则人工复核 |
 | "marker 题名改了也不影响格式" | `[文献题名]` 方括号内题名必须与原始草稿一致，缩写/翻译/改写视为 P2 |
 | "`“` 是 JSON 的事，格式不用管" | Unicode 转义序列必须还原为实际字符——`“`→`"`、`”`→`"`、`‘`→`'`、`’`→`'` 等 |
@@ -30,7 +31,9 @@ description: >-
 - `engineering-paper-humanizer`：处理中文工程论文正文、AI 腔、通用中文标点、引号、破折号和表达自然度。
 - `academic-format-cleaner`：处理 LaTeX/Markdown/plain text 的格式约束、引用位置、命令保护、结构性格式问题和残留占位符。
 - 如果发现 P0/P1 证据问题、缺来源结论或 `[待补来源: ...]` 仍在正文中，先交给 `reference-integrity-auditor` 或移入证据缺口清单，再做最终格式清理。
-- 启动格式清理前，检查 `.thesis-workflow/status.json`（门控规则遵循 workflow §强制串行规则第6条）：若 `p0_count` 或 `p1_count` > 0，或 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，拒绝继续并提示用户先完成上游审计和润色。若 `next_allowed` 为 `"fix-evidence"` 说明审计已发现问题但尚未修复，拒绝继续。若 `next_allowed` 为 `"humanizer"` 说明润色尚未完成，拒绝继续。若文件不存在，说明审计阶段未运行，拒绝继续。
+- 启动前先判断运行模式（见 §运行模式）：
+  - **独立模式**（用户粘贴了待检查文本）→ 跳过门控检查，直接进行格式检查。
+  - **工作流模式**（用户引用论文文件）→ 检查 `.thesis-workflow/status.json`（门控规则遵循 workflow §强制串行规则第6条）：若 `p0_count` 或 `p1_count` > 0，或 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，拒绝继续并提示用户先完成上游审计和润色。若 `next_allowed` 为 `"fix-evidence"` 说明审计已发现问题但尚未修复，拒绝继续。若 `next_allowed` 为 `"humanizer"` 说明润色尚未完成，拒绝继续。若文件不存在，说明审计阶段未运行，提示用户先完成上游阶段，用户确认后方可继续。
 
 推荐顺序：
 
@@ -60,9 +63,24 @@ description: >-
 
 Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要在 `--format markdown` 下执行。处理 LaTeX 或 plain text 时，按本节规则人工复核同类问题。
 
+## 运行模式
+
+本 skill 根据用户输入来源自动判断模式，无需用户手动指定：
+
+| 场景 | 判断依据 | 模式 |
+|---|---|---|
+| 用户粘贴文本到消息中（如"检查以下文本格式：……"） | 消息中包含待检查的完整文本片段 | **独立模式** |
+| 用户指定论文文件（如"检查 main-ch3.tex 格式"） | 消息中引用文件路径，且 `.thesis-workflow/status.json` 存在 | **工作流模式** |
+
+**独立模式**：不检查 `status.json`，不写入产物文件。只运行格式检查脚本和规则修复，结果直接返回。
+
+**工作流模式**：遵循下方完整流程，包括门控检查、备份、产物落盘和 `status.json` 更新。
+
 ## 工作流程
 
-1. 先判断用户要求的是格式检查，而不是正文润色、证据审计或章节写作。
+1. 先判断运行模式（见 §运行模式）和用户目标：格式检查，而不是正文润色、证据审计或章节写作。
+   - **独立模式**：跳过产物文件写入和备份步骤。运行检查脚本 → 修复问题 → 返回结果。
+   - **工作流模式**：执行以下步骤。
 2. 如需直接修改论文主文件，修改前先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮格式修复记录（变更清单，非全文副本）写入 `.thesis-workflow/05-format-cleaned.md`，最终清理后文本写入主文件（单文件模式 `main.md` / `main.txt`，拆分模式 `main-chX.md` / `main-chX.txt`）。
    文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/05-format-cleaned.md`（格式修复记录，非全文副本）。
 3. 如有目标文件，运行格式检查脚本：
@@ -78,7 +96,7 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 6. 复查同一文件，直到 `error` 清零；`warning` 和 `info` 按学校模板、论文规范和用户偏好处理。
 7. 如果用户提供的是片段而不是文件，直接给出修复后的片段，并简短说明改动类型。
 
-格式清理完成后，更新 `.thesis-workflow/status.json`：将 `stage` 设为 `"format-cleaned"`、`next_allowed` 设为 `"next-chapter"`，放行下一章写作或全流程主文件写入。
+格式清理完成后（工作流模式），更新 `.thesis-workflow/status.json`：将 `stage` 设为 `"format-cleaned"`、`next_allowed` 设为 `"next-chapter"`，放行下一章写作或全流程主文件写入。独立模式不更新 `status.json`。
 
 ## 不处理的内容
 

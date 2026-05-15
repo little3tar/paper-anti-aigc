@@ -1,11 +1,12 @@
 ---
 name: engineering-paper-humanizer
 description: >-
-  用于中文工程类论文正文润色与去 AI 味。用户要求润色文本、润色一段/一章、先润色再写入、
+  用于中文工程类论文正文润色与去 AI 味。用户要求润色文本、润色以下文本/处理以下文本（粘贴段落）、润色一段/一章、先润色再写入、
   改写论文段落、优化表述、改得自然一点、降低 AI 痕迹、减少机器感/模板化套话、处理中文引号
   或破折号、humanize thesis prose、academic Chinese polishing 时使用。
   适用于 LaTeX、Markdown、plain text 中的正文内容；不处理 citation placement、BibTeX/LaTeX
   命令或 Markdown 格式问题，这些交给 academic-format-cleaner。
+  用户在消息中直接粘贴待润色文本时，自动进入独立模式，跳过工作流门控。
 ---
 
 # Engineering Paper Humanizer
@@ -25,6 +26,19 @@ description: >-
 
 运行脚本需要 Python 3.7 或更高版本；Git 仅在需要查看差异时使用。
 
+## 运行模式
+
+本 skill 根据用户输入来源自动判断模式，无需用户手动指定：
+
+| 场景 | 判断依据 | 模式 |
+|---|---|---|
+| 用户粘贴文本到消息中（如"润色以下文本：……""处理这段文字：……"） | 消息中包含待润色的完整段落（多句、有实质技术内容） | **独立模式** |
+| 用户指定论文文件或章节（如"润色 main-ch3.md""润色 §3.2"） | 消息中引用文件路径或章节编号 | **工作流模式** |
+
+**独立模式**：不检查 `status.json`，不读取审计报告，不写入产物文件。跳过步骤 1（读取上下文）的工作流检查部分，只执行核心润色：运行文本检查 → 按规则改写 → 标点专项 → 二次 AI 痕迹审计 → 输出。结果直接返回，不落盘。
+
+**工作流模式**：遵循下方完整流程，包括门控检查、审计报告读取、备份、产物落盘和 `status.json` 更新。若 `.thesis-workflow/status.json` 不存在但用户要求润色论文文件，先提示用户完成上游阶段（审计），用户确认后方可继续。
+
 ## 在 Thesis Workflow 中的位置
 
 本 skill 应位于 `reference-integrity-auditor` 之后、`academic-format-cleaner` 之前。
@@ -39,7 +53,10 @@ description: >-
 
 若草稿仍存在 P0/P1 证据问题，先退回证据审计或章节写作，不要直接润色成更像定论的文字。
 
-启动润色前，检查 `.thesis-workflow/status.json`（门控规则遵循 workflow §强制串行规则第5条）：若 `p0_count` 或 `p1_count` > 0，或 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，拒绝继续并提示先运行 `reference-integrity-auditor` 并将 P0/P1 清零。若 `next_allowed` 为 `"fix-evidence"` 说明审计已发现问题但尚未修复，拒绝继续。若文件不存在，说明审计阶段未运行，拒绝继续并提示先运行审计。`"format-cleaner"` 和 `"next-chapter"` 状态允许润色以支持修改回环（见 workflow §修改回环）。Validation mode 下可忽略此门控。
+启动前先判断运行模式（见 §运行模式）：
+
+- **独立模式**（用户粘贴了待润色文本）→ 跳过本节门控检查，直接进入步骤 2。
+- **工作流模式**（用户引用论文文件或章节）→ 检查 `.thesis-workflow/status.json`（门控规则遵循 workflow §强制串行规则第5条）：若 `p0_count` 或 `p1_count` > 0，或 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，拒绝继续并提示先运行 `reference-integrity-auditor` 并将 P0/P1 清零。若 `next_allowed` 为 `"fix-evidence"` 说明审计已发现问题但尚未修复，拒绝继续。若文件不存在，说明审计阶段未运行，提示用户先完成上游阶段，用户确认后方可继续。`"format-cleaner"` 和 `"next-chapter"` 状态允许润色以支持修改回环（见 workflow §修改回环）。Validation mode 下可忽略此门控。
 
 ## 处理范围
 
@@ -65,9 +82,15 @@ description: >-
 
 ### 1. 读取上下文
 
-先判断文本类型和用户目标。若用户只要求格式修复，转用 `academic-format-cleaner`。若用户要求润色、降 AI 味或修复中文标点，继续本流程。
+先判断运行模式（见 §运行模式）：
 
-**强制读取审计报告**：启动时必须读取 `.thesis-workflow/03-reference-audit.md`（如存在），获取其中的两个手交清单：
+- **独立模式**：跳过本节，直接进入步骤 2。
+
+- **工作流模式**：执行以下检查。
+
+判断文本类型和用户目标。若用户只要求格式修复，转用 `academic-format-cleaner`。若用户要求润色、降 AI 味或修复中文标点，继续本流程。
+
+**强制读取审计报告**（工作流模式）：启动时必须读取 `.thesis-workflow/03-reference-audit.md`（如存在），获取其中的两个手交清单：
 
 - `可润色段落`：这些段落可以正常改写润色。
 - `禁止润色成定论的段落`：这些段落含 P0/P1、缺数据或 unsupported claims，**只做标点和连接词修正，不改变技术表述的确定性**。不得将这些段落中的”可能””初步””待验证”等降级表述改为肯定语气。
@@ -128,7 +151,9 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE> --format plain
 
 ### 6. 输出
 
-返回改写后的文本，并附简短说明。若用户给的是文件并要求直接修改文件，先备份、再修改文件，修改后运行 `check_text.py` 复查，并把本轮润色变更清单写入 `.thesis-workflow/04-humanized.md`（非全文副本），最终润色后文本写入主文件。
+**独立模式**：返回改写后的文本，附简短改动说明。不写文件，不更新 `status.json`。
+
+**工作流模式**：返回改写后的文本，并附简短说明。若用户给的是文件并要求直接修改文件，先备份、再修改文件，修改后运行 `check_text.py` 复查，并把本轮润色变更清单写入 `.thesis-workflow/04-humanized.md`（非全文副本），最终润色后文本写入主文件。
 
 润色完成后，更新 `.thesis-workflow/status.json`：将 `stage` 设为 `"humanized"`、`next_allowed` 设为 `"format-cleaner"`，放行下游格式清理阶段。
 
