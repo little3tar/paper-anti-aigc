@@ -1,6 +1,6 @@
 # Paper Anti-AIGC
 
-一套面向中文工程类毕业论文的 AI 辅助写作工作流与 Skills，根据自己对于论文写作的理解，在 Codex 的帮助下创建，并参考成型项目优化，覆盖任务书解析、大纲规划、证据驱动章节撰写、来源审计、正文润色到格式收尾六个阶段。支持 Claude Code 等兼容 `SKILL.md` 的工具。
+一套面向中文工程类毕业论文的 AI 辅助写作工作流与 Skills，根据自己对于论文写作的理解，在 Codex 的帮助下创建，并参考成型项目优化，覆盖大纲规划、证据驱动章节撰写、来源审计、正文润色到格式收尾五个阶段（任务书解析融入大纲规划阶段）。支持 Claude Code 等兼容 `SKILL.md` 的工具。
 
 > 本项目仅供学术写作组织、证据核验、表达润色和格式自检参考。请遵守所在学校或机构的学术诚信规范。
 
@@ -98,7 +98,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 ├── main-tex-context.md        ← 论文主文件结构地图（引用 ledger/，不复制参数）
 ├── materials-inventory.md     ← 用户材料编目清单
 ├── literature-notes.md        ← 文献笔记临时缓存（写作创建，审计通过后清空）
-├── literature-pool.md         ← 文献池全表（60条，6组分类，含 ZoteroKey 映射）
+├── literature-pool.md         ← 文献池全表（含 ZoteroKey 映射，分组管理）
 ├── figure-data-manifest.md    ← 图表数据溯源清单（数据文件、生成脚本、输出格式）
 ├── calculation-records.md     ← 数值唯一权威源（公式代入、参数来源、标准选型）
 ├── operations-log.md          ← 操作日志（项目检查、章节清除等一次性操作，只追加）
@@ -143,7 +143,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 | --- | --- | --- |
 | `ledger/facts.md` | 已确认设计参数、引用标准、MC51公开数据 | 参数、来源、性质(A/B/C)、计算记录ID |
 | `ledger/decisions.md` | 输出格式、文件路径、引用方案等用户确认决策 | 日期、决策、理由、影响范围 |
-| `ledger/chapter-status.md` | 各章 7×6 阶段完成状态 | 章节、大纲、细纲、草稿、审计、润色、格式 |
+| `ledger/chapter-status.md` | 各章阶段完成状态（6 列：大纲/细纲/草稿/审计/润色/格式） | 章节、大纲、细纲、草稿、审计、润色、格式 |
 | `ledger/questions.md` | 结构化待确认问题 | 编号、问题、阻塞章节、优先级、状态 |
 
 **数值单一权威源**：计算类数值（缸径、推力等）只在 `calculation-records.md` 中定义。`ledger/facts.md` 只记录参数名和关联计算记录 ID，不复制数值。
@@ -155,7 +155,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 | 文件 | 产生阶段 | 内容 | 更新时机 |
 | --- | --- | --- | --- |
 | `01-outline.md` | thesis-outline-planner | 总大纲（章→节→小节）+ 文献池分组摘要 | 大纲确认后 |
-| `literature-pool.md` | thesis-outline-planner | 文献池全表（60条，6组，含 ZoteroKey） | 大纲确认后 |
+| `literature-pool.md` | thesis-outline-planner | 文献池全表（含 ZoteroKey，分组管理） | 大纲确认后 |
 | `outlines/chX-detailed.md` | evidence-grounded-chapter-writer | 章节细纲（段落级写作点） | 细纲确认后 |
 | `02-chapter-draft.md` | evidence-grounded-chapter-writer | 章节正文草稿（内容权威源） | 每章草稿完成后 |
 | `03-reference-audit.md` | reference-integrity-auditor | 审计报告 + 文献修正记录 | 审计完成后 |
@@ -186,7 +186,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 }
 ```
 
-- `stage`：当前所处阶段（`audited` / `humanized` / `format-cleaned`）
+- `stage`：当前所处阶段（`planned` / `written` / `audited` / `humanized` / `format-cleaned`）。`planned` 和 `written` 为信息性标记；门控逻辑主要关注后三个阶段。
 - `p0_count` / `p1_count`：P0/P1 问题计数
 - `next_allowed` 取值：`"fix-evidence"` / `"humanizer"` / `"format-cleaner"` / `"next-chapter"`
 - P0/P1 > 0 时，`next_allowed` 强制为 `"fix-evidence"`，humanizer 和 format-cleaner **硬性阻断**
@@ -198,10 +198,10 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 所有材料在 `materials-inventory.md` 中编目：
 
-| ID | 文件名 | 类型 | 路径 | 提取的关键信息 | 适用章节 | 消化方式 |
-| --- | --- | --- | --- | --- | --- | --- |
-| M01 | task-book.pdf | 任务书 | evidence/task-book/ | 设计目标、约束 | 全文 | 规划输入 |
-| M02 | motor-datasheet.pdf | 数据表 | reference-materials/ | 额定 15kW | §2.3 | 待查外部源 |
+| ID | 文件名 | 类型 | 路径 | 提取的关键信息 | 数据性质 | 适用章节 | 消化方式 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| M01 | task-book.pdf | 任务书 | evidence/task-book/ | 设计目标、约束 | — | 全文 | 规划输入 |
+| M02 | motor-datasheet.pdf | 数据表 | reference-materials/ | 额定 15kW | A | §2.3 | 待查外部源 |
 
 > 用户材料仅供内部参考，**不作为正式引用进入正文**。正文中不得出现 `[用户材料: ...]` 或 `[Mxx]` 标记。
 
@@ -282,6 +282,22 @@ python -m unittest discover -s tests
 ```
 
 `tests/` 和 `evals/` 仅供 skills 仓库维护使用，不参与论文项目运行，不需要复制到论文项目中。
+
+## 项目演进
+
+本项目从单个 skill 逐步扩展为完整的六 skill 工作流。以下里程碑分支保留了各阶段的完整代码快照：
+
+| 分支 | 提交 | 阶段 | 包含内容 |
+|---|---|---|---|
+| [`single-skill`](https://github.com/little3tar/paper-anti-aigc/tree/single-skill) | `7493a67` | 1 个 skill | `engineering-paper-humanizer` — 正文润色与去 AI 腔 |
+| [`two-skills`](https://github.com/little3tar/paper-anti-aigc/tree/two-skills) | `69a67c1` | 2 个 skills | + `academic-format-cleaner` — 格式层清理 |
+| `main` | — | 6 个 skills | + `thesis-writing-workflow`、`thesis-outline-planner`、`evidence-grounded-chapter-writer`、`reference-integrity-auditor` |
+
+```bash
+# 查看各阶段代码
+git checkout single-skill   # 仅润色去 AI 腔
+git checkout two-skills     # 润色 + 格式清理
+```
 
 ## 致谢
 

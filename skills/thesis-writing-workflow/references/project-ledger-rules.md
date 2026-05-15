@@ -13,7 +13,7 @@
   ledger/
     facts.md          ← 已确认的设计参数、引用标准、公开数据
     decisions.md      ← 已确认的决策（输出格式/路径/引用方案等）
-    chapter-status.md ← 章节进展追踪（7章 × 6阶段）
+    chapter-status.md ← 章节进展追踪（每章 6 列：大纲/细纲/草稿/审计/润色/格式）
     questions.md      ← 结构化待确认问题
   project-ledger.md   ← 汇总索引（指向 ledger/ 各文件）
 ```

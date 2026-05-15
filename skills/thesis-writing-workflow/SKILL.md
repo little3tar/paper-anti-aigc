@@ -41,6 +41,8 @@ description: >-
 
 ## 阶段输入契约
 
+> **本表是各阶段入口条件的权威参考。** 各子 skill 启动时的门控检查以本表的阻塞条件为准，§强制串行规则提供补充的自动化检查项（`status.json` 的 `next_allowed` 值校验）。
+
 局部执行时按下表判断是否可以直接进入目标阶段：
 
 | 阶段 | 最低输入前提 | 可选输入 | 阻塞条件 | 默认输出 |
@@ -48,19 +50,21 @@ description: >-
 | `thesis-outline-planner` | 任务书、设计说明、导师要求或明确论文题目 | 已有文献、Zotero 导出、学校模板 | 研究对象或任务边界完全不明 | `.thesis-workflow/01-outline.md`（大纲）+ `literature-pool.md`（文献池全表） |
 | `evidence-grounded-chapter-writer` | 已确认的大纲、章节目标或用户指定写作范围 | ledger/（事实+决策）、文献池、用户材料、图表/参数 | 缺少章节目标，或关键用户自有数据不可替代 | `.thesis-workflow/02-chapter-draft.md`；细纲写入 `outlines/chX-detailed.md` |
 | `reference-integrity-auditor` | 已有大纲、章节草稿或小节草稿 | 来源清单、ledger/、标准规范、用户材料、calculation-records.md | 没有可审计文本 | `.thesis-workflow/03-reference-audit.md` |
-| `engineering-paper-humanizer` | 待润色文本，且证据状态可接受或已明确为 validation mode | 审计报告、术语表、学校风格要求 | P0/P1 > 0 或 status.json 不存在，且非 validation mode | `.thesis-workflow/04-humanized.md`（润色操作记录，非全文副本） |
-| `academic-format-cleaner` | 待清理文本或文件 | 学校模板、引用样式、LaTeX/Markdown 约束 | 正文仍含未处理 P0/P1、缺来源定论或 status.json 不存在 | `.thesis-workflow/05-format-cleaned.md`（格式操作记录，非全文副本） |
+| `engineering-paper-humanizer` | 待润色文本，且证据状态可接受或已明确为 validation mode | 审计报告、术语表、学校风格要求 | P0/P1 > 0，或 status.json 不存在且非 validation mode，或 next_allowed 不为 humanizer/format-cleaner/next-chapter（详见 §强制串行规则第5条） | `.thesis-workflow/04-humanized.md`（润色操作记录，非全文副本） |
+| `academic-format-cleaner` | 待清理文本或文件 | 学校模板、引用样式、LaTeX/Markdown 约束 | P0/P1 > 0，或 status.json 不存在，或 next_allowed 不为 format-cleaner/next-chapter（详见 §强制串行规则第6条） | `.thesis-workflow/05-format-cleaned.md`（格式操作记录，非全文副本） |
 
 ## 强制串行规则
+
+> **本节是阶段门控逻辑的单一权威定义。** 各子 skill SKILL.md 和 PreToolUse 钩子中的门控条件均引用自此节。若其他位置的门控描述与此处不一致，以此处为准。
 
 每个阶段启动前，必须检查上游产物：
 
 1. 读取 `.thesis-workflow/ledger/chapter-status.md`（如存在），确认上游阶段状态为 `confirmed`。首次运行（`ledger/` 目录尚不存在）时跳过此检查。
 2. 读取目标阶段依赖的上游产物（如 `01-outline.md`、`02-chapter-draft.md`、`03-reference-audit.md`）。
-3. 读取 `.thesis-workflow/ledger/facts.md` 和 `ledger/decisions.md`（如存在），获取已确认设计参数和决策。
+3. 读取 `.thesis-workflow/ledger/facts.md` 和 `.thesis-workflow/ledger/decisions.md`（如存在），获取已确认设计参数和决策。
 4. 若上游产物不存在或状态非 `confirmed`，且用户未明确声明跳过，**拒绝执行**并提示先运行上游阶段。
-5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**，提示先运行 `reference-integrity-auditor`。
-6. `academic-format-cleaner` 额外检查 `status.json`：若 `next_allowed` 不为 `"humanizer"` 或 `"format-cleaner"`，**强制拒绝**。
+5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**；若 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。`"format-cleaner"` 和 `"next-chapter"` 放行以支持修改回环。
+6. `academic-format-cleaner` 额外检查 `status.json`：若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。此条件与 PreToolUse 钩子防线2 一致——format-cleaner 必须在 humanizer 完成后运行。
 7. 跨章阻塞规则：前一章的 `status.json` 中 `next_allowed` 为 `"fix-evidence"` 时，**禁止开始下一章写作**。必须先将 P0/P1 清零并完成 humanizer+format-cleaner，`next_allowed` 变为 `"next-chapter"` 后才能进入下一章。
 8. 细纲确认阻塞规则：在 `ledger/chapter-status.md` 中，当前章细纲状态非 `confirmed` 时，**禁止进入正文写作**（即 `evidence-grounded-chapter-writer` 的步骤 3 和步骤 4）。细纲状态为 `draft` 时不得继续。
 
@@ -76,11 +80,12 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
     │
     ▼
 逐项处理审计报告中的问题：
-    ├── 缺文献 → 重新检索（Zotero / Web / 用户提供）
+    ├── 缺文献 → 重新检索（Zotero → 用户 → Web 三级检索，见来源策略）
     ├── 缺参数 → 向用户索要或检索标准规范
     ├── source marker 不一致 → 修正 marker
     ├── 公式不可复现 → 补全推导链或标为设计假设
-    └── 疑似伪造 → 删除或替换为可验证来源
+    ├── 疑似伪造 → 删除或替换为可验证来源
+    └── 每项修复后立即落盘：参数→ledger/facts.md，计算→calculation-records.md，决策→ledger/decisions.md
     │
     ▼
 修改章节草稿（02-chapter-draft.md），记录修复内容
@@ -91,7 +96,6 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
     ├── P0/P1 仍 > 0 → 继续循环
     │
     └── P0/P1 = 0 → status.json 写 next_allowed = "humanizer" → 放行进入润色
-    └── humanizer + format-cleaner 完成 → status.json 写 next_allowed = "next-chapter"
 ```
 
 **循环规则**：
@@ -190,9 +194,9 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 ## 执行模式
 
-### Review-gated mode
+### Review-gated mode（真实论文提交模式）
 
-真实论文写作默认使用此模式。在总大纲确认、章节细纲确认、证据缺口、P0/P1 审计问题和真实论文主文件修改决策处暂停。运行产物文件的创建和更新不等同于内容确认；可以先写入 `.thesis-workflow/`，但未经确认的大纲、细纲或证据处理方案不能作为下游定稿依据。
+真实论文写作默认使用此模式（各子 skill 中亦称 submission mode）。在总大纲确认、章节细纲确认、证据缺口、P0/P1 审计问题和真实论文主文件修改决策处暂停。运行产物文件的创建和更新不等同于内容确认；可以先写入 `.thesis-workflow/`，但未经确认的大纲、细纲或证据处理方案不能作为下游定稿依据。
 
 ### Preauthorized continuous mode
 
@@ -218,7 +222,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 4. `02-chapter-draft.md`
 5. `03-reference-audit.md`
 6. `04-humanized.md`
-7. `05-final-format-cleaned.md`
+7. `05-format-cleaned.md`
 8. `06-skill-workflow-review.md`
 
 ## 两阶段 Review Gate
@@ -316,8 +320,8 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
    - 降低 AI-like phrasing，但不改变技术含义、不发明数据、不补写来源。
 
 5. **`academic-format-cleaner`**
-   - **前置条件**：`.thesis-workflow/status.json` 存在且 `p0_count` 和 `p1_count` 均为 0，或已通过 humanizer 阶段。
-   - **硬性阻断**：若 `status.json` 不存在，说明审计未运行，拒绝继续。若为 submission mode 且 P0/P1 > 0，拒绝继续。
+   - **前置条件**：`.thesis-workflow/status.json` 存在且 `p0_count` 和 `p1_count` 均为 0，且 `next_allowed` 为 `"format-cleaner"` 或 `"next-chapter"`（即已完成 humanizer）。
+   - **硬性阻断**：若 `status.json` 不存在，拒绝继续。若 `p0_count` 或 `p1_count` > 0，拒绝继续。若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，拒绝继续。完整的门控逻辑见 §强制串行规则第6条。
    - 最后运行。
    - 修复 citation placement、Markdown/LaTeX/plain-text format、命令保护和残留占位符。
 
@@ -331,27 +335,29 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
    - 运行 `check_format.py` 确认 error 清零。
    - 确认 `status.json` 中 `p0_count` 和 `p1_count` 均为 0。
 3. **主动询问用户**：
-   - "全部五个阶段已完成，审核均通过。是否将最终文本写入主文件？"
-   - 如果论文有多个主文件（如各章独立），逐章确认写入目标。
+   - **单文件模式**："全部五个阶段已完成，审核均通过。是否将最终文本写入主文件 `main.md`（或 `main.txt`）？"
+   - **按章拆分模式**：每章完成即写入对应章文件。全论文完成后逐章确认最终版本："第 X 章已完成，是否更新 `main-chX.md`？"，无需合并所有章到一个文件。
 4. **写入主文件**（用户确认后）：
    - 先通过 `git_snapshot.py <主文件>` 创建备份。
-   - 将合并后的最终文本写入主文件。
+   - 将最终文本写入目标文件。单文件模式写入 `main.md` / `main.txt`；拆分模式写入 `main-chX.md` / `main-chX.txt`。
    - 更新 `.thesis-workflow/ledger/chapter-status.md` 和 `operations-log.md`，记录写入时间、备份路径和最终版本号。
-5. **交付清单**：在输出中列出主文件路径、备份路径、各阶段产物路径和推荐下一步（如：编译 LaTeX、提交导师审阅）。
+5. **交付清单**：在输出中列出主文件路径（单文件 1 个，拆分模式每章 1 个）、备份路径、各阶段产物路径和推荐下一步（如：编译 LaTeX、提交导师审阅）。
 
 ## 主文件输出后的修改回环
 
-全流程完成、文本写入 `main.md` / `main.txt` 后，用户审阅时可能发现需要修改。此时 `status.json` 中 `next_allowed` 为 `"next-chapter"`，PreToolUse 钩子已放行主文件写入。修改后的内容仍须经过润色和格式审核，不得因为"工作流已完成"就直接交付未处理的文本。
+全流程完成、文本写入主文件后，用户审阅时可能发现需要修改。此时 `status.json` 中 `next_allowed` 为 `"next-chapter"`，PreToolUse 钩子已放行主文件写入。修改后的内容仍须经过润色和格式审核，不得因为"工作流已完成"就直接交付未处理的文本。
+
+**单文件模式**写回目标为 `main.md` / `main.txt`，**拆分模式**写回目标为对应章节文件 `main-chX.md` / `main-chX.txt`。修改回环规则按章独立适用——改哪章就对该章文件执行备份和分级处理，不波及未修改的章。
 
 ### 修改分级与处理路径
 
-收到修改请求后，先判断修改幅度，按对应路径处理：
+收到修改请求后，先判断修改幅度，按对应路径处理。下表中的"主文件"在单文件模式下指 `main.md`，在拆分模式下指对应章文件 `main-chX.md`：
 
 | 级别 | 判断标准 | 处理路径 |
 |---|---|---|
-| **L1 微调** | 错别字、标点修正、单个术语替换、数字勘误 | 直接改 `main.md`，无需重跑阶段。改后运行 `check_text.py` 和 `check_format.py` 确认无新增问题。 |
-| **L2 局部重写** | 1-3 个句子重写、段落内结构调整、表述优化 | ① 先改 `main.md` ② 运行 `check_text.py` 复查 AI 腔指标 ③ 运行 `check_format.py` 复查格式 ④ 若检查未通过 → 对变更段落重跑 humanizer → 再跑 format-cleaner → 更新 `main.md` |
-| **L3 内容变更** | 新增段落、删除段落、数据/结论改动、结构调整 | ① 先改 `02-chapter-draft.md`（内容权威源必须同步） ② 如变更涉及证据/数据，更新 `calculation-records.md` 和 `ledger/facts.md` ③ 对变更部分重跑 humanizer（阶段 4） ④ 重跑 format-cleaner（阶段 5） ⑤ 将处理后的文本更新到 `main.md` ⑥ 更新 `ledger/chapter-status.md` 和 `operations-log.md` |
+| **L1 微调** | 错别字、标点修正、单个术语替换、数字勘误 | 直接改主文件，无需重跑阶段。改后运行 `check_text.py` 和 `check_format.py` 确认无新增问题。 |
+| **L2 局部重写** | 1-3 个句子重写、段落内结构调整、表述优化 | ① 先改主文件 ② 运行 `check_text.py` 复查 AI 腔指标 ③ 运行 `check_format.py` 复查格式 ④ 若检查未通过 → 对变更段落重跑 humanizer → 再跑 format-cleaner → 更新主文件 |
+| **L3 内容变更** | 新增段落、删除段落、数据/结论改动、结构调整 | ① 先改 `02-chapter-draft.md`（内容权威源必须同步） ② 如变更涉及证据/数据，更新 `calculation-records.md` 和 `ledger/facts.md` ③ 对变更部分重跑 humanizer（阶段 4） ④ 重跑 format-cleaner（阶段 5） ⑤ 将处理后的文本更新到主文件 ⑥ 更新 `ledger/chapter-status.md` 和 `operations-log.md` |
 
 ### 修改回环的产物更新
 
@@ -369,9 +375,10 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 ### 禁止事项
 
-- 不得因为"工作流已完成"就将 L2/L3 级修改直接写入 `main.md` 而不重跑检查和润色。
-- L3 级修改不得只改 `main.md` 而不同步 `02-chapter-draft.md`——草稿是内容权威源，主文件是输出快照。
-- 回环中不得修改 `status.json` 的 `next_allowed`——该字段只由审计阶段的正式流程更新。
+- 不得因为"工作流已完成"就将 L2/L3 级修改直接写入主文件而不重跑检查和润色。
+- L3 级修改不得只改主文件而不同步 `02-chapter-draft.md`——草稿是内容权威源，主文件是输出快照。
+- 拆分模式下，不得因修改第 X 章而未经检查就同步改动其他章的主文件。
+- 回环中不得修改 `status.json` 的 `next_allowed`——该字段由各阶段的正式流程依次更新：审计（`"humanizer"`）→ humanizer（`"format-cleaner"`）→ format-cleaner（`"next-chapter"`）。回环修改不进正式流程，不更新门控状态。
 
 ## 输出与文件安全
 
@@ -382,19 +389,19 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 - 阶段结束后更新本阶段产物和 `ledger/` 对应文件（facts/decisions/chapter-status）。大纲阶段更新 `01-outline.md` 和 `literature-pool.md`，章节写作阶段更新 `02-chapter-draft.md`，证据审计阶段更新 `03-reference-audit.md`，润色阶段更新 `04-humanized.md`（操作记录），格式清理阶段更新 `05-format-cleaned.md`（操作记录）。
 - `ledger/facts.md` 和 `ledger/decisions.md` 在确认新事实、参数、公式、来源、设计假设、用户材料或决策时更新。`ledger/chapter-status.md` 在每个阶段完成时更新。`main-tex-context.md` 只在论文主文件结构、章节标题、引用方案、模板或主文件路径变化时更新。
 - 用户要求生成文件但未指定目录时，默认创建或使用论文项目根目录下的 `.thesis-workflow/`。如果当前工作目录位于 skill 仓库内，不能把运行产物写进 skill 仓库；应使用用户论文项目根目录，无法判断时先确认。
-- 用户要求生成文件但未指定拆分方式时，将主要内容统一写入 `.thesis-workflow/` 内的默认主文件。中间表格、证据清单和待补材料作为主文件内的独立章节，除非用户指定拆成多个文件。
+- 用户要求生成文件但未指定拆分方式时，默认单文件 `main.md` / `main.txt`。论文篇幅较大（> 2 万字）时主动建议按章节拆分（见 §输出默认值 > 按章节拆分模式）。中间表格、证据清单和待补材料作为主文件内的独立章节，或按用户指定拆成独立文件。
 - 论文真实主文件优先使用用户提供或项目中可明确识别的现有主文件名；无法判断时先确认。若用户始终没有指定，才按目标格式使用 `main.tex`、`main.md` 或 `main.txt`。
 - 推荐运行产物默认文件名按任务选择：`.thesis-workflow/01-outline.md`、`.thesis-workflow/02-chapter-draft.md`、`.thesis-workflow/03-reference-audit.md`、`.thesis-workflow/04-humanized.md`、`.thesis-workflow/05-format-cleaned.md`，不要把这些运行产物写进 skill 仓库。
 - Project ledger 已拆分为 `ledger/` 子目录：`ledger/facts.md`（设计参数）、`ledger/decisions.md`（决策记录）、`ledger/chapter-status.md`（章节进展）、`ledger/questions.md`（待确认问题）。汇总索引文件为 `.thesis-workflow/project-ledger.md`。
-- 文献池独立文件：`.thesis-workflow/literature-pool.md`（60条文献全表，6组分类，含 ZoteroKey 映射）。
+- 文献池独立文件：`.thesis-workflow/literature-pool.md`（文献全表，含 ZoteroKey 映射，分组管理）。
 - 章节细纲独立存放：`.thesis-workflow/outlines/chX-detailed.md`（每章一份，段落级写作点）。大纲文件 `01-outline.md` 只保留到小节标题层级。
 - 批量操作日志：`.thesis-workflow/operations-log.md`（项目检查、章节清除等一次性操作记录，只追加不修改）。
 - Project ledger 默认放在 `.thesis-workflow/project-ledger.md`；按 `main-tex-context-template.md` 生成的项目上下文默认放在 `.thesis-workflow/main-tex-context.md`。
 - 文献笔记缓存默认放在 `.thesis-workflow/literature-notes.md`（临时文件，审计通过后清空）。
 - 图表数据溯源清单默认放在 `.thesis-workflow/figure-data-manifest.md`（持久文件，数据文件路径、生成脚本、输出格式）。
 - 计算记录默认放在 `.thesis-workflow/calculation-records.md`（计算底稿，正文数值的唯一权威数据源）。
-- 每次直接修改用户论文主文件前，先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <文件>` 创建备份。脚本优先使用 Git 分支备份，回退到 `.thesis-workflow/backups/` 下的文件复制备份。不要把备份写进 skill 仓库。
-- 直接修改真实论文主文件（`main.md` / `main.txt`）后，将本轮变更清单（改了什么、为什么改）写入 `.thesis-workflow/` 对应阶段产物（`04-humanized.md` 或 `05-format-cleaned.md`）。这些产物是操作记录，不存全文副本——全文以 `main.md` / `main.txt` 为唯一权威输出。
+- 每次直接修改用户论文主文件前，先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <文件>` 创建备份。脚本优先使用 Git 分支备份，回退到 `.thesis-workflow/backups/` 下的文件复制备份。不要把备份写进 skill 仓库。单文件模式备份 `main.md` / `main.txt`；拆分模式备份对应章文件 `main-chX.md` / `main-chX.txt`。
+- 直接修改真实论文主文件后，将本轮变更清单（改了什么、为什么改）写入 `.thesis-workflow/` 对应阶段产物（`04-humanized.md` 或 `05-format-cleaned.md`）。这些产物是操作记录，不存全文副本——全文以主文件为唯一权威输出。
 - `.thesis-workflow/` 内运行产物默认主动更新，但不对每次更新创建备份；重要确认版、主文件结构大改、用户原始材料变更和真实主文件修改才创建备份或快照。重大确认版本建议使用 `--anchor` 参数创建锚点备份，锚点备份永不自动淘汰。
 - 以下 `.thesis-workflow/` 产物在关键节点应额外备份：`ledger/` 目录（每次确认后）、`01-outline.md`（总大纲确认后）、`02-chapter-draft.md`（细纲确认后）。备份命令同主文件：`git_snapshot.py .thesis-workflow/01-outline.md --anchor`。
 - 普通备份默认保留最近 5 个，超出自动淘汰（可通过 `GIT_SNAPSHOT_MAX_BACKUPS` 环境变量或 `--max-backups N` 参数调整）。锚点备份不受此限制。
@@ -437,6 +444,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 - 初始输出格式：”请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？未指定时我默认用对话 Markdown。”
 - 论文主文件：”请确认论文主文件路径。若项目中已有明确的 `main.tex`、`thesis.tex`、`main.md` 或 `main.txt` 主文件，我将使用该文件；仍无法判断时再由你指定。”
+- 主文件拆分：”论文预计篇幅较长（> 2 万字），建议按章节拆分主文件（`main-ch1.md` ~ `main-chN.md`），便于分章管理和大文件编辑。是否采用拆分模式，还是保持单文件 `main.md`？”
 - 总大纲确认：”请确认是否按此总大纲进入第 X 章细纲；如需调整，请指出章节或研究重点。”
 - 细纲确认：”请确认本章细纲是否可以进入正文写作；如需调整，请指出需要增删的段落或图表。”
 - 证据缺口：”以下内容缺少来源。请提供材料，或允许我改为网络检索/降级表述。”
@@ -444,11 +452,54 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 - 材料收录：”检测到你提供了以下材料：[文件清单]。是否同意我统一整理到 `.thesis-workflow/evidence/` 下，便于后续各阶段使用？”
 - 全流程完成：”全部五个阶段已完成，审核均通过。是否将最终文本写入主文件？”
 
+### 用户确认/补充信息的落盘规则（⭐ 全流程适用）
+
+用户在**任何确认门**的回复中提供的新信息、纠正、补充细节，**必须在回复后立即写入对应 ledger 文件**，不得等到下一阶段或写作时再补。对话上下文可能被压缩，用户纠正的信息会丢失。
+
+| 信息类型 | 落盘目标 | 操作 |
+|---|---|---|
+| 新确认/修正的参数（B 类设计选择、C 类初值更新等） | `ledger/facts.md` | 追加新行，旧值标 `superseded` |
+| 计算类数值的修正（如”缸径改为 100mm”） | `calculation-records.md` | 旧记录标 `superseded`，追加新行，附修正说明 |
+| 新确认的决策（选型方向、计算方法、输出格式等） | `ledger/decisions.md` | 追加新行 |
+| 新增的待确认问题 | `ledger/questions.md` | 追加新行 |
+| 补充的文献/来源/标准 | `literature-pool.md` | 追加新行 |
+| 用户对 P0/P1 修复的确认或替代方案 | `03-reference-audit.md` | 追加修复记录 |
+| 用户提供的补充材料/数据 | `materials-inventory.md` | 追加编目行 |
+
+此规则覆盖**所有确认门**：总大纲确认、细纲确认、证据缺口确认、材料收录确认、A/B/C 分类确认、审计修复确认、主文件修改确认。
+
+落盘后向用户一句话确认：”以上信息已写入 `ledger/facts.md` / `calculation-records.md`。”
+
 ## 输出默认值
 
 - 独立一次性问答默认输出为对话 Markdown。
 - 真实论文工作流默认主动创建或更新 `.thesis-workflow/` 运行产物；大纲、细纲和 P0/P1 处理方案仍需内容确认后才能进入下游。
-- 草稿和中间审阅产物优先用 `.md`，且默认合并到 `.thesis-workflow/` 内的一个主文件中。
+- 草稿和中间审阅产物优先用 `.md`，分别写入 `.thesis-workflow/` 下 01-05 独立产物文件。
+- **主文件输出模式**：默认单文件 `main.md` / `main.txt`。论文规模较大（如预计全文 > 2 万字）或用户明确要求时，支持按章节拆分主文件，每章一个独立输出文件。
+
+### 单文件模式（默认）
+
+所有章节合并写入一个文件：
+
+```
+main.md / main.txt          ← 全论文唯一输出
+```
+
+### 按章节拆分模式
+
+每章独立文件，便于分章审阅、编译和大文件管理：
+
+```
+main-ch1.md / main-ch1.txt  ← 第 1 章输出
+main-ch2.md / main-ch2.txt  ← 第 2 章输出
+...
+main-chN.md / main-chN.txt  ← 第 N 章输出
+```
+
+拆分模式下每章独立跑完 2→3→4→5 阶段后即可写入对应章文件，无需等全论文完成。修改回环规则按章独立适用——改哪章就对该章文件执行备份和 L1/L2/L3 处理。
+
+**拆分模式选择时机**：建议在总大纲确认后、首章写作前确定。已开始的论文可从下一章切换，已存在的章保持原名不动。如果论文项目已有明确的各章独立文件（如 `chapters/ch1.tex`），优先沿用现有命名。选择后记录到 `ledger/decisions.md`。
+
 - `.docx` 不在直接输出格式之列。当用户要求 Word 文档时，先以 `.tex`、`.md` 或 `.txt` 完成内容并确认，再通过 pandoc 或 `python-docx` 转换为 `.docx`。
 - 当用户要求 LaTeX 输出或提供了学校模板时，读取 `references/latex-output-guide.md` 生成 `.tex` 章节文件和 `main.tex`，然后通过 XeLaTeX 编译。
 
@@ -468,9 +519,9 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 - `02-chapter-draft.md`：章节正文草稿（**内容权威源**）。初稿不直接写入主文件。
 - `03-reference-audit.md`：审计报告 + 文献修正记录（不存正文副本）。
-- `04-humanized.md`：润色操作记录 + 变更清单（**不存全文副本**）。最终润色后文本写入 `main.md` / `main.txt`。
-- `05-format-cleaned.md`：格式修复记录 + 变更清单（**不存全文副本**）。最终清理后文本写入 `main.md` / `main.txt`。
-- `main.md` / `main.txt`：唯一对外输出文件。`main.md` 为 Markdown 中间格式，`main.txt` 为纯文本最终交付格式。
+- `04-humanized.md`：润色操作记录 + 变更清单（**不存全文副本**）。最终润色后文本写入主文件。
+- `05-format-cleaned.md`：格式修复记录 + 变更清单（**不存全文副本**）。最终清理后文本写入主文件。
+- 主文件（`main.md` / `main.txt`，或拆分模式 `main-chX.md` / `main-chX.txt`）：唯一对外输出文件。`.md` 为 Markdown 中间格式，`.txt` 为纯文本最终交付格式。
 
 ## Source Policy
 

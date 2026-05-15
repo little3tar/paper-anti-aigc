@@ -34,11 +34,9 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-# Windows GBK 终端兼容：强制 UTF-8 输出
-if os.name == "nt":
-    sys.stdout = __import__("io").TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-    sys.stderr = __import__("io").TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+from _shared import setup_windows_utf8
 
+setup_windows_utf8()
 
 BACKUP_PREFIX = "backup/humanizer/"
 FILE_BACKUP_DIR = Path(".thesis-workflow") / "backups"

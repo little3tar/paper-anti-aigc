@@ -1,47 +1,111 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+"""SessionStart 钩子：检测 .thesis-workflow/status.json，注入工作流状态提示。
 
-THESIS_WORKFLOW_DIR=""
-if [ -d ".thesis-workflow" ]; then
-  THESIS_WORKFLOW_DIR="$(pwd)/.thesis-workflow"
-fi
+在每次新会话启动时运行，让 AI 知道当前论文工作流处于哪个阶段、下一步该做什么。
+"""
 
-FILE_SAFETY="主文件保护（PreToolUse 钩子强制）：草稿写入 .thesis-workflow/02-chapter-draft.md，不要直接写入主文件。主文件只在全部五个阶段完成、用户显式确认后才可修改。"
+import json
+import os
+import sys
 
-CONTEXT=""
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-if [ -n "${THESIS_WORKFLOW_DIR:-}" ] && [ -f "${THESIS_WORKFLOW_DIR}/status.json" ]; then
-  STATUS=$(cat "${THESIS_WORKFLOW_DIR}/status.json" 2>/dev/null || echo "{}")
-  NA=$(echo "$STATUS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('next_allowed','unknown'))" 2>/dev/null || echo "unknown")
-  P0=$(echo "$STATUS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('p0_count','?'))" 2>/dev/null || echo "?")
-  P1=$(echo "$STATUS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('p1_count','?'))" 2>/dev/null || echo "?")
+FILE_SAFETY = (
+    "主文件保护（PreToolUse 钩子强制）：草稿写入 .thesis-workflow/02-chapter-draft.md，"
+    "不要直接写入主文件。主文件只在全部五个阶段完成、用户显式确认后才可修改。"
+)
 
-  case "$NA" in
-    "fix-evidence")
-      STAGE_GUIDE="当前状态: P0=${P0}, P1=${P1} 未清零，next_allowed=fix-evidence。你只能运行 reference-integrity-auditor 修复证据问题。禁止运行 engineering-paper-humanizer 和 academic-format-cleaner。禁止开始下一章。"
-      ;;
-    "humanizer")
-      STAGE_GUIDE="当前状态: P0/P1 已清零，next_allowed=humanizer。你可以运行 engineering-paper-humanizer 润色正文，然后运行 academic-format-cleaner 格式收尾。润色后文本写入 main.md/main.txt，阶段产物 04/05 只存操作记录（变更清单），不存全文副本。"
-      ;;
-    "format-cleaner")
-      STAGE_GUIDE="当前状态: 润色已完成，next_allowed=format-cleaner。你可以运行 academic-format-cleaner 进行格式收尾。"
-      ;;
-    "next-chapter")
-      STAGE_GUIDE="当前状态: 本章全部五个阶段已完成，next_allowed=next-chapter。可以进入下一章的大纲规划或细纲设计。"
-      ;;
-    *)
-      STAGE_GUIDE="当前状态: next_allowed=${NA}, P0=${P0}, P1=${P1}。请先读取 status.json 确认当前阶段。"
-      ;;
-  esac
+STAGE_GUIDES = {
+    "fix-evidence": (
+        "当前状态: P0={p0}, P1={p1} 未清零，next_allowed=fix-evidence。"
+        "你只能运行 reference-integrity-auditor 修复证据问题。"
+        "禁止运行 engineering-paper-humanizer 和 academic-format-cleaner。禁止开始下一章。"
+    ),
+    "humanizer": (
+        "当前状态: P0/P1 已清零，next_allowed=humanizer。"
+        "你可以运行 engineering-paper-humanizer 润色正文，然后运行 academic-format-cleaner 格式收尾。"
+        "润色后文本写入 main.md/main.txt，阶段产物 04/05 只存操作记录（变更清单），不存全文副本。"
+    ),
+    "format-cleaner": (
+        "当前状态: 润色已完成，next_allowed=format-cleaner。"
+        "你可以运行 academic-format-cleaner 进行格式收尾。"
+    ),
+    "next-chapter": (
+        "当前状态: 本章全部五个阶段已完成，next_allowed=next-chapter。"
+        "可以进入下一章的大纲规划或细纲设计。"
+    ),
+}
 
-  CONTEXT="论文工作流状态：${STATUS}。${STAGE_GUIDE}。${FILE_SAFETY}"
-else
-  CONTEXT="论文写作技能已就绪。五个阶段：thesis-outline-planner → evidence-grounded-chapter-writer → reference-integrity-auditor → engineering-paper-humanizer → academic-format-cleaner。默认按顺序执行全部五步。用户明确指定"只运行X"时才允许局部执行。${FILE_SAFETY}"
-fi
 
-if [ -n "$CONTEXT" ]; then
-  ESCAPED=$(printf '%s' "$CONTEXT" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null || printf '%s' "$CONTEXT")
-  printf '{"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": %s}}\n' "$ESCAPED"
-fi
+def find_workflow_dir() -> str | None:
+    cwd = os.getcwd()
+    # 向上遍历查找 .thesis-workflow/
+    path = cwd
+    while True:
+        candidate = os.path.join(path, ".thesis-workflow")
+        if os.path.isdir(candidate):
+            return candidate
+        parent = os.path.dirname(path)
+        if parent == path:
+            break
+        path = parent
+    return None
 
-exit 0
+
+def build_context(workflow_dir: str) -> str:
+    status_path = os.path.join(workflow_dir, "status.json")
+    if not os.path.isfile(status_path):
+        return _default_context()
+
+    try:
+        with open(status_path, "r", encoding="utf-8") as f:
+            status = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return _default_context()
+
+    na = status.get("next_allowed", "unknown")
+    p0 = status.get("p0_count", "?")
+    p1 = status.get("p1_count", "?")
+
+    guide_template = STAGE_GUIDES.get(na)
+    if guide_template:
+        stage_guide = guide_template.format(p0=p0, p1=p1)
+    else:
+        stage_guide = (
+            f"当前状态: next_allowed={na}, P0={p0}, P1={p1}。"
+            f"请先读取 status.json 确认当前阶段。"
+        )
+
+    status_str = json.dumps(status, ensure_ascii=False)
+    return f"论文工作流状态：{status_str}。{stage_guide}。{FILE_SAFETY}"
+
+
+def _default_context() -> str:
+    return (
+        "论文写作技能已就绪。五个阶段：thesis-outline-planner → "
+        "evidence-grounded-chapter-writer → reference-integrity-auditor → "
+        "engineering-paper-humanizer → academic-format-cleaner。"
+        "默认按顺序执行全部五步。用户明确指定\"只运行X\"时才允许局部执行。"
+        + FILE_SAFETY
+    )
+
+
+def main():
+    workflow_dir = find_workflow_dir()
+    if workflow_dir:
+        context = build_context(workflow_dir)
+    else:
+        context = _default_context()
+
+    output = {
+        "hookSpecificOutput": {
+            "hookEventName": "SessionStart",
+            "additionalContext": context,
+        }
+    }
+    print(json.dumps(output, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
