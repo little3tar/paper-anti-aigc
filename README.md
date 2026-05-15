@@ -98,7 +98,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 ├── main-tex-context.md        ← 论文主文件结构地图（引用 ledger/，不复制参数）
 ├── materials-inventory.md     ← 用户材料编目清单
 ├── literature-notes.md        ← 文献笔记临时缓存（写作创建，审计通过后清空）
-├── literature-pool.md         ← 文献池全表（60条，6组分类，含 ZoteroKey 映射）
+├── literature-pool.md         ← 文献池全表（含 ZoteroKey 映射，分组管理）
 ├── figure-data-manifest.md    ← 图表数据溯源清单（数据文件、生成脚本、输出格式）
 ├── calculation-records.md     ← 数值唯一权威源（公式代入、参数来源、标准选型）
 ├── operations-log.md          ← 操作日志（项目检查、章节清除等一次性操作，只追加）
@@ -155,7 +155,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 | 文件 | 产生阶段 | 内容 | 更新时机 |
 | --- | --- | --- | --- |
 | `01-outline.md` | thesis-outline-planner | 总大纲（章→节→小节）+ 文献池分组摘要 | 大纲确认后 |
-| `literature-pool.md` | thesis-outline-planner | 文献池全表（60条，6组，含 ZoteroKey） | 大纲确认后 |
+| `literature-pool.md` | thesis-outline-planner | 文献池全表（含 ZoteroKey，分组管理） | 大纲确认后 |
 | `outlines/chX-detailed.md` | evidence-grounded-chapter-writer | 章节细纲（段落级写作点） | 细纲确认后 |
 | `02-chapter-draft.md` | evidence-grounded-chapter-writer | 章节正文草稿（内容权威源） | 每章草稿完成后 |
 | `03-reference-audit.md` | reference-integrity-auditor | 审计报告 + 文献修正记录 | 审计完成后 |

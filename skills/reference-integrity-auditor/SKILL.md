@@ -26,7 +26,9 @@ description: >-
 
 ## 审计模式
 
-- **Submission mode**：真实提交或定稿前使用。只要仍有 P0/P1 问题，就停止下游润色和格式收尾。
+模式语义遵循 workflow §执行模式。本 skill 涉及两种模式：
+
+- **Review-gated mode（即 submission mode）**：真实提交或定稿前使用。只要仍有 P0/P1 问题，就停止下游润色和格式收尾。
 - **Validation mode**：测试 workflow 或 dry-run 时使用。可以在 P0/P1 仍可见的前提下继续 humanizer 和 format check，但必须把 unsupported 正文内容移到证据缺口区。
 
 ## 工作流程

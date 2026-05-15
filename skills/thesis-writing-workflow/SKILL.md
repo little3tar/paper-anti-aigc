@@ -41,6 +41,8 @@ description: >-
 
 ## 阶段输入契约
 
+> **本表是各阶段入口条件的权威参考。** 各子 skill 启动时的门控检查以本表的阻塞条件为准，§强制串行规则提供补充的自动化检查项（`status.json` 的 `next_allowed` 值校验）。
+
 局部执行时按下表判断是否可以直接进入目标阶段：
 
 | 阶段 | 最低输入前提 | 可选输入 | 阻塞条件 | 默认输出 |
@@ -48,10 +50,12 @@ description: >-
 | `thesis-outline-planner` | 任务书、设计说明、导师要求或明确论文题目 | 已有文献、Zotero 导出、学校模板 | 研究对象或任务边界完全不明 | `.thesis-workflow/01-outline.md`（大纲）+ `literature-pool.md`（文献池全表） |
 | `evidence-grounded-chapter-writer` | 已确认的大纲、章节目标或用户指定写作范围 | ledger/（事实+决策）、文献池、用户材料、图表/参数 | 缺少章节目标，或关键用户自有数据不可替代 | `.thesis-workflow/02-chapter-draft.md`；细纲写入 `outlines/chX-detailed.md` |
 | `reference-integrity-auditor` | 已有大纲、章节草稿或小节草稿 | 来源清单、ledger/、标准规范、用户材料、calculation-records.md | 没有可审计文本 | `.thesis-workflow/03-reference-audit.md` |
-| `engineering-paper-humanizer` | 待润色文本，且证据状态可接受或已明确为 validation mode | 审计报告、术语表、学校风格要求 | P0/P1 > 0 或 status.json 不存在，且非 validation mode | `.thesis-workflow/04-humanized.md`（润色操作记录，非全文副本） |
-| `academic-format-cleaner` | 待清理文本或文件 | 学校模板、引用样式、LaTeX/Markdown 约束 | 正文仍含未处理 P0/P1、缺来源定论或 status.json 不存在 | `.thesis-workflow/05-format-cleaned.md`（格式操作记录，非全文副本） |
+| `engineering-paper-humanizer` | 待润色文本，且证据状态可接受或已明确为 validation mode | 审计报告、术语表、学校风格要求 | P0/P1 > 0，或 status.json 不存在且非 validation mode，或 next_allowed 不为 humanizer/format-cleaner/next-chapter（详见 §强制串行规则第5条） | `.thesis-workflow/04-humanized.md`（润色操作记录，非全文副本） |
+| `academic-format-cleaner` | 待清理文本或文件 | 学校模板、引用样式、LaTeX/Markdown 约束 | P0/P1 > 0，或 status.json 不存在，或 next_allowed 不为 format-cleaner/next-chapter（详见 §强制串行规则第6条） | `.thesis-workflow/05-format-cleaned.md`（格式操作记录，非全文副本） |
 
 ## 强制串行规则
+
+> **本节是阶段门控逻辑的单一权威定义。** 各子 skill SKILL.md 和 PreToolUse 钩子中的门控条件均引用自此节。若其他位置的门控描述与此处不一致，以此处为准。
 
 每个阶段启动前，必须检查上游产物：
 
@@ -59,8 +63,8 @@ description: >-
 2. 读取目标阶段依赖的上游产物（如 `01-outline.md`、`02-chapter-draft.md`、`03-reference-audit.md`）。
 3. 读取 `.thesis-workflow/ledger/facts.md` 和 `.thesis-workflow/ledger/decisions.md`（如存在），获取已确认设计参数和决策。
 4. 若上游产物不存在或状态非 `confirmed`，且用户未明确声明跳过，**拒绝执行**并提示先运行上游阶段。
-5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**，提示先运行 `reference-integrity-auditor`。
-6. `academic-format-cleaner` 额外检查 `status.json`：若 `next_allowed` 不为 `"humanizer"` 或 `"format-cleaner"`，**强制拒绝**。
+5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**；若 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。`"format-cleaner"` 和 `"next-chapter"` 放行以支持修改回环。
+6. `academic-format-cleaner` 额外检查 `status.json`：若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。此条件与 PreToolUse 钩子防线2 一致——format-cleaner 必须在 humanizer 完成后运行。
 7. 跨章阻塞规则：前一章的 `status.json` 中 `next_allowed` 为 `"fix-evidence"` 时，**禁止开始下一章写作**。必须先将 P0/P1 清零并完成 humanizer+format-cleaner，`next_allowed` 变为 `"next-chapter"` 后才能进入下一章。
 8. 细纲确认阻塞规则：在 `ledger/chapter-status.md` 中，当前章细纲状态非 `confirmed` 时，**禁止进入正文写作**（即 `evidence-grounded-chapter-writer` 的步骤 3 和步骤 4）。细纲状态为 `draft` 时不得继续。
 
@@ -190,9 +194,9 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 ## 执行模式
 
-### Review-gated mode
+### Review-gated mode（真实论文提交模式）
 
-真实论文写作默认使用此模式。在总大纲确认、章节细纲确认、证据缺口、P0/P1 审计问题和真实论文主文件修改决策处暂停。运行产物文件的创建和更新不等同于内容确认；可以先写入 `.thesis-workflow/`，但未经确认的大纲、细纲或证据处理方案不能作为下游定稿依据。
+真实论文写作默认使用此模式（各子 skill 中亦称 submission mode）。在总大纲确认、章节细纲确认、证据缺口、P0/P1 审计问题和真实论文主文件修改决策处暂停。运行产物文件的创建和更新不等同于内容确认；可以先写入 `.thesis-workflow/`，但未经确认的大纲、细纲或证据处理方案不能作为下游定稿依据。
 
 ### Preauthorized continuous mode
 
@@ -316,8 +320,8 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
    - 降低 AI-like phrasing，但不改变技术含义、不发明数据、不补写来源。
 
 5. **`academic-format-cleaner`**
-   - **前置条件**：`.thesis-workflow/status.json` 存在且 `p0_count` 和 `p1_count` 均为 0，或已通过 humanizer 阶段。
-   - **硬性阻断**：若 `status.json` 不存在，说明审计未运行，拒绝继续。若为 submission mode 且 P0/P1 > 0，拒绝继续。
+   - **前置条件**：`.thesis-workflow/status.json` 存在且 `p0_count` 和 `p1_count` 均为 0，且 `next_allowed` 为 `"format-cleaner"` 或 `"next-chapter"`（即已完成 humanizer）。
+   - **硬性阻断**：若 `status.json` 不存在，拒绝继续。若 `p0_count` 或 `p1_count` > 0，拒绝继续。若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，拒绝继续。完整的门控逻辑见 §强制串行规则第6条。
    - 最后运行。
    - 修复 citation placement、Markdown/LaTeX/plain-text format、命令保护和残留占位符。
 
@@ -389,7 +393,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 - 论文真实主文件优先使用用户提供或项目中可明确识别的现有主文件名；无法判断时先确认。若用户始终没有指定，才按目标格式使用 `main.tex`、`main.md` 或 `main.txt`。
 - 推荐运行产物默认文件名按任务选择：`.thesis-workflow/01-outline.md`、`.thesis-workflow/02-chapter-draft.md`、`.thesis-workflow/03-reference-audit.md`、`.thesis-workflow/04-humanized.md`、`.thesis-workflow/05-format-cleaned.md`，不要把这些运行产物写进 skill 仓库。
 - Project ledger 已拆分为 `ledger/` 子目录：`ledger/facts.md`（设计参数）、`ledger/decisions.md`（决策记录）、`ledger/chapter-status.md`（章节进展）、`ledger/questions.md`（待确认问题）。汇总索引文件为 `.thesis-workflow/project-ledger.md`。
-- 文献池独立文件：`.thesis-workflow/literature-pool.md`（60条文献全表，6组分类，含 ZoteroKey 映射）。
+- 文献池独立文件：`.thesis-workflow/literature-pool.md`（文献全表，含 ZoteroKey 映射，分组管理）。
 - 章节细纲独立存放：`.thesis-workflow/outlines/chX-detailed.md`（每章一份，段落级写作点）。大纲文件 `01-outline.md` 只保留到小节标题层级。
 - 批量操作日志：`.thesis-workflow/operations-log.md`（项目检查、章节清除等一次性操作记录，只追加不修改）。
 - Project ledger 默认放在 `.thesis-workflow/project-ledger.md`；按 `main-tex-context-template.md` 生成的项目上下文默认放在 `.thesis-workflow/main-tex-context.md`。

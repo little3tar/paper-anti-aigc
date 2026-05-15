@@ -201,6 +201,10 @@ def check_skip_stage_confirm(file_path: str, workflow_dir: Path, status: dict | 
          "thesis-outline-planner", "大纲规划"),
         ("03", "03-reference-audit.md", "02-chapter-draft.md",
          "evidence-grounded-chapter-writer", "章节写作"),
+        ("04", "04-humanized.md", "03-reference-audit.md",
+         "reference-integrity-auditor", "证据审计"),
+        ("05", "05-format-cleaned.md", "03-reference-audit.md",
+         "reference-integrity-auditor（及 engineering-paper-humanizer）", "审计与润色"),
     ]
 
     for stage, product, upstream, skill, desc in checks:

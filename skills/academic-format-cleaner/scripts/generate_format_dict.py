@@ -16,18 +16,7 @@ import sys
 import argparse
 from pathlib import Path
 
-# 跨 skill 引用：从 engineering-paper-humanizer/scripts/ 导入共享模块
-_script_dir = Path(__file__).resolve().parent
-_shared_dir = None
-for _root_candidate in _script_dir.parents:
-    _candidate = _root_candidate / "engineering-paper-humanizer" / "scripts"
-    if _candidate.is_dir():
-        _shared_dir = _candidate
-        break
-if _shared_dir is None:
-    _shared_dir = Path(__file__).resolve().parents[2] / "engineering-paper-humanizer" / "scripts"
-sys.path.insert(0, str(_shared_dir))
-from _shared import setup_windows_utf8, generate_rule_dict_markdown  # noqa: E402
+from _shared import setup_windows_utf8, generate_rule_dict_markdown
 
 setup_windows_utf8()
 

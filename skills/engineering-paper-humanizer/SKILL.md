@@ -39,7 +39,7 @@ description: >-
 
 若草稿仍存在 P0/P1 证据问题，先退回证据审计或章节写作，不要直接润色成更像定论的文字。
 
-启动润色前，检查 `.thesis-workflow/status.json`：若 `p0_count` 或 `p1_count` > 0，或 `next_allowed` 不为 `"humanizer"`，拒绝继续并提示先运行 `reference-integrity-auditor` 并将 P0/P1 清零。若 `next_allowed` 为 `"fix-evidence"` 说明审计已发现问题但尚未修复，拒绝继续。若文件不存在，说明审计阶段未运行，拒绝继续并提示先运行审计。Validation mode 下可忽略此门控。
+启动润色前，检查 `.thesis-workflow/status.json`（门控规则遵循 workflow §强制串行规则第5条）：若 `p0_count` 或 `p1_count` > 0，或 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，拒绝继续并提示先运行 `reference-integrity-auditor` 并将 P0/P1 清零。若 `next_allowed` 为 `"fix-evidence"` 说明审计已发现问题但尚未修复，拒绝继续。若文件不存在，说明审计阶段未运行，拒绝继续并提示先运行审计。`"format-cleaner"` 和 `"next-chapter"` 状态允许润色以支持修改回环（见 workflow §修改回环）。Validation mode 下可忽略此门控。
 
 ## 处理范围
 

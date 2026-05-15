@@ -24,19 +24,7 @@ import json
 import argparse
 from pathlib import Path
 
-# 查找 _shared 模块：从当前脚本向上搜索，找到 skills 根目录下的 engineering-paper-humanizer/scripts
-_script_dir = Path(__file__).resolve().parent
-_shared_dir = None
-for _root_candidate in _script_dir.parents:
-    _candidate = _root_candidate / "engineering-paper-humanizer" / "scripts"
-    if _candidate.is_dir():
-        _shared_dir = _candidate
-        break
-if _shared_dir is None:
-    # 回退到原来的硬编码路径（保持向后兼容）
-    _shared_dir = Path(__file__).resolve().parents[2] / "engineering-paper-humanizer" / "scripts"
-sys.path.insert(0, str(_shared_dir))
-from _shared import (  # noqa: E402
+from _shared import (
     is_in_math_env,
     precompute_block_math,
     precompute_protected_envs,
