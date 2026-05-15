@@ -58,7 +58,7 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 ```bash
 git checkout main
-git merge --no-ff improve-workflow -m "merge: <简述>"
+git merge --no-ff improve-workflow -m "merge: <总结 improve-workflow 本次合并包含的改动>"
 ```
 
 `--no-ff` 确保始终产生一个双亲 merge commit，分支的提交历史完整保留在 `git log --graph` 中可见。不使用 `--squash`（会压成一次提交丢失分支链），不使用 `reset --hard` 后重新开始（会丢失 reflog 追溯）。

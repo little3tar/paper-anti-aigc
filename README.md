@@ -283,6 +283,22 @@ python -m unittest discover -s tests
 
 `tests/` 和 `evals/` 仅供 skills 仓库维护使用，不参与论文项目运行，不需要复制到论文项目中。
 
+## 项目演进
+
+本项目从单个 skill 逐步扩展为完整的六 skill 工作流。以下里程碑分支保留了各阶段的完整代码快照：
+
+| 分支 | 提交 | 阶段 | 包含内容 |
+|---|---|---|---|
+| [`single-skill`](https://github.com/little3tar/paper-anti-aigc/tree/single-skill) | `7493a67` | 1 个 skill | `engineering-paper-humanizer` — 正文润色与去 AI 腔 |
+| [`two-skills`](https://github.com/little3tar/paper-anti-aigc/tree/two-skills) | `69a67c1` | 2 个 skills | + `academic-format-cleaner` — 格式层清理 |
+| `main` | — | 6 个 skills | + `thesis-writing-workflow`、`thesis-outline-planner`、`evidence-grounded-chapter-writer`、`reference-integrity-auditor` |
+
+```bash
+# 查看各阶段代码
+git checkout single-skill   # 仅润色去 AI 腔
+git checkout two-skills     # 润色 + 格式清理
+```
+
 ## 致谢
 
 本项目受以下项目启发：
