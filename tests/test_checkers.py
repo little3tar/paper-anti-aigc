@@ -47,6 +47,33 @@ class CheckerScriptTests(unittest.TestCase):
             self.assertNotIn(c["line"], aigc052_lines,
                               f"AIGC-CONN L{c['line']} 不应与 AIGC-052 重叠")
 
+    def test_humanizer_checker_reports_real_ai_report_patterns(self) -> None:
+        result = run_script(
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_ai_report_patterns.md",
+            "--format",
+            "markdown",
+            "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        rule_ids = {item["rule"] for item in diagnostics}
+        for rid in (
+            "AIGC-063",
+            "AIGC-065",
+            "AIGC-066",
+            "AIGC-067",
+            "AIGC-068",
+            "AIGC-069",
+            "AIGC-070",
+            "AIGC-071",
+            "AIGC-072",
+            "AIGC-073",
+            "AIGC-074",
+            "AIGC-075",
+        ):
+            self.assertIn(rid, rule_ids, f"应命中 {rid}")
+
     def test_format_checker_reports_latex_errors(self) -> None:
         result = run_script(
             "skills/academic-format-cleaner/scripts/check_format.py",

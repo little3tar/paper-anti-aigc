@@ -322,8 +322,8 @@ def strip_to_plain_text(text: str) -> str:
         table_lines = lines[table_start:]
         result.extend(_convert_md_table_block(table_lines))
 
-    # 清理空行：连续空行合并为一个；仅在一级标题/表格/图表块前保留一个空行
-    _heading_pat = re.compile(r"^\d+\s")
+    # 清理空行：连续空行合并为一个；仅在一级章节大标题/表格/图表块前保留一个空行
+    _heading_pat = re.compile(r"^\d+\s.*[一-鿿]")
     cleaned: list[str] = []
     prev_empty = False
     for j, r_line in enumerate(result):
