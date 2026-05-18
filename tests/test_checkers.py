@@ -521,6 +521,23 @@ class CheckerScriptTests(unittest.TestCase):
         rule_ids = {item["rule"] for item in diagnostics}
         self.assertIn("PUNCT-002", rule_ids)
 
+    def test_humanizer_parentheses_policy(self) -> None:
+        """PUNCT-007: 中文解释括号应清理，英文全称/参数括号可保留。"""
+        result = run_script(
+            "skills/engineering-paper-humanizer/scripts/check_text.py",
+            "tests/fixtures/sample_parentheses_policy.md",
+            "--format", "markdown", "--json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        diagnostics = json.loads(result.stdout)
+        punct_hits = [item for item in diagnostics if item["rule"] == "PUNCT-007"]
+        self.assertEqual(len(punct_hits), 2, punct_hits)
+        contexts = "\n".join(item["context"] for item in punct_hits)
+        self.assertIn("教材式解释括号", contexts)
+        self.assertIn("检查同步性", contexts)
+        self.assertNotIn("Oscillating Disc Cutting", contexts)
+        self.assertNotIn("31.5 MPa", contexts)
+
     def test_humanizer_no_punct_in_latex_comments(self) -> None:
         """LaTeX 注释行内的标点不应触发 PUNCT 规则。"""
         result = run_script(

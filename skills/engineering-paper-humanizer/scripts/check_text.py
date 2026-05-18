@@ -329,6 +329,11 @@ def check_file(
         )
     )
     diagnostics.extend(
+        check_parentheses_policy(
+            lines, start_line, end_line, target_format, in_block_math, in_protected_env, in_markdown_protected
+        )
+    )
+    diagnostics.extend(
         check_fragmented_headers(
             lines, start_line, end_line, target_format, in_markdown_protected
         )
@@ -429,6 +434,79 @@ def check_burstiness(
             warnings.append(w)
 
     return warnings
+
+
+def _is_allowed_parenthetical(content: str) -> bool:
+    """判断括号内容是否属于必须保留的技术信息。"""
+    value = content.strip()
+    if not value:
+        return False
+
+    # 序号、缩写、变量名这类短标记不是解释性括号。
+    if re.fullmatch(r"[0-9A-Za-z]+", value):
+        return True
+
+    has_chinese = re.search(r"[\u4e00-\u9fff]", value) is not None
+    has_latin = re.search(r"[A-Za-z]", value) is not None
+    has_digit = re.search(r"\d", value) is not None
+
+    # 中文括号内容默认清理；专业解释需要化入正文。
+    if has_chinese:
+        return False
+
+    # 英文全称、英文缩写、标准号、型号、参数单位等可保留。
+    if has_latin:
+        return True
+    if has_digit and re.search(r"[%=+\-*/^~～·.,，\s]", value):
+        return True
+
+    return False
+
+
+def check_parentheses_policy(
+    lines: list[str],
+    start: int,
+    end: int,
+    target_format: str,
+    in_block_math: list[bool],
+    in_protected_env: list[bool],
+    in_markdown_protected: list[bool],
+) -> list[dict]:
+    """检测正文中不应保留的解释性括号。"""
+    diagnostics = []
+    paren_re = re.compile(r"[（(]([^（）()\n]{1,120})[）)]")
+
+    for i in range(start, end):
+        if in_block_math[i] or in_protected_env[i] or in_markdown_protected[i]:
+            continue
+
+        line = lines[i]
+        if target_format == "latex":
+            line_for_check = mask_latex_inline_protected(strip_latex_comment(line))
+            if line_for_check.lstrip().startswith("%"):
+                continue
+        elif target_format == "markdown":
+            line_for_check = mask_inline_code(line)
+        else:
+            line_for_check = line
+
+        for m in paren_re.finditer(line_for_check):
+            content = m.group(1)
+            if _is_allowed_parenthetical(content):
+                continue
+            diagnostics.append(
+                {
+                    "line": i + 1,
+                    "column": m.start() + 1,
+                    "rule": "PUNCT-007",
+                    "severity": "warning",
+                    "message": "检测到正文解释性括号，当前规则下默认清理",
+                    "fix": "只保留专业缩写、英文全称、标准号、型号和必要参数；中文解释括号应并入正文或删除",
+                    "context": line.strip(),
+                }
+            )
+
+    return diagnostics
 
 
 def check_quote_balance(
