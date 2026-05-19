@@ -91,6 +91,8 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
    python <SKILL_DIR>/scripts/check_format.py <TARGET_FILE> --format plain
    ```
 
+   加 `--fix --format plain` 可自动完成 Markdown → 纯文本剥离（去除标题标记、加粗/斜体、行内代码反引号、链接、列表标记、引用、代码围栏、水平线，表格转空格对齐，Mermaid/DOT 图表代码块保留围栏，`$$` 公式保留语法）。详见 `references/format-guide.md` 自动转换小节。
+
 4. 根据逐行诊断修复格式问题；不要改写技术结论、实验数据、公式推导或文献含义。
 5. **核对 marker 内容完整性**：读取原始草稿（`.thesis-workflow/02-chapter-draft.md`）和主文件（`main.md`/`main.txt` 或 `main-chX.md`/`main-chX.txt`），提取两份文件中所有 `[文献题名]` marker 的题名列表进行比较。题名被缩写、翻译、改写或缺失的，标记为 P2 并从原始草稿恢复正确题名。注意：`04-humanized.md` 只存变更清单不含全文，不可用作对比源。若主文件不存在则跳过此步。
 6. 复查同一文件，直到 `error` 清零；`warning` 和 `info` 按学校模板、论文规范和用户偏好处理。
