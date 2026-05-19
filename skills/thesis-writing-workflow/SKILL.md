@@ -50,8 +50,8 @@ description: >-
 | `thesis-outline-planner` | 任务书、设计说明、导师要求或明确论文题目 | 已有文献、Zotero 导出、学校模板 | 研究对象或任务边界完全不明 | `.thesis-workflow/01-outline.md`（大纲）+ `literature-pool.md`（文献池全表） |
 | `evidence-grounded-chapter-writer` | 已确认的大纲、章节目标或用户指定写作范围 | ledger/（事实+决策）、文献池、用户材料、图表/参数 | 缺少章节目标，或关键用户自有数据不可替代 | `.thesis-workflow/02-chapter-draft.md`；细纲写入 `outlines/chX-detailed.md` |
 | `reference-integrity-auditor` | 已有大纲、章节草稿或小节草稿 | 来源清单、ledger/、标准规范、用户材料、calculation-records.md | 没有可审计文本 | `.thesis-workflow/03-reference-audit.md` |
-| `engineering-paper-humanizer` | 待润色文本，且证据状态可接受或已明确为 validation mode | 审计报告、术语表、学校风格要求 | P0/P1 > 0，或 status.json 不存在且非 validation mode，或 next_allowed 不为 humanizer/format-cleaner/next-chapter（详见 §强制串行规则第5条） | `.thesis-workflow/04-humanized.md`（润色操作记录，非全文副本） |
-| `academic-format-cleaner` | 待清理文本或文件 | 学校模板、引用样式、LaTeX/Markdown 约束 | P0/P1 > 0，或 status.json 不存在，或 next_allowed 不为 format-cleaner/next-chapter（详见 §强制串行规则第6条） | `.thesis-workflow/05-format-cleaned.md`（格式操作记录，非全文副本） |
+| `engineering-paper-humanizer` | 待润色文本（工作流模式：论文文件或章节；独立模式：用户粘贴的文本段落） | 审计报告、术语表、学校风格要求 | 工作流模式：P0/P1 > 0，或 status.json 不存在且非 validation mode，或 next_allowed 不为 humanizer/format-cleaner/next-chapter（详见 §强制串行规则第5条）。独立模式：无阻塞条件 | `.thesis-workflow/04-humanized.md`（润色操作记录，非全文副本；独立模式不写产物） |
+| `academic-format-cleaner` | 待清理文本或文件（工作流模式：论文文件；独立模式：用户粘贴的文本片段） | 学校模板、引用样式、LaTeX/Markdown 约束 | 工作流模式：P0/P1 > 0，或 status.json 不存在，或 next_allowed 不为 format-cleaner/next-chapter（详见 §强制串行规则第6条）。独立模式：无阻塞条件 | `.thesis-workflow/05-format-cleaned.md`（格式操作记录，非全文副本；独立模式不写产物） |
 
 ## 强制串行规则
 
@@ -63,8 +63,8 @@ description: >-
 2. 读取目标阶段依赖的上游产物（如 `01-outline.md`、`02-chapter-draft.md`、`03-reference-audit.md`）。
 3. 读取 `.thesis-workflow/ledger/facts.md` 和 `.thesis-workflow/ledger/decisions.md`（如存在），获取已确认设计参数和决策。
 4. 若上游产物不存在或状态非 `confirmed`，且用户未明确声明跳过，**拒绝执行**并提示先运行上游阶段。
-5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**；若 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。`"format-cleaner"` 和 `"next-chapter"` 放行以支持修改回环。
-6. `academic-format-cleaner` 额外检查 `status.json`：若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。此条件与 PreToolUse 钩子防线2 一致——format-cleaner 必须在 humanizer 完成后运行。
+5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**；若 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。`"format-cleaner"` 和 `"next-chapter"` 放行以支持修改回环。**独立润色模式**（用户在消息中直接粘贴文本，而非引用论文文件或章节）不适用本门控——humanizer 将跳过 `status.json` 检查，润色结果直接返回，不写入产物文件。
+6. `academic-format-cleaner` 额外检查 `status.json`：若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。此条件与 PreToolUse 钩子防线2 一致——format-cleaner 必须在 humanizer 完成后运行。**独立模式**（用户在消息中直接粘贴文本，而非引用论文文件）不适用本门控。
 7. 跨章阻塞规则：前一章的 `status.json` 中 `next_allowed` 为 `"fix-evidence"` 时，**禁止开始下一章写作**。必须先将 P0/P1 清零并完成 humanizer+format-cleaner，`next_allowed` 变为 `"next-chapter"` 后才能进入下一章。
 8. 细纲确认阻塞规则：在 `ledger/chapter-status.md` 中，当前章细纲状态非 `confirmed` 时，**禁止进入正文写作**（即 `evidence-grounded-chapter-writer` 的步骤 3 和步骤 4）。细纲状态为 `draft` 时不得继续。
 
@@ -314,14 +314,14 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
    - **缓存清理**：审计通过后清空 `literature-notes.md`（保留文件头占位）；审计未通过则保留供修复阶段使用。
 
 4. **`engineering-paper-humanizer`**
-   - **前置条件**：`.thesis-workflow/status.json` 存在且 `p0_count` 和 `p1_count` 均为 0，或当前为 validation mode。
-   - **硬性阻断**：若 `status.json` 不存在，说明审计未运行，拒绝继续。若 `p0_count` 或 `p1_count` > 0，拒绝继续，提示先运行 `reference-integrity-auditor` 补齐证据。
-   - 只在证据问题受控后进行。
+   - **前置条件**（工作流模式）：`.thesis-workflow/status.json` 存在且 `p0_count` 和 `p1_count` 均为 0，或当前为 validation mode。独立模式（用户粘贴文本）无前置条件。
+   - **硬性阻断**（工作流模式）：若 `status.json` 不存在且非独立模式，说明审计未运行，提示用户先完成上游阶段。若 `p0_count` 或 `p1_count` > 0，拒绝继续，提示先运行 `reference-integrity-auditor` 补齐证据。
+   - 只在证据问题受控后进行（工作流模式）。
    - 降低 AI-like phrasing，但不改变技术含义、不发明数据、不补写来源。
 
 5. **`academic-format-cleaner`**
-   - **前置条件**：`.thesis-workflow/status.json` 存在且 `p0_count` 和 `p1_count` 均为 0，且 `next_allowed` 为 `"format-cleaner"` 或 `"next-chapter"`（即已完成 humanizer）。
-   - **硬性阻断**：若 `status.json` 不存在，拒绝继续。若 `p0_count` 或 `p1_count` > 0，拒绝继续。若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，拒绝继续。完整的门控逻辑见 §强制串行规则第6条。
+   - **前置条件**（工作流模式）：`.thesis-workflow/status.json` 存在且 `p0_count` 和 `p1_count` 均为 0，且 `next_allowed` 为 `"format-cleaner"` 或 `"next-chapter"`（即已完成 humanizer）。独立模式（用户粘贴文本）无前置条件。
+   - **硬性阻断**（工作流模式）：若 `status.json` 不存在且非独立模式，提示用户先完成上游阶段。若 `p0_count` 或 `p1_count` > 0，拒绝继续。若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，拒绝继续。完整的门控逻辑见 §强制串行规则第6条。
    - 最后运行。
    - 修复 citation placement、Markdown/LaTeX/plain-text format、命令保护和残留占位符。
 
