@@ -35,7 +35,7 @@ description: >-
 
 1. **确定审计范围**
    - 判断用户需要逐段审计、source marker 审计、来源清单审计，还是可直接修订的问题列表。
-   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/03-reference-audit.md`。
+   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/audit.md`。
    - 如果存在 project ledger（`ledger/` 目录），读取 `ledger/facts.md` 和 `ledger/decisions.md` 后对照已确认事实、公式、来源和设计决策。
 
 2. **切分草稿**
@@ -67,7 +67,7 @@ description: >-
    - 验证 `[参考文献]`、`[文献题名]`、`[网络资料: ...]`、`[标准规范: ...]`、`[Mxx]` 使用一致。
    - 把正文中残留的 `[标准规范: ...]` 视为工作稿标记。若标准已核验，建议改成正式正文表述和引用；若未核验，移入 `证据缺口清单`。
    - 把正文中的 `[待补来源: ...]` 视为残留 evidence gap marker，建议移入 `未写入正文的待补资料`、`证据缺口清单` 或 project ledger。
-   - 正文中残留的 `[用户材料: ...]` 或 `[Mxx]` → 标记为 P3（最终输出前必须清除，不应留在正文中）。
+   - 正文中残留的 `[用户材料: ...]` 或 `[Mxx]` → 标记为 P3（最终由 format-cleaner 强制清除，不应留在正文中）。
    - Zotero/local source marker 应使用来源题名作为括号内容，例如 `[基于神经网络的悬臂式掘进机自适应截割控制系统研究]` 或 `[A development in rock cutting technology]`。
    - 重复题名需要在 marker 内追加作者和年份，例如 `[A development in rock cutting technology Hood 2000]`。
    - 检查图表占位符是否位于正文相关插入点，而不只是尾部清单。
@@ -144,16 +144,7 @@ description: >-
 
 ### 文献笔记缓存清理
 
-审计报告完成且 `status.json` 写入后，根据审计结果清理 `.thesis-workflow/literature-notes.md`：
-
-- `next_allowed = "humanizer"` 或 `"next-chapter"`（审计通过）→ 清空缓存内容，保留文件头和下一章占位：
-  ```markdown
-  # 文献笔记缓存
-
-  > 上一章已完成。等待下一章写作。
-  ```
-- `next_allowed = "fix-evidence"`（审计未通过）→ **保留**缓存内容，供修复阶段继续使用。修复完成并重新审计通过后再清空。
-- 全部章节完成后 → 清空缓存内容，保留文件（不删除），方便后续修改或增补章节时复用。
+缓存清理规则遵循 `literature-notes-cache-rules.md` §审计后清理。审计通过后清空，审计未通过保留供修复使用。
 
 不要编造缺失来源。需要来源时，在 evidence gap section 中说明证据类型和可检索关键词，不要伪造参考文献，也不要把缺来源定论留在正文中。
 

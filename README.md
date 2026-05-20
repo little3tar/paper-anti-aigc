@@ -102,7 +102,16 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 ├── figure-data-manifest.md    ← 图表数据溯源清单（数据文件、生成脚本、输出格式）
 ├── calculation-records.md     ← 数值唯一权威源（公式代入、参数来源、标准选型）
 ├── operations-log.md          ← 操作日志（项目检查、章节清除等一次性操作，只追加）
+├── outline.md                 ← 阶段 1：总大纲（章→节→小节）+ 文献池分组摘要
 ├── status.json                ← 门控状态（p0_count、p1_count、next_allowed）
+│
+├── chapters/                  ← 按章归档的阶段产物（每章独立，不互相覆盖）
+│   ├── ch1/
+│   │   ├── draft.md           ←   阶段 2：章节正文草稿（内容权威源）
+│   │   ├── audit.md           ←   阶段 3：审计报告 + 文献修正记录
+│   │   ├── humanized.md       ←   阶段 4：润色操作记录（非全文副本）
+│   │   └── format-cleaned.md  ←   阶段 5：格式修复记录（非全文副本）
+│   └── chN/ ...
 │
 ├── ledger/                    ← 项目台账（拆分后，各子文件独立读写）
 │   ├── facts.md               ←   已确认设计参数、引用标准、MC51 公开数据
@@ -112,12 +121,6 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 │
 ├── outlines/                  ← 章节细纲（段落级写作点，每章一份）
 │   └── ch2-detailed.md        ←   第2章细纲
-│
-├── 01-outline.md              ← 阶段 1：总大纲（章→节→小节）+ 文献池分组摘要
-├── 02-chapter-draft.md        ← 阶段 2：章节正文草稿（内容权威源）
-├── 03-reference-audit.md      ← 阶段 3：审计报告 + 文献修正记录
-├── 04-humanized.md            ← 阶段 4：润色操作记录（非全文副本）
-├── 05-format-cleaned.md       ← 阶段 5：格式修复记录（非全文副本）
 │
 ├── evidence/                  ← 用户提供材料的物理存放
 │   ├── task-book/             ←   任务书、设计说明、开题报告
@@ -150,17 +153,17 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 状态标签：`confirmed`、`draft`、`needs-source`、`needs-user-data`、`derived`、`superseded`。
 
-#### 阶段产物（01-05）
+#### 阶段产物
 
 | 文件 | 产生阶段 | 内容 | 更新时机 |
 | --- | --- | --- | --- |
-| `01-outline.md` | thesis-outline-planner | 总大纲（章→节→小节）+ 文献池分组摘要 | 大纲确认后 |
+| `outline.md` | thesis-outline-planner | 总大纲（章→节→小节）+ 文献池分组摘要 | 大纲确认后 |
 | `literature-pool.md` | thesis-outline-planner | 文献池全表（含 ZoteroKey，分组管理） | 大纲确认后 |
 | `outlines/chX-detailed.md` | evidence-grounded-chapter-writer | 章节细纲（段落级写作点） | 细纲确认后 |
-| `02-chapter-draft.md` | evidence-grounded-chapter-writer | 章节正文草稿（内容权威源） | 每章草稿完成后 |
-| `03-reference-audit.md` | reference-integrity-auditor | 审计报告 + 文献修正记录 | 审计完成后 |
-| `04-humanized.md` | engineering-paper-humanizer | 润色操作记录（非全文副本，最终文本写入 main.md/txt） | 润色完成后 |
-| `05-format-cleaned.md` | academic-format-cleaner | 格式修复记录（非全文副本，最终文本写入 main.md/txt） | 格式清理完成后 |
+| `chapters/chX/draft.md` | evidence-grounded-chapter-writer | 第 X 章正文草稿（内容权威源） | 每章草稿完成后 |
+| `chapters/chX/audit.md` | reference-integrity-auditor | 第 X 章审计报告 + 文献修正记录 | 审计完成后 |
+| `chapters/chX/humanized.md` | engineering-paper-humanizer | 第 X 章润色操作记录（非全文副本，最终文本写入 main-chX.md/txt/tex） | 润色完成后 |
+| `chapters/chX/format-cleaned.md` | academic-format-cleaner | 第 X 章格式修复记录（非全文副本，最终文本写入 main-chX.md/txt/tex） | 格式清理完成后 |
 | `operations-log.md` | 各阶段 | 批量操作/项目检查/章节清除记录（只追加） | 批量操作后 |
 
 #### 工作辅助文件

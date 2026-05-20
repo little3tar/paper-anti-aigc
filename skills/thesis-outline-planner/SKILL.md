@@ -63,15 +63,12 @@ description: >-
    - 关键信息缺失时，只问最小必要确认问题。
 
 3. **确认输出格式**
-   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/01-outline.md`（总大纲，章→节→小节层级）和 `.thesis-workflow/literature-pool.md`（文献池全表，6组分类）。章节细纲在写作阶段生成，存放于 `.thesis-workflow/outlines/chX-detailed.md`。
+   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/outline.md`（总大纲，章→节→小节层级）和 `.thesis-workflow/literature-pool.md`（文献池全表，6组分类）。章节细纲在写作阶段生成，存放于 `.thesis-workflow/outlines/chX-detailed.md`。
    - 只有当交付格式影响工作时才问：”请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
    - 如果用户要求 Word 文档，先以 `.tex`、`.md` 或 `.txt` 完成并确认计划，再通过 pandoc 或 `python-docx` 转换为 `.docx`。
 
 4. **建立文献池**
    - 遵循强制三级检索协议（见 workflow §来源策略）：Zotero → 用户 → 网络，每项都要尝试，不得只查一项就停止。
-   - 优先使用 Zotero MCP 或环境暴露的本地文献 MCP/resource（第一级）。
-   - Zotero 无结果或信息不完整时，询问用户能否提供 `.bib`、`.ris`、`.csv`、文献清单或相关资料（第二级）。
-   - 以上两项均不足时，Web search 补缺口主题，优先可靠来源（第三级）。
    - 将行业标准、国家标准、规范、规程、验收要求和限值作为独立来源类型处理。此类来源不强求在 Zotero 中；按三级协议检索：Zotero → 询问用户 → 搜索官方标准平台、主管部门、标准发布机构、出版社页面或其他可靠来源。
    - 对已核验标准，规划其进入正文的位置和用途，例如设计依据、参数依据、验收依据、限值依据或安全裕量依据。
    - 文献数量按任务规模分层：真实完整论文计划 30-50 篇，单章 10+ 篇（小节 3+ 篇），workflow validation 或 minimal dry-run 2-5 篇。

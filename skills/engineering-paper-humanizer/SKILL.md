@@ -17,7 +17,7 @@ description: >-
 |---|---|
 | "这段写得太平淡，加点升华" | 工程论文用参数、约束和代价说话，不加宏大叙事 |
 | "破折号改成逗号太麻烦，保留" | 中文正文破折号必须处理，不得保留 `——` |
-| "status.json 里 P0 还在，先润色" | P0/P1 未清零时拒绝润色，退回到审计 |
+| "status.json 里 P0 还在，先润色" | P0/P1 未清零时拒绝润色（validation mode 除外），退回到审计 |
 | "这个结论的证据我帮它补上" | 不补写来源、数据、实验条件，缺证据移入缺口清单 |
 | "润色就是压缩文字" | 保留数据口径、方法条件、指标含义和结论边界，不删必要信息 |
 | "marker 里的题名太长，缩写一下" | `[文献题名]` 方括号内的题名是 bibliography 解析依据，不得修改、缩写、翻译或删除 |
@@ -104,9 +104,9 @@ description: >-
 
 如果 `03-reference-audit.md` 不存在但 `status.json` 存在且 P0/P1 已清零，可继续但需在输出中注明”审计报告缺失，润色边界由 humanizer 自行判断”。
 
-如果用户要求直接修改论文主文件，修改前先通过 `scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮润色操作记录（变更清单，非全文副本）写入 `.thesis-workflow/04-humanized.md`，最终润色后文本写入主文件（单文件模式 `main.md` / `main.txt`，拆分模式 `main-chX.md` / `main-chX.txt`）。
+如果用户要求直接修改论文主文件，修改前先通过 `scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮润色操作记录（变更清单，非全文副本）写入 `.thesis-workflow/chapters/chX/humanized.md`，最终润色后文本写入对应章主文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
 
-文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/04-humanized.md`（润色操作记录，非全文副本）。
+文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/humanized.md`（润色操作记录，非全文副本）。
 
 如用户提供了项目级上下文文件（`ledger/` 目录），先读取 `ledger/facts.md` 和 `ledger/decisions.md`。
 
@@ -178,7 +178,13 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE> --format plain
 
 **独立模式**：返回改写后的文本，附简短改动说明。不写文件，不更新 `status.json`。
 
-**工作流模式**：返回改写后的文本，并附简短说明。若用户给的是文件并要求直接修改文件，先备份、再修改文件，修改后运行 `check_text.py` 复查，并把本轮润色变更清单写入 `.thesis-workflow/04-humanized.md`（非全文副本），最终润色后文本写入主文件。
+**工作流模式**：返回改写后的文本，并附简短说明。若用户给的是文件并要求直接修改文件，先备份、再修改文件，修改后运行 `check_text.py` 复查，并把本轮润色变更清单写入 `.thesis-workflow/chapters/chX/humanized.md`（非全文副本），最终润色后文本写入主文件。
+
+**humanized.md 最低记录要求**（工作流模式）：
+- 每个高风险片段的原文首句 → 改文首句对照（至少标注段落位置）
+- Source marker 完整性确认结论（是否所有 `[文献题名]` marker 保持原样）
+- `check_text.py` 复查的关键指标变化（errors/warnings 数量对比）
+- 禁止只写"全文润色完成"这类无信息量的单句记录
 
 润色完成后，更新 `.thesis-workflow/status.json`：将 `stage` 设为 `"humanized"`、`next_allowed` 设为 `"format-cleaner"`，放行下游格式清理阶段。
 

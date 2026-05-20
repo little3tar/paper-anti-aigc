@@ -8,14 +8,5 @@
 - 起草完成后，若产生了新的已确认事实、公式、参数、来源、设计决策或证据缺口，应更新 `ledger/` 对应文件。
 - 只有保存位置或是否使用文件不明确时才询问用户。
 - 未确认项使用 `draft`、`needs-source` 或 `needs-user-data`，不要因为某内容在草稿中有用就将其标记为 `confirmed`。
-
-状态标签：
-
-- `confirmed`
-- `draft`
-- `needs-source`
-- `needs-user-data`
-- `derived`
-- `superseded`
-
-不要静默覆盖已确认条目。参数、公式或决策变更时保留旧条目并标记 `superseded`。
+- 状态标签定义见 workflow router 同名参考文件。
+- 不要静默覆盖已确认条目。参数、公式或决策变更时保留旧条目并标记 `superseded`。

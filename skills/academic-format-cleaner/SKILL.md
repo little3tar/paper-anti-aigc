@@ -17,10 +17,8 @@ description: >-
 | "格式问题很少，目测一下就行" | 必须运行 check_format.py，依赖脚本输出判断 |
 | "`[待补来源]` 标记先留着" | 残留标记必须清理或移入证据缺口，不得留到最终稿 |
 | "引用位置差不多就行" | `\cite{}` 须紧贴被引文字，位于中文句号、逗号内侧 |
-| "P0/P1 还在，但只做格式检查没事" | 工作流模式下检查 status.json，P0/P1 > 0 时拒绝继续；独立模式（用户粘贴文本）不受此限 |
-| "部分格式问题不在脚本检测范围" | 脚本未覆盖的问题按本 skill 规则人工复核 |
-| "marker 题名改了也不影响格式" | `[文献题名]` 方括号内题名必须与原始草稿一致，缩写/翻译/改写视为 P2 |
-| "`“` 是 JSON 的事，格式不用管" | Unicode 转义序列必须还原为实际字符——`“`→`"`、`”`→`"`、`‘`→`'`、`’`→`'` 等 |
+| "P0/P1 还在，但只做格式检查没事" | 工作流模式下检查 status.json，P0/P1 > 0 时拒绝继续（详见 workflow §强制串行规则第6条）；独立模式不受此限 |
+| “`”` 是 JSON 的事，格式不用管” | Unicode 转义序列必须还原为实际字符——`”`→`”`、`”`→`”`、`’`→`’`、`’`→`’` 等 |
 
 本 skill 只处理格式层问题，不负责改写正文风格。它通常是 thesis workflow 的最后一道后处理，用来保护命令、公式、引用和 Markdown/LaTeX 结构。
 
@@ -58,7 +56,7 @@ description: >-
 9. **缺来源正文残留**：正文中的 `[待补来源: ...]` 属于未清理证据缺口。最终格式清理前应移出正文，放入 `未写入正文的待补资料`、`证据缺口清单` 或项目台账。
 10. **标准规范工作标记**：正文中的 `[标准规范: ...]` 不能直接进入最终定稿。已核验标准应改写为正式正文依据并配 `[参考文献]` 或模板要求的引用；未核验标准移入 `证据缺口清单`。
 11. **用户材料残留标记**：`[用户材料: ...]`、`[Mxx]`、`[内部参考: ...]` 等内部工作标记不得出现在最终定稿中。检测到后强制清除标记本身，保留实质性内容（设计假设、推导过程或工程解释）。
-12. **marker 内容完整性**（润色后核对）：对照 `.thesis-workflow/02-chapter-draft.md`（内容权威源）中的 source marker 清单，检查主文件（`main.md`/`main.txt` 或 `main-chX.md`/`main-chX.txt`）中 `[文献题名]` 方括号内的题名文字是否保持原样。被缩写、翻译、改写或缺失的 marker 视为 P2 问题，需从原始草稿恢复。此项在 LaTeX、Markdown 和 plain text 中均需人工复核。注意：`04-humanized.md` 是变更清单（非全文副本），不能用作 marker 完整性校验源。
+12. **marker 内容完整性**（润色后核对）：对照 `.thesis-workflow/chapters/chX/draft.md`（内容权威源）中的 source marker 清单，检查主文件中 `[文献题名]` 方括号内的题名文字是否保持原样。被缩写、翻译、改写或缺失的 marker 视为 P2 问题，需从原始草稿恢复。注意：`chapters/chX/humanized.md` 是变更清单（非全文副本），不能用作 marker 完整性校验源。
 13. **Unicode 转义序列还原**：最终输出稿中不得出现 Unicode 转义序列。中文引号 `“` `”` 必须还原为 `"` `"`，单引号 `‘` `’` 还原为 `'` `'`，其他可见字符的转义序列同样还原为实际 Unicode 字符。此项在 LaTeX、Markdown 和 plain text 中均需检查。
 
 Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要在 `--format markdown` 下执行。处理 LaTeX 或 plain text 时，按本节规则人工复核同类问题。
@@ -81,8 +79,8 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 1. 先判断运行模式（见 §运行模式）和用户目标：格式检查，而不是正文润色、证据审计或章节写作。
    - **独立模式**：跳过产物文件写入和备份步骤。运行检查脚本 → 修复问题 → 返回结果。
    - **工作流模式**：执行以下步骤。
-2. 如需直接修改论文主文件，修改前先通过 `engineering-paper-humanizer/scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮格式修复记录（变更清单，非全文副本）写入 `.thesis-workflow/05-format-cleaned.md`，最终清理后文本写入主文件（单文件模式 `main.md` / `main.txt`，拆分模式 `main-chX.md` / `main-chX.txt`）。
-   文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/05-format-cleaned.md`（格式修复记录，非全文副本）。
+2. 如需直接修改论文主文件，修改前先通过 `thesis-writing-workflow/scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮格式修复记录（变更清单，非全文副本）写入 `.thesis-workflow/chapters/chX/format-cleaned.md`，最终清理后文本写入对应章主文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
+   文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/format-cleaned.md`（格式修复记录，非全文副本）。
 3. 如有目标文件，运行格式检查脚本：
 
    ```bash
@@ -94,11 +92,17 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
    加 `--fix --format plain` 可自动完成 Markdown → 纯文本剥离（去除标题标记、加粗/斜体、行内代码反引号、链接、列表标记、引用、代码围栏、水平线，表格转空格对齐，Mermaid/DOT 图表代码块保留围栏，`$$` 公式保留语法）。详见 `references/format-guide.md` 自动转换小节。
 
 4. 根据逐行诊断修复格式问题；不要改写技术结论、实验数据、公式推导或文献含义。
-5. **核对 marker 内容完整性**：读取原始草稿（`.thesis-workflow/02-chapter-draft.md`）和主文件（`main.md`/`main.txt` 或 `main-chX.md`/`main-chX.txt`），提取两份文件中所有 `[文献题名]` marker 的题名列表进行比较。题名被缩写、翻译、改写或缺失的，标记为 P2 并从原始草稿恢复正确题名。注意：`04-humanized.md` 只存变更清单不含全文，不可用作对比源。若主文件不存在则跳过此步。
+5. **核对 marker 内容完整性**：读取原始草稿（`.thesis-workflow/chapters/chX/draft.md`）和主文件（`main-chX.md` / `main-chX.txt` / `main-chX.tex`），提取两份文件中所有 `[文献题名]` marker 的题名列表进行比较。题名被缩写、翻译、改写或缺失的，标记为 P2 并从原始草稿恢复正确题名。注意：`04-humanized.md` 只存变更清单不含全文，不可用作对比源。若主文件不存在则跳过此步。
 6. 复查同一文件，直到 `error` 清零；`warning` 和 `info` 按学校模板、论文规范和用户偏好处理。
 7. 如果用户提供的是片段而不是文件，直接给出修复后的片段，并简短说明改动类型。
 
 格式清理完成后（工作流模式），更新 `.thesis-workflow/status.json`：将 `stage` 设为 `"format-cleaned"`、`next_allowed` 设为 `"next-chapter"`，放行下一章写作或全流程主文件写入。独立模式不更新 `status.json`。
+
+**format-cleaned.md 最低记录要求**（工作流模式）：
+- Marker 逐条核对结果表（至少列出：题名原文 vs 主文件中题名，标记是否一致）
+- Unicode 转义序列检查结论（检出数量 + 修复数量）
+- `check_format.py` 最终 error 数（必须为 0）
+- 禁止只写"格式检查通过"这类无信息量的单句记录
 
 ## 不处理的内容
 

@@ -2,7 +2,7 @@
 """PreToolUse 钩子：论文工作流阶段门控。
 
 三道防线：
-1. 主文件保护 — 全部五阶段完成前禁止写入 main.md/txt/tex
+1. 主文件保护 — 全部五阶段完成前禁止写入 main-ch*.md/txt/tex
 2. 阶段门控 — P0/P1 未清零 + next_allowed 不匹配时禁止写入阶段产物
 3. 跳阶段确认 — 缺少上游产物时要求用户确认（ask，非 deny）
 
@@ -41,7 +41,13 @@ def read_status(workflow_dir: Path) -> dict | None:
 
 
 def read_main_file_path(workflow_dir: Path) -> set[str]:
+    """生成主文件保护名单。覆盖按章拆分模式（main-ch*.md/txt/tex）及兼容旧名单（main.md 等）。"""
     main_files: set[str] = set()
+    # 按章拆分模式：main-ch1.md, main-ch2.txt, ...
+    for i in range(1, 20):
+        for ext in (".md", ".txt", ".tex"):
+            main_files.add(f"main-ch{i}{ext}")
+    # 兼容旧名单（单文件模式迁移前的项目可能仍有）
     for stem in ("main", "thesis", "dissertation", "paper"):
         for ext in (".md", ".txt", ".tex"):
             main_files.add(f"{stem}{ext}")
@@ -73,22 +79,38 @@ def is_main_thesis_file(file_path: str, workflow_dir: Path) -> bool:
     main_names = read_main_file_path(workflow_dir)
     if fname in main_names:
         return True
-    for stem in ("main", "thesis", "dissertation", "paper"):
-        for ext in (".md", ".txt", ".tex"):
-            if fname == f"{stem}{ext}":
-                return True
+    # 额外匹配：任何 main-ch* 命名的文件
+    for ext in (".md", ".txt", ".tex"):
+        if fname.startswith("main-ch") and fname.endswith(ext):
+            return True
     return False
 
 
 def is_stage_product(file_path: str, stage: str) -> bool:
-    products = {
+    """检查文件路径是否匹配指定阶段的产物。
+
+    新结构：chapters/chX/{stage}.md
+    旧结构兼容：0X-xxx.md（根目录）
+    """
+    import re
+    products_new = {
+        "02": re.compile(r"chapters/ch\d+/draft\.md$"),
+        "03": re.compile(r"chapters/ch\d+/audit\.md$"),
+        "04": re.compile(r"chapters/ch\d+/humanized\.md$"),
+        "05": re.compile(r"chapters/ch\d+/format-cleaned\.md$"),
+    }
+    # 兼容旧路径
+    products_old = {
         "02": "02-chapter-draft.md",
         "03": "03-reference-audit.md",
         "04": "04-humanized.md",
         "05": "05-format-cleaned.md",
     }
-    target = products.get(stage, "")
-    return bool(target) and file_path.endswith(target)
+    pattern = products_new.get(stage)
+    if pattern and pattern.search(file_path):
+        return True
+    old_target = products_old.get(stage, "")
+    return bool(old_target) and file_path.endswith(old_target)
 
 
 def upstream_exists(workflow_dir: Path, filename: str) -> bool:
@@ -123,7 +145,7 @@ def make_ask(reason: str) -> dict:
 
 
 def check_main_file_protection(file_path: str, workflow_dir: Path, status: dict | None):
-    """防线 1：主文件保护 — 阶段未完成禁止写入 main.md/txt/tex。"""
+    """防线 1：主文件保护 — 阶段未完成禁止写入 main-ch*.md/txt/tex。"""
     if not is_main_thesis_file(file_path, workflow_dir):
         return None
 
@@ -140,8 +162,8 @@ def check_main_file_protection(file_path: str, workflow_dir: Path, status: dict 
     reason = (
         f"论文工作流未完成全部五个阶段，禁止直接写入主文件 ({os.path.basename(file_path)})。"
         f"当前状态: next_allowed={na}, P0={p0}, P1={p1}。"
-        f"草稿应写入 .thesis-workflow/02-chapter-draft.md。"
-        f"最终文本在全部阶段完成、用户显式确认后方可写入主文件。"
+        f"草稿应写入 .thesis-workflow/chapters/chX/draft.md。"
+        f"最终文本在全部阶段完成、用户显式确认后方可写入主文件 (main-chX.md/txt/tex)。"
         f"详见 workflow §输出与文件安全 和 §阶段产物职责分离。"
     )
     return make_deny(reason)
@@ -197,13 +219,13 @@ def check_skip_stage_confirm(file_path: str, workflow_dir: Path, status: dict | 
     覆盖 workflow §强制串行规则 第 2、4 条（上游产物存在性检查）。
     """
     checks = [
-        ("02", "02-chapter-draft.md", "01-outline.md",
+        ("02", "chapters/ch*/draft.md", "outline.md",
          "thesis-outline-planner", "大纲规划"),
-        ("03", "03-reference-audit.md", "02-chapter-draft.md",
+        ("03", "chapters/ch*/audit.md", "chapters/ch*/draft.md",
          "evidence-grounded-chapter-writer", "章节写作"),
-        ("04", "04-humanized.md", "03-reference-audit.md",
+        ("04", "chapters/ch*/humanized.md", "chapters/ch*/audit.md",
          "reference-integrity-auditor", "证据审计"),
-        ("05", "05-format-cleaned.md", "03-reference-audit.md",
+        ("05", "chapters/ch*/format-cleaned.md", "chapters/ch*/audit.md",
          "reference-integrity-auditor（及 engineering-paper-humanizer）", "审计与润色"),
     ]
 
