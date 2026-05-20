@@ -191,7 +191,7 @@ def is_markdown_table_separator(line: str) -> bool:
     """Return True for Markdown table separator rows such as ``| --- | :---: |``."""
     stripped = line.strip()
     return bool(
-        re.fullmatch(r"\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?", stripped)
+        re.fullmatch(r"\|?\s*:?-{2,}:?\s*(?:\|\s*:?-{2,}:?\s*)+\|?", stripped)
     )
 
 

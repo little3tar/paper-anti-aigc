@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""SessionStart 钩子：检测 .thesis-workflow/status.json，注入工作流状态提示。
+"""SessionStart 钩子：扫描 .thesis-workflow/chapters/ch*/status.json，注入工作流状态提示。
 
-在每次新会话启动时运行，让 AI 知道当前论文工作流处于哪个阶段、下一步该做什么。
+在每次新会话启动时运行，让 AI 知道当前论文工作流各章进度和下一步该做什么。
 """
 
 import json
@@ -18,29 +18,26 @@ FILE_SAFETY = (
 
 STAGE_GUIDES = {
     "fix-evidence": (
-        "当前状态: P0={p0}, P1={p1} 未清零，next_allowed=fix-evidence。"
-        "你只能运行 reference-integrity-auditor 修复证据问题。"
-        "禁止运行 engineering-paper-humanizer 和 academic-format-cleaner。禁止开始下一章。"
+        "第{ch}章: P0={p0}, P1={p1} 未清零，next_allowed=fix-evidence。"
+        "只能运行 reference-integrity-auditor 修复证据问题。"
+        "禁止运行 engineering-paper-humanizer 和 academic-format-cleaner。"
     ),
     "humanizer": (
-        "当前状态: P0/P1 已清零，next_allowed=humanizer。"
-        "你可以运行 engineering-paper-humanizer 润色正文，然后运行 academic-format-cleaner 格式收尾。"
-        "润色后文本写入 main-chX.md/main-chX.txt/main-chX.tex，阶段产物 chapters/chX/humanized.md、chapters/chX/format-cleaned.md 只存操作记录（变更清单），不存全文副本。"
+        "第{ch}章: P0/P1 已清零，next_allowed=humanizer。"
+        "可以运行 engineering-paper-humanizer 润色正文。"
     ),
     "format-cleaner": (
-        "当前状态: 润色已完成，next_allowed=format-cleaner。"
-        "你可以运行 academic-format-cleaner 进行格式收尾。"
+        "第{ch}章: 润色已完成，next_allowed=format-cleaner。"
+        "可以运行 academic-format-cleaner 进行格式收尾。"
     ),
     "next-chapter": (
-        "当前状态: 本章全部五个阶段已完成，next_allowed=next-chapter。"
-        "可以进入下一章的大纲规划或细纲设计。"
+        "第{ch}章: 全部五个阶段已完成，next_allowed=next-chapter。"
     ),
 }
 
 
 def find_workflow_dir() -> str | None:
     cwd = os.getcwd()
-    # 向上遍历查找 .thesis-workflow/
     path = cwd
     while True:
         candidate = os.path.join(path, ".thesis-workflow")
@@ -54,31 +51,67 @@ def find_workflow_dir() -> str | None:
 
 
 def build_context(workflow_dir: str) -> str:
-    status_path = os.path.join(workflow_dir, "status.json")
-    if not os.path.isfile(status_path):
+    chapters_dir = os.path.join(workflow_dir, "chapters")
+
+    # 扫描各章 status.json
+    chapter_statuses = {}
+    if os.path.isdir(chapters_dir):
+        for entry in os.listdir(chapters_dir):
+            ch_dir = os.path.join(chapters_dir, entry)
+            if not os.path.isdir(ch_dir) or not entry.startswith("ch"):
+                continue
+            status_path = os.path.join(ch_dir, "status.json")
+            if os.path.isfile(status_path):
+                try:
+                    with open(status_path, "r", encoding="utf-8") as f:
+                        chapter_statuses[entry] = json.load(f)
+                except (json.JSONDecodeError, OSError):
+                    pass
+
+    if not chapter_statuses:
         return _default_context()
 
-    try:
-        with open(status_path, "r", encoding="utf-8") as f:
-            status = json.load(f)
-    except (json.JSONDecodeError, OSError):
-        return _default_context()
-
-    na = status.get("next_allowed", "unknown")
-    p0 = status.get("p0_count", "?")
-    p1 = status.get("p1_count", "?")
-
-    guide_template = STAGE_GUIDES.get(na)
-    if guide_template:
-        stage_guide = guide_template.format(p0=p0, p1=p1)
-    else:
-        stage_guide = (
-            f"当前状态: next_allowed={na}, P0={p0}, P1={p1}。"
-            f"请先读取 status.json 确认当前阶段。"
+    # 构建各章状态摘要
+    lines = ["论文工作流各章状态："]
+    active_chapter = None
+    for ch_name in sorted(chapter_statuses.keys()):
+        s = chapter_statuses[ch_name]
+        na = s.get("next_allowed", "?")
+        p0 = s.get("p0_count", "?")
+        p1 = s.get("p1_count", "?")
+        p2 = s.get("p2_count", "?")
+        stage = s.get("stage", "?")
+        lines.append(
+            f"  {ch_name}: stage={stage}, P0={p0}, P1={p1}, P2={p2}, next={na}"
         )
+        if na not in ("next-chapter",):
+            active_chapter = ch_name
 
-    status_str = json.dumps(status, ensure_ascii=False)
-    return f"论文工作流状态：{status_str}。{stage_guide}。{FILE_SAFETY}"
+    # 若无活跃章节（所有章 next_allowed 均为 next-chapter），找到第一个无 status.json 的章
+    if active_chapter is None:
+        for i in range(1, 20):
+            ch_name = f"ch{i}"
+            if ch_name not in chapter_statuses:
+                active_chapter = ch_name
+                break
+
+    # 为活跃章节生成引导
+    guide = ""
+    if active_chapter and active_chapter in chapter_statuses:
+        s = chapter_statuses[active_chapter]
+        na = s.get("next_allowed", "")
+        template = STAGE_GUIDES.get(na)
+        if template:
+            guide = template.format(
+                ch=active_chapter,
+                p0=s.get("p0_count", "?"),
+                p1=s.get("p1_count", "?"),
+            )
+    elif active_chapter:
+        guide = f"下一章 {active_chapter} 尚未开始，可进入大纲规划或细纲设计。"
+
+    summary = "\n".join(lines)
+    return f"{summary}\n{guide}\n{FILE_SAFETY}"
 
 
 def _default_context() -> str:

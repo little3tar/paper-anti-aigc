@@ -63,15 +63,17 @@ description: >-
    - 关键信息缺失时，只问最小必要确认问题。
 
 3. **确认输出格式**
-   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/outline.md`（总大纲，章→节→小节层级）和 `.thesis-workflow/literature-pool.md`（文献池全表，6组分类）。章节细纲在写作阶段生成，存放于 `.thesis-workflow/outlines/chX-detailed.md`。
+   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/outline.md`（总大纲，章→节→小节层级）、`.thesis-workflow/literature-pool.md`（文献池全表，按主题分组）和 `.thesis-workflow/main-tex-context.md`（项目上下文，按 `thesis-writing-workflow/references/main-tex-context-template.md` 填充）。章节细纲在写作阶段生成，存放于 `.thesis-workflow/chapters/chX/detailed-outline.md`。
    - 只有当交付格式影响工作时才问：”请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
    - 如果用户要求 Word 文档，先以 `.tex`、`.md` 或 `.txt` 完成并确认计划，再通过 pandoc 或 `python-docx` 转换为 `.docx`。
+   - **创建项目上下文**：确认输出格式后，读取 workflow 的 `references/main-tex-context-template.md`，将已确定的格式选择（输出格式、标题格式、中英双语规范、图表编号、段落风格、引用方案、章节结构）填入模板生成 `.thesis-workflow/main-tex-context.md`。当前无法确定的字段留空或标注"待确认"，后续阶段补充。
 
 4. **建立文献池**
    - 遵循强制三级检索协议（见 workflow §来源策略）：Zotero → 用户 → 网络，每项都要尝试，不得只查一项就停止。
    - 将行业标准、国家标准、规范、规程、验收要求和限值作为独立来源类型处理。此类来源不强求在 Zotero 中；按三级协议检索：Zotero → 询问用户 → 搜索官方标准平台、主管部门、标准发布机构、出版社页面或其他可靠来源。
    - 对已核验标准，规划其进入正文的位置和用途，例如设计依据、参数依据、验收依据、限值依据或安全裕量依据。
    - 文献数量按任务规模分层：真实完整论文计划 30-50 篇，单章 10+ 篇（小节 3+ 篇），workflow validation 或 minimal dry-run 2-5 篇。
+   - **文献池分组原则**：按研究主题/技术路线分组，不按论文章节分组——一篇文献可能支撑多章，不应在多组中重复出现。分组数量由实际研究主题数自然决定，不强定数字。标准规范和专利因元数据结构不同（缺作者/期刊，有标准号/专利号/发布机构），独立成组。每组内文献按相关度排列，每篇标注支撑章节（可并列多章）。分组由 outline-planner 初步确定后，写作和审计阶段可按需调整。
    - 记录每个来源的题名、作者/年份、来源类型、检索词和可支撑章节。
    - **Zotero 笔记/标注参考**：检索到文献后，通过 Zotero MCP 检查该文献是否有用户的笔记或标注。如有，主动询问用户：
      > "检测到以下文献在 Zotero 中有笔记/标注：[文献题名列表]。是否允许我参考这些笔记内容，用于更准确地提取文献关键发现和支撑论点？"
@@ -113,16 +115,23 @@ description: >-
 
 ## 推荐输出结构
 
-除非用户指定其他格式，使用：
+outline.md 仅含以下四段。不写入文献池摘要、图表溯源、设计参数、决策、进度或证据缺口。
 
-1. `任务理解`
-2. `资料检索计划与文献池`（全表写入 `literature-pool.md`，大纲只保留分组摘要）
-3. `论文总章节规划`（到小节标题层级；段落级细纲后续写入 `outlines/chX-detailed.md`）
-4. `任务书要求与章节对应关系`
-5. `建议图表与附录`
-6. `公式/数据/证据需求判断`
-7. `项目台账`（指向 `ledger/` 目录）
-8. `待确认问题`
-9. `下一步建议`
+1. **任务理解**（精简版，≤10行。不列参数清单——参数见 `ledger/facts.md`）
+2. **论文总章节规划**（到小节标题层级。图表占位符内嵌在各节标题下，不单独成节。段落级细纲写入 `chapters/chX/detailed-outline.md`）
+3. **任务书要求与章节对应关系**
+4. **公式/数据/证据需求判断**
+
+项目上下文信息写入 `main-tex-context.md`（按 workflow 模板填充）。
+
+以下产物直接写入各自专属文件，其内容不进入 outline.md：
+- 文献池全表 → `literature-pool.md`
+- 图表生成细节（脚本/格式/数据文件）→ `figure-data-manifest.md`
+- 设计参数 → `ledger/facts.md`
+- 设计决策 → `ledger/decisions.md`
+- 待确认问题 → `ledger/questions.md`
+- 章节进展 → `ledger/chapter-status.md`（运行时产物，非规划阶段写入）
+
+outline.md 规划确认后内容冻结。仅用户主动要求调整章节结构时修改 §二。后续运行时信息（进度/事实/证据缺口）写入各自的 `ledger/` 和 `chapters/chX/` 文件，不回写 outline.md。
 
 计划要具体到后续 agent 可以直接执行章节写作，而不需要重新解释题目。

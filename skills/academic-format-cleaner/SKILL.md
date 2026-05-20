@@ -31,7 +31,7 @@ description: >-
 - 如果发现 P0/P1 证据问题、缺来源结论或 `[待补来源: ...]` 仍在正文中，先交给 `reference-integrity-auditor` 或移入证据缺口清单，再做最终格式清理。
 - 启动前先判断运行模式（见 §运行模式）：
   - **独立模式**（用户粘贴了待检查文本）→ 跳过门控检查，直接进行格式检查。
-  - **工作流模式**（用户引用论文文件）→ 检查 `.thesis-workflow/status.json`（门控规则遵循 workflow §强制串行规则第6条）：若 `p0_count` 或 `p1_count` > 0，或 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，拒绝继续并提示用户先完成上游审计和润色。若 `next_allowed` 为 `"fix-evidence"` 说明审计已发现问题但尚未修复，拒绝继续。若 `next_allowed` 为 `"humanizer"` 说明润色尚未完成，拒绝继续。若文件不存在，说明审计阶段未运行，提示用户先完成上游阶段，用户确认后方可继续。
+  - **工作流模式**（用户引用论文文件）→ 检查 `.thesis-workflow/chapters/chX/status.json`（门控规则遵循 workflow §强制串行规则第6条）：若 `p0_count` 或 `p1_count` > 0，或 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，拒绝继续并提示用户先完成上游审计和润色。若 `next_allowed` 为 `"fix-evidence"` 说明审计已发现问题但尚未修复，拒绝继续。若 `next_allowed` 为 `"humanizer"` 说明润色尚未完成，拒绝继续。若文件不存在，说明审计阶段未运行，提示用户先完成上游阶段，用户确认后方可继续。
 
 推荐顺序：
 
@@ -68,7 +68,7 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 | 场景 | 判断依据 | 模式 |
 |---|---|---|
 | 用户粘贴文本到消息中（如"检查以下文本格式：……"） | 消息中包含待检查的完整文本片段 | **独立模式** |
-| 用户指定论文文件（如"检查 main-ch3.tex 格式"） | 消息中引用文件路径，且 `.thesis-workflow/status.json` 存在 | **工作流模式** |
+| 用户指定论文文件（如"检查 main-ch3.tex 格式"） | 消息中引用文件路径，且 `.thesis-workflow/chapters/chX/status.json` 存在 | **工作流模式** |
 
 **独立模式**：不检查 `status.json`，不写入产物文件。只运行格式检查脚本和规则修复，结果直接返回。
 
@@ -92,11 +92,11 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
    加 `--fix --format plain` 可自动完成 Markdown → 纯文本剥离（去除标题标记、加粗/斜体、行内代码反引号、链接、列表标记、引用、代码围栏、水平线，表格转空格对齐，Mermaid/DOT 图表代码块保留围栏，`$$` 公式保留语法）。详见 `references/format-guide.md` 自动转换小节。
 
 4. 根据逐行诊断修复格式问题；不要改写技术结论、实验数据、公式推导或文献含义。
-5. **核对 marker 内容完整性**：读取原始草稿（`.thesis-workflow/chapters/chX/draft.md`）和主文件（`main-chX.md` / `main-chX.txt` / `main-chX.tex`），提取两份文件中所有 `[文献题名]` marker 的题名列表进行比较。题名被缩写、翻译、改写或缺失的，标记为 P2 并从原始草稿恢复正确题名。注意：`04-humanized.md` 只存变更清单不含全文，不可用作对比源。若主文件不存在则跳过此步。
+5. **核对 marker 内容完整性**：读取原始草稿（`.thesis-workflow/chapters/chX/draft.md`）和主文件（`main-chX.md` / `main-chX.txt` / `main-chX.tex`），提取两份文件中所有 `[文献题名]` marker 的题名列表进行比较。题名被缩写、翻译、改写或缺失的，标记为 P2 并从原始草稿恢复正确题名。注意：`chapters/chX/humanized.md` 只存变更清单不含全文，不可用作对比源。若主文件不存在则跳过此步。
 6. 复查同一文件，直到 `error` 清零；`warning` 和 `info` 按学校模板、论文规范和用户偏好处理。
 7. 如果用户提供的是片段而不是文件，直接给出修复后的片段，并简短说明改动类型。
 
-格式清理完成后（工作流模式），更新 `.thesis-workflow/status.json`：将 `stage` 设为 `"format-cleaned"`、`next_allowed` 设为 `"next-chapter"`，放行下一章写作或全流程主文件写入。独立模式不更新 `status.json`。
+格式清理完成后（工作流模式），更新 `.thesis-workflow/chapters/chX/status.json`：将 `stage` 设为 `"format-cleaned"`、`next_allowed` 设为 `"next-chapter"`，放行下一章写作或全流程主文件写入。独立模式不更新 `status.json`。
 
 **format-cleaned.md 最低记录要求**（工作流模式）：
 - Marker 逐条核对结果表（至少列出：题名原文 vs 主文件中题名，标记是否一致）

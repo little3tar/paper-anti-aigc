@@ -102,10 +102,11 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 ├── calculation-records.md     ← 数值唯一权威源（公式代入、参数来源、标准选型）
 ├── operations-log.md          ← 操作日志（项目检查、章节清除等一次性操作，只追加）
 ├── outline.md                 ← 阶段 1：总大纲（章→节→小节）+ 文献池分组摘要
-├── status.json                ← 门控状态（p0_count、p1_count、next_allowed）
 │
 ├── chapters/                  ← 按章归档的阶段产物（每章独立，不互相覆盖）
 │   ├── ch1/
+│   │   ├── detailed-outline.md  ←   阶段 2 前置：段落级写作细纲（用户确认后）
+│   │   ├── status.json          ←   本章门控状态（P0/P1/P2 + next_allowed，权威）
 │   │   ├── draft.md           ←   阶段 2：章节正文草稿（内容权威源）
 │   │   ├── audit.md           ←   阶段 3：审计报告 + 文献修正记录
 │   │   ├── humanized.md       ←   阶段 4：润色操作记录（非全文副本）
@@ -119,9 +120,6 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 │   ├── chapter-status.md      ←   各章 6 阶段完成状态
 │   └── questions.md           ←   结构化待确认问题
 │
-├── outlines/                  ← 章节细纲（段落级写作点，每章一份）
-│   └── ch2-detailed.md        ←   第2章细纲
-│
 ├── evidence/                  ← 用户提供材料的物理存放
 │   ├── task-book/             ←   任务书、设计说明、开题报告
 │   ├── reference-materials/   ←   用户提供的论文、手册、教材副本
@@ -133,7 +131,6 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 │   └── zotero-export/         ←   Zotero 导出的 .bib 文件（文献信息校验基准）
 │
 ├── backups/                   ← 主文件备份（普通备份保留最近 5 个，锚点备份不限）
-└── validation/                ← workflow 验证产物（仅验证模式使用）
 ```
 
 ### 各文件/目录说明
@@ -159,7 +156,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 | --- | --- | --- | --- |
 | `outline.md` | thesis-outline-planner | 总大纲（章→节→小节）+ 文献池分组摘要 | 大纲确认后 |
 | `literature-pool.md` | thesis-outline-planner | 文献池全表（含 ZoteroKey，分组管理） | 大纲确认后 |
-| `outlines/chX-detailed.md` | evidence-grounded-chapter-writer | 章节细纲（段落级写作点） | 细纲确认后 |
+| `chapters/chX/detailed-outline.md` | evidence-grounded-chapter-writer | 章节细纲（段落级写作点） | 细纲确认后 |
 | `chapters/chX/draft.md` | evidence-grounded-chapter-writer | 第 X 章正文草稿（内容权威源） | 每章草稿完成后 |
 | `chapters/chX/audit.md` | reference-integrity-auditor | 第 X 章审计报告 + 文献修正记录 | 审计完成后 |
 | `chapters/chX/humanized.md` | engineering-paper-humanizer | 第 X 章润色操作记录（非全文副本，最终文本写入 main-chX.md/txt/tex） | 润色完成后 |
@@ -176,24 +173,31 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 #### status.json（门控）
 
+**按章存储**：`.thesis-workflow/chapters/chX/status.json` 为本章权威门控状态。
+
+按章 `chapters/chX/status.json` 格式：
+
 ```json
 {
-  "stage": "audited",
-  "timestamp": "2026-05-13T22:00:00",
-  "p0_count": 0,
-  "p1_count": 0,
-  "green_paragraphs": ["§2.1", "§3.2"],
-  "blocked_paragraphs": ["§2.3"],
-  "next_allowed": "humanizer",
-  "notes": ""
+    "stage": "audited",
+    "chapter": "ch5",
+    "timestamp": "2026-05-13T22:00:00",
+    "p0_count": 0,
+    "p1_count": 0,
+    "p2_count": 3,
+    "green_paragraphs": ["§2.1", "§3.2"],
+    "blocked_paragraphs": ["§2.3"],
+    "next_allowed": "humanizer",
+    "notes": ""
 }
 ```
 
-- `stage`：当前所处阶段（`planned` / `written` / `audited` / `humanized` / `format-cleaned`）。`planned` 和 `written` 为信息性标记；门控逻辑主要关注后三个阶段。
-- `p0_count` / `p1_count`：P0/P1 问题计数
+- `stage`：当前所处阶段（`audited` / `humanized` / `format-cleaned`）
+- `p0_count` / `p1_count` / `p2_count`：审计问题计数（p2_count 来自审计报告）
+- `green_paragraphs` / `blocked_paragraphs`：humanizer 使用，由 auditor 写入
 - `next_allowed` 取值：`"fix-evidence"` / `"humanizer"` / `"format-cleaner"` / `"next-chapter"`
 - P0/P1 > 0 时，`next_allowed` 强制为 `"fix-evidence"`，humanizer 和 format-cleaner **硬性阻断**
-- 前一章未完成 humanizer+format-cleaner 时，**禁止开始下一章**
+- 前一章未完成 humanizer+format-cleaner（`next_allowed` 不为 `"next-chapter"`）时，**禁止开始下一章**
 
 #### evidence/（用户材料）
 
@@ -218,13 +222,13 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 `project-ledger.md` 已拆分为 `ledger/` 下的独立文件（facts/decisions/chapter-status/questions），各自独立读写。`project-ledger.md` 为汇总索引。
 
-#### outlines/（章节细纲）
+#### chapters/chX/detailed-outline.md（章节细纲）
 
-每章的段落级细纲独立存储（`chX-detailed.md`），写作前由 chapter-writer 生成并经用户确认。总大纲 `01-outline.md` 只保留到小节标题层级。
+每章的段落级细纲按章存放（`chapters/chX/detailed-outline.md`），写作前由 chapter-writer 生成并经用户确认。总大纲 `outline.md` 只保留到小节标题层级。
 
 #### literature-pool.md（文献池全表）
 
-从 `01-outline.md` 分离的 60 条文献全表，6 组分类，含 ZoteroKey 映射。大纲中只保留分组摘要。
+从 `outline.md` 分离的 60 条文献全表，6 组分类，含 ZoteroKey 映射。大纲中只保留分组摘要。
 
 #### operations-log.md（操作日志）
 

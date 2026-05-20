@@ -6,14 +6,12 @@
 2. 阶段门控 — P0/P1 未清零 + next_allowed 不匹配时禁止写入阶段产物
 3. 跳阶段确认 — 缺少上游产物时要求用户确认（ask，非 deny）
 
-设计要点：
-- 所有 AI 需要看到的指引放在 permissionDecisionReason（AI 可见），
-  不在 systemMessage（仅用户可见，AI 看不到 — GitHub issue #26423）。
-- deny 用于硬性违规，ask 用于需要用户确认的边界情况。
+门控状态按章存储：读取 .thesis-workflow/chapters/chX/status.json。
 """
 
 import json
 import os
+import re
 import sys
 
 if sys.platform == "win32":
@@ -30,31 +28,41 @@ def find_workflow_dir() -> Path | None:
     return None
 
 
-def read_status(workflow_dir: Path) -> dict | None:
-    status_path = workflow_dir / "status.json"
-    if not status_path.is_file():
-        return None
-    try:
-        return json.loads(status_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return None
+def extract_chapter(file_path: str) -> str | None:
+    """从文件路径中提取章号。支持 chapters/ch4/xxx.md 和 main-ch4.md 两种格式。"""
+    # chapters/ch4/xxx.md → ch4
+    m = re.search(r"chapters/(ch\d+)/", file_path)
+    if m:
+        return m.group(1)
+    # main-ch4.md → ch4
+    m = re.search(r"main-(ch\d+)\.(?:md|txt|tex)$", os.path.basename(file_path))
+    if m:
+        return m.group(1)
+    return None
+
+
+def read_status(workflow_dir: Path, file_path: str = "") -> dict | None:
+    """读取目标章的 status.json。"""
+    ch = extract_chapter(file_path)
+    if ch:
+        ch_path = workflow_dir / "chapters" / ch / "status.json"
+        if ch_path.is_file():
+            try:
+                return json.loads(ch_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                pass
+    return None
 
 
 def read_main_file_path(workflow_dir: Path) -> set[str]:
-    """生成主文件保护名单。覆盖按章拆分模式（main-ch*.md/txt/tex）及兼容旧名单（main.md 等）。"""
+    """生成主文件保护名单。覆盖按章拆分模式（main-ch*.md/txt/tex）。"""
     main_files: set[str] = set()
-    # 按章拆分模式：main-ch1.md, main-ch2.txt, ...
     for i in range(1, 20):
         for ext in (".md", ".txt", ".tex"):
             main_files.add(f"main-ch{i}{ext}")
-    # 兼容旧名单（单文件模式迁移前的项目可能仍有）
-    for stem in ("main", "thesis", "dissertation", "paper"):
-        for ext in (".md", ".txt", ".tex"):
-            main_files.add(f"{stem}{ext}")
     ctx_path = workflow_dir / "main-tex-context.md"
     if ctx_path.is_file():
         try:
-            import re
             text = ctx_path.read_text(encoding="utf-8")
             for line in text.splitlines():
                 s = line.strip()
@@ -79,7 +87,6 @@ def is_main_thesis_file(file_path: str, workflow_dir: Path) -> bool:
     main_names = read_main_file_path(workflow_dir)
     if fname in main_names:
         return True
-    # 额外匹配：任何 main-ch* 命名的文件
     for ext in (".md", ".txt", ".tex"):
         if fname.startswith("main-ch") and fname.endswith(ext):
             return True
@@ -87,38 +94,29 @@ def is_main_thesis_file(file_path: str, workflow_dir: Path) -> bool:
 
 
 def is_stage_product(file_path: str, stage: str) -> bool:
-    """检查文件路径是否匹配指定阶段的产物。
-
-    新结构：chapters/chX/{stage}.md
-    旧结构兼容：0X-xxx.md（根目录）
-    """
-    import re
+    """检查文件路径是否匹配指定阶段的产物。"""
     products_new = {
         "02": re.compile(r"chapters/ch\d+/draft\.md$"),
         "03": re.compile(r"chapters/ch\d+/audit\.md$"),
         "04": re.compile(r"chapters/ch\d+/humanized\.md$"),
         "05": re.compile(r"chapters/ch\d+/format-cleaned\.md$"),
     }
-    # 兼容旧路径
-    products_old = {
-        "02": "02-chapter-draft.md",
-        "03": "03-reference-audit.md",
-        "04": "04-humanized.md",
-        "05": "05-format-cleaned.md",
-    }
     pattern = products_new.get(stage)
     if pattern and pattern.search(file_path):
         return True
-    old_target = products_old.get(stage, "")
-    return bool(old_target) and file_path.endswith(old_target)
+    return False
 
 
-def upstream_exists(workflow_dir: Path, filename: str) -> bool:
-    return (workflow_dir / filename).is_file()
+def upstream_exists(workflow_dir: Path, file_path: str, upstream_pattern: str) -> bool:
+    """检查上游产物是否存在。upstream_pattern 中的 chX 替换为目标章的章号。"""
+    ch = extract_chapter(file_path)
+    if ch:
+        resolved = upstream_pattern.replace("ch*", ch)
+        return (workflow_dir / resolved).is_file()
+    return False
 
 
 def make_deny(reason: str) -> dict:
-    """硬性拒绝。reason 写入 permissionDecisionReason（AI 可见）。"""
     return {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
@@ -129,7 +127,6 @@ def make_deny(reason: str) -> dict:
 
 
 def make_ask(reason: str) -> dict:
-    """要求用户确认。reason 写入 permissionDecisionReason（AI 和用户均可见）。"""
     return {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
@@ -159,21 +156,19 @@ def check_main_file_protection(file_path: str, workflow_dir: Path, status: dict 
     if na == "next-chapter":
         return None
 
+    ch = extract_chapter(file_path) or "?"
     reason = (
-        f"论文工作流未完成全部五个阶段，禁止直接写入主文件 ({os.path.basename(file_path)})。"
+        f"第{ch}章工作流未完成全部五个阶段，禁止直接写入主文件 ({os.path.basename(file_path)})。"
         f"当前状态: next_allowed={na}, P0={p0}, P1={p1}。"
-        f"草稿应写入 .thesis-workflow/chapters/chX/draft.md。"
-        f"最终文本在全部阶段完成、用户显式确认后方可写入主文件 (main-chX.md/txt/tex)。"
+        f"草稿应写入 .thesis-workflow/chapters/{ch}/draft.md。"
+        f"最终文本在全部阶段完成、用户显式确认后方可写入主文件。"
         f"详见 workflow §输出与文件安全 和 §阶段产物职责分离。"
     )
     return make_deny(reason)
 
 
 def check_stage_gate(file_path: str, workflow_dir: Path, status: dict | None):
-    """防线 2：阶段门控 — P0/P1 未清零 + next_allowed 不匹配时禁止写入阶段产物。
-
-    覆盖 workflow §强制串行规则 第 5 条（humanizer P0/P1 检查）和第 6 条（format-cleaner next_allowed 检查）。
-    """
+    """防线 2：阶段门控 — P0/P1 未清零 + next_allowed 不匹配时禁止写入阶段产物。"""
     if status is None:
         return None
 
@@ -181,8 +176,7 @@ def check_stage_gate(file_path: str, workflow_dir: Path, status: dict | None):
     p1 = status.get("p1_count", -1)
     na = status.get("next_allowed", "")
 
-    # 确定目标阶段及其合法状态
-    target = None  # (product_name, allowed_next_allowed_values)
+    target = None
     if is_stage_product(file_path, "04"):
         target = ("04-humanized.md", ("humanizer", "format-cleaner", "next-chapter"))
     elif is_stage_product(file_path, "05"):
@@ -193,7 +187,6 @@ def check_stage_gate(file_path: str, workflow_dir: Path, status: dict | None):
 
     product_name, allowed_states = target
 
-    # P0/P1 检查（regardless of next_allowed）
     if p0 > 0 or p1 > 0:
         return make_deny(
             f"P0/P1 未清零（P0={p0}, P1={p1}），禁止写入 {product_name}。"
@@ -201,36 +194,35 @@ def check_stage_gate(file_path: str, workflow_dir: Path, status: dict | None):
             f"审计通过并清零后方可进入下游阶段。详见 workflow §审计退回修复闭环。"
         )
 
-    # next_allowed 阶段匹配检查
     if na not in allowed_states:
         return make_deny(
             f"当前 next_allowed=\"{na}\"，不允许写入 {product_name}。"
             f"该产物要求 next_allowed 为 {' / '.join(allowed_states)}。"
-            f"请确认上游阶段已完成并更新了 status.json。详见 workflow §强制串行规则。"
+            f"请确认上游阶段已完成并更新了 chapters/chX/status.json。详见 workflow §强制串行规则。"
         )
 
     return None
 
 
 def check_skip_stage_confirm(file_path: str, workflow_dir: Path, status: dict | None):
-    """防线 3：跳阶段确认 — 缺少上游产物时要求用户确认。
+    """防线 3：跳阶段确认 — 缺少上游产物时要求用户确认。"""
+    ch = extract_chapter(file_path)
+    if not ch:
+        return None
 
-    使用 ask（而非 deny），因为用户可能已直接指定写作范围。
-    覆盖 workflow §强制串行规则 第 2、4 条（上游产物存在性检查）。
-    """
     checks = [
-        ("02", "chapters/ch*/draft.md", "outline.md",
+        ("02", f"chapters/{ch}/draft.md", "outline.md",
          "thesis-outline-planner", "大纲规划"),
-        ("03", "chapters/ch*/audit.md", "chapters/ch*/draft.md",
+        ("03", f"chapters/{ch}/audit.md", f"chapters/{ch}/draft.md",
          "evidence-grounded-chapter-writer", "章节写作"),
-        ("04", "chapters/ch*/humanized.md", "chapters/ch*/audit.md",
+        ("04", f"chapters/{ch}/humanized.md", f"chapters/{ch}/audit.md",
          "reference-integrity-auditor", "证据审计"),
-        ("05", "chapters/ch*/format-cleaned.md", "chapters/ch*/audit.md",
+        ("05", f"chapters/{ch}/format-cleaned.md", f"chapters/{ch}/audit.md",
          "reference-integrity-auditor（及 engineering-paper-humanizer）", "审计与润色"),
     ]
 
     for stage, product, upstream, skill, desc in checks:
-        if is_stage_product(file_path, stage) and not upstream_exists(workflow_dir, upstream):
+        if is_stage_product(file_path, stage) and not (workflow_dir / upstream).is_file():
             return make_ask(
                 f"你正要写入 {product}，但 {upstream} 不存在。"
                 f"请确认：是否已通过 {skill} 完成{desc}？"
@@ -264,21 +256,21 @@ def main():
         print("{}")
         return
 
-    status = read_status(workflow_dir)
+    status = read_status(workflow_dir, file_path)
 
-    # 防线 1：主文件保护（deny — AI 可见 permissionDecisionReason）
+    # 防线 1：主文件保护
     result = check_main_file_protection(file_path, workflow_dir, status)
     if result is not None:
         print(json.dumps(result, ensure_ascii=False))
         return
 
-    # 防线 2：阶段门控（deny — AI 可见 permissionDecisionReason）
+    # 防线 2：阶段门控
     result = check_stage_gate(file_path, workflow_dir, status)
     if result is not None:
         print(json.dumps(result, ensure_ascii=False))
         return
 
-    # 防线 3：跳阶段确认（ask — AI 和用户均可见 permissionDecisionReason）
+    # 防线 3：跳阶段确认
     result = check_skip_stage_confirm(file_path, workflow_dir, status)
     if result is not None:
         print(json.dumps(result, ensure_ascii=False))
