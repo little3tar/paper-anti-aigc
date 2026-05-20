@@ -95,9 +95,8 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 ```text
 .thesis-workflow/
 ├── project-ledger.md          ← 台账索引文件（指向 ledger/ 各文件）
-├── main-tex-context.md        ← 论文主文件结构地图（引用 ledger/，不复制参数）
+├── main-tex-context.md        ← 论文主文件结构地图
 ├── materials-inventory.md     ← 用户材料编目清单
-├── literature-notes.md        ← 文献笔记临时缓存（写作创建，审计通过后清空）
 ├── literature-pool.md         ← 文献池全表（含 ZoteroKey 映射，分组管理）
 ├── figure-data-manifest.md    ← 图表数据溯源清单（数据文件、生成脚本、输出格式）
 ├── calculation-records.md     ← 数值唯一权威源（公式代入、参数来源、标准选型）
@@ -110,7 +109,8 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 │   │   ├── draft.md           ←   阶段 2：章节正文草稿（内容权威源）
 │   │   ├── audit.md           ←   阶段 3：审计报告 + 文献修正记录
 │   │   ├── humanized.md       ←   阶段 4：润色操作记录（非全文副本）
-│   │   └── format-cleaned.md  ←   阶段 5：格式修复记录（非全文副本）
+│   │   ├── format-cleaned.md  ←   阶段 5：格式修复记录（非全文副本）
+│   │   └── literature-notes.md←   文献笔记缓存（按章存储，随章保留）
 │   └── chN/ ...
 │
 ├── ledger/                    ← 项目台账（拆分后，各子文件独立读写）
@@ -170,7 +170,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 | 文件 | 用途 | 生命周期 |
 | --- | --- | --- |
-| `literature-notes.md` | Zotero 文献笔记/标注分批缓存，写作和审计阶段引用 | 写作创建 → 审计校验 → 审计通过后清空 |
+| `chapters/chX/literature-notes.md` | Zotero 文献笔记/标注分批缓存，写作和审计阶段引用 | 写作创建，随章保留 |
 | `figure-data-manifest.md` | 图表级数据溯源：数据文件路径、真实/mock、生成脚本、输出格式 | 大纲建框架 → 写作填充 → 审计校验；持久保留 |
 | `calculation-records.md` | 计算底稿：公式、代入过程、参数来源、标准选型、状态 | 写作创建 → 审计校验 → 参数变更时标 superseded 追加新行 |
 

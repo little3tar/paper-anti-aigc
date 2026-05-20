@@ -239,10 +239,9 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
    - **前置条件**：`.thesis-workflow/chapters/chX/draft.md` 存在且章节草稿已完成，或用户提供了待审计文本。
    - 审计 unsupported claims、source marker consistency 和来源可靠性。
    - 审计公式、单位、参数来源、代入步骤和计算可复现性。
-   - 对照 `.thesis-workflow/literature-notes.md` 缓存中的文献笔记/标注交叉校验正文 claim（缓存存在且条目状态为 `已获取` 时）。
+   - 对照 `.thesis-workflow/chapters/chX/literature-notes.md` 缓存中的文献笔记/标注交叉校验正文 claim（缓存存在且条目状态为 `已获取` 时）。
    - Review-gated mode 下，如 P0/P1 仍存在则暂停。Validation mode 下，只有把 unsupported 正文内容移入 evidence-gap lists 或 ledger 后，才允许继续。
    - **阻断规则**：P0/P1 > 0 时 `status.json` 写 `"next_allowed": "fix-evidence"`，下游 humanizer 和 format-cleaner 必须拒绝，且**禁止开始下一章**。
-   - **缓存清理**：审计通过后清空 `literature-notes.md`（保留文件头占位）；审计未通过则保留供修复阶段使用。
 
 4. **`engineering-paper-humanizer`**
    - **前置条件**（工作流模式）：`.thesis-workflow/status.json` 存在且 `p0_count` 和 `p1_count` 均为 0，或当前为 validation mode。独立模式（用户粘贴文本）无前置条件。
@@ -268,6 +267,13 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 3. **主动询问用户**：每章完成即写入对应章文件。全论文完成后逐章确认最终版本："第 X 章已完成，是否更新 `main-chX.md`？"，无需合并所有章到一个文件。
 4. **写入主文件**（用户确认后）：
    - 先通过 `git_snapshot.py <主文件>` 创建备份。
+   - **从 draft 抽取主文件正文**：`draft.md` 是工作稿（含10项产出元数据），写入主文件前剥离工作稿元数据，只保留以下内容进入主文件：
+     - 正文（章节标题、段落、图表占位符、表注）
+     - 参考文献引用（`[文献题名]` marker 保留在原句中）
+     - Mermaid 代码块、matplotlib 脚本、Graphviz DOT 代码块（嵌入对应图表占位符下方，不在文末独立成章）
+     - 提示词模板（嵌入对应图表占位符下方）
+     - 表格正文（含表注）
+   - 以下工作稿元数据**不进入主文件**：证据表、参考来源清单、待用户补充的信息、未写入正文的待补资料、证据缺口清单、后处理建议、章节细纲、公式与参数计划。
    - 将最终文本写入对应章文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
    - 更新 `.thesis-workflow/ledger/chapter-status.md` 和 `operations-log.md`，记录写入时间、备份路径和最终版本号。
 5. **交付清单**：在输出中列出主文件路径（每章 1 个）、备份路径、各阶段产物路径和推荐下一步（如：编译 LaTeX、提交导师审阅）。
@@ -297,7 +303,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 - 章节细纲独立存放：`.thesis-workflow/outlines/chX-detailed.md`（每章一份，段落级写作点）。大纲文件 `outline.md` 只保留到小节标题层级。
 - 批量操作日志：`.thesis-workflow/operations-log.md`（项目检查、章节清除等一次性操作记录，只追加不修改）。
 - Project ledger 默认放在 `.thesis-workflow/project-ledger.md`；按 `main-tex-context-template.md` 生成的项目上下文默认放在 `.thesis-workflow/main-tex-context.md`。
-- 文献笔记缓存默认放在 `.thesis-workflow/literature-notes.md`（临时文件，审计通过后清空）。
+- 文献笔记缓存按章存储：`.thesis-workflow/chapters/chX/literature-notes.md`（随章保留，不自动清空）。
 - 图表数据溯源清单默认放在 `.thesis-workflow/figure-data-manifest.md`（持久文件，数据文件路径、生成脚本、输出格式）。
 - 计算记录默认放在 `.thesis-workflow/calculation-records.md`（计算底稿，正文数值的唯一权威数据源）。
 - 每次直接修改用户论文主文件前，先通过 `scripts/git_snapshot.py <文件>` 创建备份。脚本优先使用 Git 分支备份，回退到 `.thesis-workflow/backups/` 下的文件复制备份。不要把备份写进 skill 仓库。备份对应章文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。

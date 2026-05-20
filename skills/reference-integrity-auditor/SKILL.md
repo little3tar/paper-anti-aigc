@@ -74,7 +74,7 @@ description: >-
    - **文献信息准确性抽查**：对照 Zotero 文献库或 `.bib` 导出文件（默认路径 `.thesis-workflow/evidence/zotero-export/`），随机抽查 20%（不少于 5 条）的 `[文献题名]` marker，核对题名、作者、年份是否与原始记录一致。题名被缩写、改写或包含转录错误（如特殊字符丢失、大小写错误）→ 标记 P2，需从原始记录修正。若 `.bib` 文件不存在，抽查 Zotero MCP 可检索到的条目。若 Zotero MCP 和 `.bib` 均不可用，在审计报告中标注"文献信息准确性未经核验"并建议用户提供导出文件。
 
 5b. **对照文献笔记缓存校验正文 claim（⭐）**
-   - 检查 `.thesis-workflow/literature-notes.md` 是否存在。
+   - 检查 `.thesis-workflow/chapters/chX/literature-notes.md` 是否存在。
    - 如存在，读取缓存中与当前审计段落相关的文献条目。
    - **仅读取状态为 `已获取` 的条目**；标记为 `无笔记` 或 `获取失败` 的条目直接跳过，不重试获取。
    - 对照缓存中的标注内容，验证正文 claim 一致性：
@@ -142,9 +142,9 @@ description: >-
 - `p0_count` / `p1_count` 任一 > 0 时，`next_allowed` 设为 `"fix-evidence"`（必须退回补证据，禁止进入 humanizer，禁止开始下一章）。
 - 仅当 P0/P1 全部解决后，`next_allowed` 设为 `"humanizer"`，放行进入润色。后续 `"format-cleaner"` 和 `"next-chapter"` 分别由 humanizer 和 format-cleaner 阶段完成后更新。
 
-### 文献笔记缓存清理
+### 文献笔记缓存
 
-缓存清理规则遵循 `literature-notes-cache-rules.md` §审计后清理。审计通过后清空，审计未通过保留供修复使用。
+缓存的使用和读取规则见 `literature-notes-cache-rules.md`。缓存按章存储（`chapters/chX/literature-notes.md`），随章保留不自动清空。
 
 不要编造缺失来源。需要来源时，在 evidence gap section 中说明证据类型和可检索关键词，不要伪造参考文献，也不要把缺来源定论留在正文中。
 
