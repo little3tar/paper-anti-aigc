@@ -281,6 +281,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
      - 提示词模板（嵌入对应图表占位符下方）
      - 表格正文（含表注）
    - 以下工作稿元数据**不进入主文件**：证据表、参考来源清单、待用户补充的信息、未写入正文的待补资料、证据缺口清单、后处理建议、章节细纲、公式与参数计划。
+   - **运行时编号剥离（⭐）**：以下 `.thesis-workflow/` 内部编号仅限工作稿使用，写入主文件前必须清除或转换：计算记录 ID（如 C3-01）→ 正文中直接呈现数值和标准选型结论；材料编目 ID（如 M01、M02）→ 已在用户材料协议中禁止进入正文；台账参数标记（`[Mxx]`、`[用户材料: ...]`）→ 全部清除；图表清单 Figure ID（如 Fig 3-1）→ 转为论文规范的图表编号格式。
    - 将最终文本写入对应章文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
    - 更新 `.thesis-workflow/ledger/chapter-status.md` 和 `operations-log.md`，记录写入时间、备份路径和最终版本号。
 5. **交付清单**：在输出中列出主文件路径（每章 1 个）、备份路径、各阶段产物路径和推荐下一步（如：编译 LaTeX、提交导师审阅）。
@@ -407,9 +408,9 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 ## 数据单一权威源
 
-- 所有计算类数值（缸径、推力、流量、功率等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。正文和 ledger 中只引用计算记录 ID（如 C3-01），不复制数值。
+- 所有计算类数值（缸径、推力、流量、功率等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。draft.md 工作稿中可用计算记录 ID（如 C3-01）标记数值来源，便于审计追踪。计算记录 ID 仅限 `.thesis-workflow/` 内部使用——**写入主文件（main-chX.md）前必须清除**，正文中直接呈现数值和标准选型结论，不得出现 C3-01 等内部编号。
 - `ledger/facts.md` 只记录参数名、类型、来源和关联计算记录 ID。`main-tex-context.md` 引用 `ledger/facts.md`，不复制参数表。
-- 数值变更/公式修正/代入纠错/标准选型调整时，只需更新 `calculation-records.md` 一处（旧记录标 `superseded`，追加新行，不原地编辑）。正文和 ledger 中引用计算记录 ID，数值自动跟随最新有效记录，无需多处同步。审计时对照计算记录核验正文数值。
+- 数值变更/公式修正/代入纠错/标准选型调整时，只需更新 `calculation-records.md` 一处（旧记录标 `superseded`，追加新行，不原地编辑）。draft.md 工作稿和 ledger 中引用计算记录 ID 指向最新有效记录，无需多处同步数值。审计时对照计算记录核验正文数值。
 
 ## 阶段产物职责分离
 

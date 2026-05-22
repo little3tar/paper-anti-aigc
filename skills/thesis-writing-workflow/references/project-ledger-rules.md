@@ -20,7 +20,7 @@
 
 ## 数值型参数规则
 
-计算类数值（缸径、推力、流量等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。`ledger/facts.md` 只记录参数名、类型、来源和关联计算记录 ID，不复制数值。正文中引用计算记录 ID（如 C3-01）。
+计算类数值（缸径、推力、流量等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。`ledger/facts.md` 只记录参数名、类型、来源和关联计算记录 ID，不复制数值。draft.md 工作稿中用计算记录 ID 标记数值来源，写入主文件前清除——正文中直接呈现数值，不得出现 C3-01 等内部编号。
 
 ## 何时询问
 
