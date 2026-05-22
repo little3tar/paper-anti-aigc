@@ -191,7 +191,7 @@ def is_markdown_table_separator(line: str) -> bool:
     """Return True for Markdown table separator rows such as ``| --- | :---: |``."""
     stripped = line.strip()
     return bool(
-        re.fullmatch(r"\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?", stripped)
+        re.fullmatch(r"\|?\s*:?-{2,}:?\s*(?:\|\s*:?-{2,}:?\s*)+\|?", stripped)
     )
 
 
@@ -291,6 +291,13 @@ def format_text(diagnostics: list[dict], filepath: str) -> str:
     lines.append(
         f"  汇总: {counts['error']} 错误 | {counts['warning']} 警告 | {counts['info']} 提示"
     )
+    # 按规则 ID 分组统计
+    rule_counts: dict[str, int] = {}
+    for d in diagnostics:
+        rid = d.get("rule", "UNKNOWN")
+        rule_counts[rid] = rule_counts.get(rid, 0) + 1
+    if rule_counts:
+        lines.append(f"  按规则: " + " | ".join(f"{k}: {v}" for k, v in sorted(rule_counts.items())))
     lines.append(f"{'=' * 60}")
 
     return "\n".join(lines)

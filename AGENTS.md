@@ -20,13 +20,14 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 | 规则 | 权威位置 |
 |---|---|
-| A/B/C 分类 | workflow §用户材料收录协议 |
-| Zotero 笔记协议 | `literature-notes-cache-rules.md` |
-| source marker 格式 | `citation-key-rules.md` |
+| A/B/C 分类 | `skills/thesis-writing-workflow/references/user-material-protocol.md` |
+| Zotero 笔记协议 | `skills/evidence-grounded-chapter-writer/references/literature-notes-cache-rules.md` |
+| source marker 格式 | `skills/evidence-grounded-chapter-writer/references/citation-key-rules.md` |
 | 备份协议 | workflow §备份协议 |
 | 门控逻辑（各阶段准入条件） | workflow §强制串行规则 |
-| 执行模式语义（Review-gated / Preauthorized / Validation） | workflow §执行模式 |
+| 执行模式语义（Review-gated / Preauthorized / Validation / 工作流vs独立） | workflow §执行模式 |
 | 阶段入口条件（前置条件 + 阻塞条件） | workflow §阶段输入契约 |
+| 修改回环（分级/产物更新/备份） | `skills/thesis-writing-workflow/references/revision-loop.md` |
 
 ### 不描述默认行为
 只写例外。持久文件不写"保留不删除"，正常备份不写"保留最近 N 个"。
@@ -35,7 +36,7 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 只放 AI 特有的直觉错误。不是规则重述。写之前问：这是 AI 才容易犯的错吗？
 
 ### 子 skill 引用 workflow，不复述
-文件产出 boilerplate 只在 workflow §输出与文件安全 定义。子 skill 步骤 1 写："文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/XX-xxx.md`。"
+文件产出 boilerplate 只在 workflow §输出与文件安全 定义。子 skill 步骤 1 写："文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/xxx.md`。"
 
 ### 跨 skill 引用可解析
 
@@ -46,7 +47,10 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 每个 skill 的 `scripts/` 不跨 skill 导入代码。如需共享工具函数，在各 skill 的 `scripts/` 下维护独立副本（如 `_shared.py`），确保每个 skill 可独立部署。
 
 ### 新增产物同步
-新增 `.thesis-workflow/` 产物 → 同步更新 `README.md` 目录树 + 产物表、`workflow SKILL.md` 产出物列表。新增 reference 文件 → 在所属 skill 参考文件表追加一行。
+新增 `.thesis-workflow/` 产物 → 同步更新 `README.md` 目录树 + 产物表、`workflow SKILL.md` 产出物列表。新增 `chapters/chX/` 下的阶段产物 → 同步更新目录树。新增 reference 文件 → 在所属 skill 参考文件表追加一行，并同步本文件（AGENTS.md）的单一权威定义表。
+
+### 修改前先研究
+修改 skills 或 hooks 前，必须通过 skill-creator 和联网搜索获取相关知识——skill 设计最佳实践、相似问题的解决模式、AI 指令执行的已知陷阱。禁止凭直觉直接改，先研究再动手。
 
 ## Git
 
@@ -61,4 +65,4 @@ git checkout main
 git merge --no-ff improve-workflow -m "merge: <总结 improve-workflow 本次合并包含的改动>"
 ```
 
-`--no-ff` 确保始终产生一个双亲 merge commit，分支的提交历史完整保留在 `git log --graph` 中可见。不使用 `--squash`（会压成一次提交丢失分支链），不使用 `reset --hard` 后重新开始（会丢失 reflog 追溯）。
+`--no-ff` 确保始终产生一个双亲 merge commit，分支的提交历史完整保留在 `git log --graph` 中可见。不使用 `--squash`（会压成一次提交丢失分支链），不使用 `reset --hard` 后重新开始（会丢失 reflog 追溯）。合并说明使用中文。

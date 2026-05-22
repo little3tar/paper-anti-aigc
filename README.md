@@ -95,14 +95,24 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 ```text
 .thesis-workflow/
 ├── project-ledger.md          ← 台账索引文件（指向 ledger/ 各文件）
-├── main-tex-context.md        ← 论文主文件结构地图（引用 ledger/，不复制参数）
+├── main-tex-context.md        ← 论文主文件结构地图
 ├── materials-inventory.md     ← 用户材料编目清单
-├── literature-notes.md        ← 文献笔记临时缓存（写作创建，审计通过后清空）
 ├── literature-pool.md         ← 文献池全表（含 ZoteroKey 映射，分组管理）
 ├── figure-data-manifest.md    ← 图表数据溯源清单（数据文件、生成脚本、输出格式）
 ├── calculation-records.md     ← 数值唯一权威源（公式代入、参数来源、标准选型）
 ├── operations-log.md          ← 操作日志（项目检查、章节清除等一次性操作，只追加）
-├── status.json                ← 门控状态（p0_count、p1_count、next_allowed）
+├── outline.md                 ← 阶段 1：总大纲（章→节→小节）+ 文献池分组摘要
+│
+├── chapters/                  ← 按章归档的阶段产物（每章独立，不互相覆盖）
+│   ├── ch1/
+│   │   ├── detailed-outline.md  ←   阶段 2 前置：段落级写作细纲（用户确认后）
+│   │   ├── status.json          ←   本章门控状态（P0/P1/P2 + next_allowed，权威）
+│   │   ├── draft.md           ←   阶段 2：章节正文草稿（内容权威源）
+│   │   ├── audit.md           ←   阶段 3：审计报告 + 文献修正记录
+│   │   ├── humanized.md       ←   阶段 4：润色操作记录（非全文副本）
+│   │   ├── format-cleaned.md  ←   阶段 5：格式修复记录（非全文副本）
+│   │   └── literature-notes.md←   文献笔记缓存（按章存储，随章保留）
+│   └── chN/ ...
 │
 ├── ledger/                    ← 项目台账（拆分后，各子文件独立读写）
 │   ├── facts.md               ←   已确认设计参数、引用标准、MC51 公开数据
@@ -110,27 +120,22 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 │   ├── chapter-status.md      ←   各章 6 阶段完成状态
 │   └── questions.md           ←   结构化待确认问题
 │
-├── outlines/                  ← 章节细纲（段落级写作点，每章一份）
-│   └── ch2-detailed.md        ←   第2章细纲
-│
-├── 01-outline.md              ← 阶段 1：总大纲（章→节→小节）+ 文献池分组摘要
-├── 02-chapter-draft.md        ← 阶段 2：章节正文草稿（内容权威源）
-├── 03-reference-audit.md      ← 阶段 3：审计报告 + 文献修正记录
-├── 04-humanized.md            ← 阶段 4：润色操作记录（非全文副本）
-├── 05-format-cleaned.md       ← 阶段 5：格式修复记录（非全文副本）
-│
 ├── evidence/                  ← 用户提供材料的物理存放
 │   ├── task-book/             ←   任务书、设计说明、开题报告
 │   ├── reference-materials/   ←   用户提供的论文、手册、教材副本
 │   ├── user-data/             ←   用户自算数据、实验记录、仿真结果
 │   ├── user-figures/          ←   用户自制的图、照片、截图
+│   ├── user-videos/           ←   用户提供的视频、动画、演示录像
 │   ├── user-code/             ←   用户提供的程序、脚本
 │   ├── advisor-notes/         ←   导师批注、会议记录
 │   ├── standards-specs/       ←   用户提供的标准规范文件
 │   └── zotero-export/         ←   Zotero 导出的 .bib 文件（文献信息校验基准）
 │
+├── generated-figures/         ← AI 生成的图（Mermaid/matplotlib/DOT/提示词渲染产物，可重新生成）
+│
 ├── backups/                   ← 主文件备份（普通备份保留最近 5 个，锚点备份不限）
-└── validation/                ← workflow 验证产物（仅验证模式使用）
+```
+> **主文件输出**：最终章文件默认输出到论文项目根目录下的 `output/` 子目录（如 `output/main-ch1.md`），避免大量章文件散落根目录。用户指定位置或模板要求位置优先。
 ```
 
 ### 各文件/目录说明
@@ -150,51 +155,58 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 状态标签：`confirmed`、`draft`、`needs-source`、`needs-user-data`、`derived`、`superseded`。
 
-#### 阶段产物（01-05）
+#### 阶段产物
 
 | 文件 | 产生阶段 | 内容 | 更新时机 |
 | --- | --- | --- | --- |
-| `01-outline.md` | thesis-outline-planner | 总大纲（章→节→小节）+ 文献池分组摘要 | 大纲确认后 |
+| `outline.md` | thesis-outline-planner | 总大纲（章→节→小节）+ 文献池分组摘要 | 大纲确认后 |
 | `literature-pool.md` | thesis-outline-planner | 文献池全表（含 ZoteroKey，分组管理） | 大纲确认后 |
-| `outlines/chX-detailed.md` | evidence-grounded-chapter-writer | 章节细纲（段落级写作点） | 细纲确认后 |
-| `02-chapter-draft.md` | evidence-grounded-chapter-writer | 章节正文草稿（内容权威源） | 每章草稿完成后 |
-| `03-reference-audit.md` | reference-integrity-auditor | 审计报告 + 文献修正记录 | 审计完成后 |
-| `04-humanized.md` | engineering-paper-humanizer | 润色操作记录（非全文副本，最终文本写入 main.md/txt） | 润色完成后 |
-| `05-format-cleaned.md` | academic-format-cleaner | 格式修复记录（非全文副本，最终文本写入 main.md/txt） | 格式清理完成后 |
+| `chapters/chX/detailed-outline.md` | evidence-grounded-chapter-writer | 章节细纲（段落级写作点） | 细纲确认后 |
+| `chapters/chX/draft.md` | evidence-grounded-chapter-writer | 第 X 章正文草稿（内容权威源） | 每章草稿完成后 |
+| `chapters/chX/audit.md` | reference-integrity-auditor | 第 X 章审计报告 + 文献修正记录 | 审计完成后 |
+| `chapters/chX/humanized.md` | engineering-paper-humanizer | 第 X 章润色操作记录（非全文副本，最终文本写入 main-chX.md/txt/tex） | 润色完成后 |
+| `chapters/chX/format-cleaned.md` | academic-format-cleaner | 第 X 章格式修复记录（非全文副本，最终文本写入 main-chX.md/txt/tex） | 格式清理完成后 |
 | `operations-log.md` | 各阶段 | 批量操作/项目检查/章节清除记录（只追加） | 批量操作后 |
 
 #### 工作辅助文件
 
 | 文件 | 用途 | 生命周期 |
 | --- | --- | --- |
-| `literature-notes.md` | Zotero 文献笔记/标注分批缓存，写作和审计阶段引用 | 写作创建 → 审计校验 → 审计通过后清空 |
+| `chapters/chX/literature-notes.md` | Zotero 文献笔记/标注分批缓存，写作和审计阶段引用 | 写作创建，随章保留 |
 | `figure-data-manifest.md` | 图表级数据溯源：数据文件路径、真实/mock、生成脚本、输出格式 | 大纲建框架 → 写作填充 → 审计校验；持久保留 |
 | `calculation-records.md` | 计算底稿：公式、代入过程、参数来源、标准选型、状态 | 写作创建 → 审计校验 → 参数变更时标 superseded 追加新行 |
 
 #### status.json（门控）
 
+**按章存储**：`.thesis-workflow/chapters/chX/status.json` 为本章权威门控状态。
+
+按章 `chapters/chX/status.json` 格式：
+
 ```json
 {
-  "stage": "audited",
-  "timestamp": "2026-05-13T22:00:00",
-  "p0_count": 0,
-  "p1_count": 0,
-  "green_paragraphs": ["§2.1", "§3.2"],
-  "blocked_paragraphs": ["§2.3"],
-  "next_allowed": "humanizer",
-  "notes": ""
+    "stage": "audited",
+    "chapter": "ch5",
+    "timestamp": "2026-05-13T22:00:00",
+    "p0_count": 0,
+    "p1_count": 0,
+    "p2_count": 3,
+    "green_paragraphs": ["§2.1", "§3.2"],
+    "blocked_paragraphs": ["§2.3"],
+    "next_allowed": "humanizer",
+    "notes": ""
 }
 ```
 
-- `stage`：当前所处阶段（`planned` / `written` / `audited` / `humanized` / `format-cleaned`）。`planned` 和 `written` 为信息性标记；门控逻辑主要关注后三个阶段。
-- `p0_count` / `p1_count`：P0/P1 问题计数
+- `stage`：当前所处阶段（`audited` / `humanized` / `format-cleaned`）
+- `p0_count` / `p1_count` / `p2_count`：审计问题计数（p2_count 来自审计报告）
+- `green_paragraphs` / `blocked_paragraphs`：humanizer 使用，由 auditor 写入
 - `next_allowed` 取值：`"fix-evidence"` / `"humanizer"` / `"format-cleaner"` / `"next-chapter"`
 - P0/P1 > 0 时，`next_allowed` 强制为 `"fix-evidence"`，humanizer 和 format-cleaner **硬性阻断**
-- 前一章未完成 humanizer+format-cleaner 时，**禁止开始下一章**
+- 前一章未完成 humanizer+format-cleaner（`next_allowed` 不为 `"next-chapter"`）时，**禁止开始下一章**
 
 #### evidence/（用户材料）
 
-用户提供的任务书、参考资料、数据、图纸、导师批注等，按类型分目录存放。同名冲突附加时间戳区分；二进制文件直接移动，文本文件统一转 UTF-8。
+用户提供的任务书、参考资料、数据、图纸、导师批注等，按类型分目录存放。无信息量文件名（如 `IMG_0001.jpg`）须重命名为描述性名称后再整理。同名冲突附加时间戳区分；二进制文件直接移动，文本文件统一转 UTF-8。`user-videos/` 存放用户提供的视频和动画，与 `user-figures/`（图片/照片/截图）分开放置。
 
 所有材料在 `materials-inventory.md` 中编目：
 
@@ -215,13 +227,13 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 `project-ledger.md` 已拆分为 `ledger/` 下的独立文件（facts/decisions/chapter-status/questions），各自独立读写。`project-ledger.md` 为汇总索引。
 
-#### outlines/（章节细纲）
+#### chapters/chX/detailed-outline.md（章节细纲）
 
-每章的段落级细纲独立存储（`chX-detailed.md`），写作前由 chapter-writer 生成并经用户确认。总大纲 `01-outline.md` 只保留到小节标题层级。
+每章的段落级细纲按章存放（`chapters/chX/detailed-outline.md`），写作前由 chapter-writer 生成并经用户确认。总大纲 `outline.md` 只保留到小节标题层级。
 
 #### literature-pool.md（文献池全表）
 
-从 `01-outline.md` 分离的 60 条文献全表，6 组分类，含 ZoteroKey 映射。大纲中只保留分组摘要。
+从 `outline.md` 分离的 60 条文献全表，6 组分类，含 ZoteroKey 映射。大纲中只保留分组摘要。
 
 #### operations-log.md（操作日志）
 

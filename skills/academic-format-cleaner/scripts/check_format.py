@@ -271,13 +271,9 @@ def strip_to_plain_text(text: str) -> str:
                 in_fence = True
                 fence_marker = marker
                 fence_is_chart = is_chart
-                if is_chart:
-                    result.append(re.sub(r"^>\s?", "", line, count=1))
                 i += 1
                 continue
             elif marker == fence_marker:
-                if fence_is_chart:
-                    result.append(re.sub(r"^>\s?", "", line, count=1))
                 in_fence = False
                 fence_marker = ""
                 fence_is_chart = False
