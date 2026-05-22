@@ -27,3 +27,17 @@
 ## 动作规则
 
 图表插入点仍需在正文中使用 `[此处插入图片：...]` 占位符，尾部图表清单只汇总不替代。`figure-data-manifest.md` 不替代正文插入点。
+
+## 生成图存放规则
+
+AI 根据 Mermaid 代码块、matplotlib 脚本、Graphviz DOT 文件或提示词模板渲染产生的图片文件，统一存放在 `.thesis-workflow/generated-figures/`。该目录与 `evidence/` 分工明确：
+
+| 目录 | 放什么 | 性质 |
+|---|---|---|
+| `evidence/user-figures/` | 用户提供的原始照片、截图、渲染图 | 用户原始输入，只读 |
+| `evidence/user-videos/` | 用户提供的原始视频 | 用户原始输入，只读 |
+| `.thesis-workflow/generated-figures/` | AI 生成的图（Mermaid/matplotlib/DOT/提示词渲染） | 可重新生成，不混入用户材料 |
+
+**命名格式**：`Fig X-Y 描述.png`（与 manifest 中 Figure ID 对应，如 `Fig 3-1 流量-压力曲线.png`）。
+
+此规则全流程适用——无论图片在 outline-planner、chapter-writer 还是修改回环中产生，均存入同一目录。manifest 中"生成脚本"列记录生成该图的代码/提示词来源，"数据文件"列可为空（纯代码生成图无外部数据文件）。

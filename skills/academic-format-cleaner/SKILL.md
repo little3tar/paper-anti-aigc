@@ -68,7 +68,7 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 | 场景 | 判断依据 | 模式 |
 |---|---|---|
 | 用户粘贴文本到消息中（如"检查以下文本格式：……"） | 消息中包含待检查的完整文本片段 | **独立模式** |
-| 用户指定论文文件（如"检查 main-ch3.tex 格式"） | 消息中引用文件路径，且 `.thesis-workflow/chapters/chX/status.json` 存在 | **工作流模式** |
+| 用户指定论文文件（如"检查 output/main-ch3.tex 格式"） | 消息中引用文件路径，且 `.thesis-workflow/chapters/chX/status.json` 存在 | **工作流模式** |
 
 **独立模式**：不检查 `status.json`，不写入产物文件。只运行格式检查脚本和规则修复，结果直接返回。
 

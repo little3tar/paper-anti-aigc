@@ -125,12 +125,17 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 │   ├── reference-materials/   ←   用户提供的论文、手册、教材副本
 │   ├── user-data/             ←   用户自算数据、实验记录、仿真结果
 │   ├── user-figures/          ←   用户自制的图、照片、截图
+│   ├── user-videos/           ←   用户提供的视频、动画、演示录像
 │   ├── user-code/             ←   用户提供的程序、脚本
 │   ├── advisor-notes/         ←   导师批注、会议记录
 │   ├── standards-specs/       ←   用户提供的标准规范文件
 │   └── zotero-export/         ←   Zotero 导出的 .bib 文件（文献信息校验基准）
 │
+├── generated-figures/         ← AI 生成的图（Mermaid/matplotlib/DOT/提示词渲染产物，可重新生成）
+│
 ├── backups/                   ← 主文件备份（普通备份保留最近 5 个，锚点备份不限）
+```
+> **主文件输出**：最终章文件默认输出到论文项目根目录下的 `output/` 子目录（如 `output/main-ch1.md`），避免大量章文件散落根目录。用户指定位置或模板要求位置优先。
 ```
 
 ### 各文件/目录说明
@@ -201,7 +206,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 #### evidence/（用户材料）
 
-用户提供的任务书、参考资料、数据、图纸、导师批注等，按类型分目录存放。同名冲突附加时间戳区分；二进制文件直接移动，文本文件统一转 UTF-8。
+用户提供的任务书、参考资料、数据、图纸、导师批注等，按类型分目录存放。无信息量文件名（如 `IMG_0001.jpg`）须重命名为描述性名称后再整理。同名冲突附加时间戳区分；二进制文件直接移动，文本文件统一转 UTF-8。`user-videos/` 存放用户提供的视频和动画，与 `user-figures/`（图片/照片/截图）分开放置。
 
 所有材料在 `materials-inventory.md` 中编目：
 

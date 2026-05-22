@@ -127,7 +127,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 
 | 模式 | 判断依据 | 门控行为 | 产物落盘 |
 |------|---------|---------|---------|
-| **工作流模式** | 用户引用论文文件或章节（如"润色 main-ch3.md"） | 完整检查 status.json（P0/P1 + next_allowed） | 写入 `chapters/chX/` |
+| **工作流模式** | 用户引用论文文件或章节（如"润色 output/main-ch3.md"） | 完整检查 status.json（P0/P1 + next_allowed） | 写入 `chapters/chX/` |
 | **独立模式** | 用户在消息中直接粘贴文本（如"润色以下文本：……"） | 跳过 status.json 检查 | 不写产物文件 |
 
 子 skill 根据用户输入来源自动判断模式，无需用户手动指定。
@@ -282,7 +282,7 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
      - 表格正文（含表注）
    - 以下工作稿元数据**不进入主文件**：证据表、参考来源清单、待用户补充的信息、未写入正文的待补资料、证据缺口清单、后处理建议、章节细纲、公式与参数计划。
    - **运行时编号剥离（⭐）**：以下 `.thesis-workflow/` 内部编号仅限工作稿使用，写入主文件前必须清除或转换：计算记录 ID（如 C3-01）→ 正文中直接呈现数值和标准选型结论；材料编目 ID（如 M01、M02）→ 已在用户材料协议中禁止进入正文；台账参数标记（`[Mxx]`、`[用户材料: ...]`）→ 全部清除；图表清单 Figure ID（如 Fig 3-1）→ 转为论文规范的图表编号格式。
-   - 将最终文本写入对应章文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
+	   - 将最终文本写入对应章文件（默认路径 `output/main-chX.md` 等，具体以 `ledger/decisions.md` 记录的主文件路径为准）。
    - 更新 `.thesis-workflow/ledger/chapter-status.md` 和 `operations-log.md`，记录写入时间、备份路径和最终版本号。
 5. **交付清单**：在输出中列出主文件路径（每章 1 个）、备份路径、各阶段产物路径和推荐下一步（如：编译 LaTeX、提交导师审阅）。
 
@@ -313,6 +313,8 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 - Project ledger 放在 `ledger/` 子目录下，各 skill 直接读写对应文件。按 `references/main-tex-context-template.md` 生成的项目上下文默认放在 `.thesis-workflow/main-tex-context.md`，由 `thesis-outline-planner` 在确认输出格式后首次创建。后续各阶段读取其中的格式约定；当主文件结构、章节标题、引用方案、模板或主文件路径变化时，触发变更的阶段负责更新。
 - 文献笔记缓存按章存储：`.thesis-workflow/chapters/chX/literature-notes.md`（随章保留，不自动清空）。
 - 图表数据溯源清单默认放在 `.thesis-workflow/figure-data-manifest.md`（持久文件，数据文件路径、生成脚本、输出格式）。
+- **生成图存放**：AI 根据 Mermaid 代码块、matplotlib 脚本、DOT 文件或提示词模板渲染产生的图片文件，统一存放在 `.thesis-workflow/generated-figures/`。命名格式 `Fig X-Y 描述.png`，与 manifest 中 Figure ID 对应。该目录与 `evidence/user-figures/` 分工明确——用户原始图片不放此处。规则见 `evidence-grounded-chapter-writer/references/figure-data-manifest-rules.md`。
+- **用户视频存放**：用户提供的视频、动画、演示录像存放在 `.thesis-workflow/evidence/user-videos/`。规则见 `references/user-material-protocol.md`。
 - 计算记录默认放在 `.thesis-workflow/calculation-records.md`（计算底稿，正文数值的唯一权威数据源）。
 - 每次直接修改用户论文主文件前，先通过 `scripts/git_snapshot.py <文件>` 创建备份。脚本优先使用 Git 分支备份，回退到 `.thesis-workflow/backups/` 下的文件复制备份。不要把备份写进 skill 仓库。备份对应章文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
 - 直接修改真实论文主文件后，将本轮变更清单（改了什么、为什么改）写入 `.thesis-workflow/chapters/chX/` 对应阶段产物（`humanized.md` 或 `format-cleaned.md`）。这些产物是操作记录，不存全文副本——全文以主文件为唯一权威输出。
@@ -357,13 +359,13 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 可使用这些模板：
 
 - 初始输出格式：“请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？未指定时我默认用对话 Markdown。”
-- 论文主文件：“请确认论文主文件命名。默认按章使用 `main-ch1.md` ~ `main-chN.md`。若项目中已有明确的章文件，我将沿用现有命名。”
+- 论文主文件：“请确认论文主文件存放位置和命名。默认放在 `output/` 子目录下按章使用 `output/main-ch1.md` ~ `output/main-chN.md`。如果你有指定位置或模板要求的目录，我以你指定的为准。”主文件路径确认后记录到 `ledger/decisions.md`。
 - 总大纲确认：“请确认是否按此总大纲进入第 X 章细纲；如需调整，请指出章节或研究重点。”
 - 细纲确认：”请确认本章细纲是否可以进入正文写作；如需调整，请指出需要增删的段落或图表。”
 - 证据缺口：”以下内容缺少来源。请提供材料，或允许我改为网络检索/降级表述。”
 - 真实主文件修改：”请确认是否直接修改论文主文件。确认后我会先备份原文件，再写回主文件，并把本轮结果另存到 `.thesis-workflow/` 对应阶段产物。”
 - 材料收录：”检测到你提供了以下材料：[文件清单]。是否同意我统一整理到 `.thesis-workflow/evidence/` 下，便于后续各阶段使用？”
-- 全流程完成：“第 X 章已通过全部五个阶段，审核均通过。是否将最终文本写入 `main-chX.md` / `main-chX.txt` / `main-chX.tex`？”
+- 全流程完成：“第 X 章已通过全部五个阶段，审核均通过。是否将最终文本写入主文件？”（主文件路径已在输出格式确认时记录到 `ledger/decisions.md`）
 
 ### 用户确认/补充信息的落盘规则（⭐ 全流程适用）
 
@@ -388,12 +390,16 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 - 独立一次性问答默认输出为对话 Markdown。
 - 真实论文工作流默认主动创建或更新 `.thesis-workflow/` 运行产物；大纲、细纲和 P0/P1 处理方案仍需内容确认后才能进入下游。
 - 草稿和中间审阅产物优先用 `.md`，写入 `.thesis-workflow/chapters/chX/` 下对应产物文件。
+- **主文件输出位置（三级优先级）**：
+  1. **用户指定位置**：用户明确指定了输出路径或文件名时，以用户指定为准
+  2. **模板/项目已有位置**：学校模板要求了特定目录结构，或项目已有明确的各章独立文件（如 `chapters/ch1.tex`），优先沿用
+  3. **工作流默认**：以上均未指定时，主文件放在论文项目根目录下的 `output/` 子目录中（`output/main-chX.md` 等），避免大量章文件散落根目录。`output/` 目录由工作流首次输出时自动创建
 - **主文件输出格式**：按章节拆分，每章一个独立输出文件：
   ```
-  main-ch1.md / main-ch1.txt  ← 第 1 章输出
-  main-ch2.md / main-ch2.txt  ← 第 2 章输出
+  output/main-ch1.md / output/main-ch1.txt  ← 第 1 章输出
+  output/main-ch2.md / output/main-ch2.txt  ← 第 2 章输出
   ...
-  main-chN.md / main-chN.txt  ← 第 N 章输出
+  output/main-chN.md / output/main-chN.txt  ← 第 N 章输出
   ```
 - 每章独立跑完 2→3→4→5 阶段后即可写入对应章文件，无需等全论文完成。修改回环规则按章独立适用——改哪章就对该章文件执行备份和 L1/L2/L3 处理。
 - 如果论文项目已有明确的各章独立文件（如 `chapters/ch1.tex`），优先沿用现有命名。主文件命名确认后记录到 `ledger/decisions.md`。
