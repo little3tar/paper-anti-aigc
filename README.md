@@ -14,6 +14,7 @@
 | `reference-integrity-auditor` | 审计 P0/P1 证据问题、source marker、公式可复现性 |
 | `engineering-paper-humanizer` | 润色中文工程论文正文，降 AI 腔，处理中文标点 |
 | `academic-format-cleaner` | 格式收尾：引用位置、命令保护、数学块和残留标记清理 |
+| `docx-translator` | 将 Word 文档(.docx)内容翻译为中文，保留原文档格式 |
 
 ## 工作流
 
@@ -273,10 +274,20 @@ python skills/academic-format-cleaner/scripts/generate_format_dict.py
 ### 智能备份
 
 ```bash
-python skills/engineering-paper-humanizer/scripts/git_snapshot.py paper.tex
-python skills/engineering-paper-humanizer/scripts/git_snapshot.py paper.tex --anchor
-python skills/engineering-paper-humanizer/scripts/git_snapshot.py --list
-python skills/engineering-paper-humanizer/scripts/git_snapshot.py --rollback paper.tex
+python skills/thesis-writing-workflow/scripts/git_snapshot.py paper.tex
+python skills/thesis-writing-workflow/scripts/git_snapshot.py paper.tex --anchor
+python skills/thesis-writing-workflow/scripts/git_snapshot.py --list
+python skills/thesis-writing-workflow/scripts/git_snapshot.py --rollback paper.tex
+```
+
+### DOCX 翻译
+
+```bash
+# 导出段落列表
+python skills/docx-translator/scripts/export_paragraphs.py input.docx paragraphs.txt
+
+# 应用翻译到文档
+python skills/docx-translator/scripts/apply_translations.py input.docx translations_b64.json output.docx
 ```
 
 ## 测试
@@ -297,13 +308,13 @@ python -m unittest discover -s tests
 
 ## 项目演进
 
-本项目从单个 skill 逐步扩展为完整的六 skill 工作流。以下里程碑分支保留了各阶段的完整代码快照：
+本项目从单个 skill 逐步扩展为完整的七 skill 工作流。以下里程碑分支保留了各阶段的完整代码快照：
 
 | 分支 | 提交 | 阶段 | 包含内容 |
 |---|---|---|---|
 | [`single-skill`](https://github.com/little3tar/paper-anti-aigc/tree/single-skill) | `7493a67` | 1 个 skill | `engineering-paper-humanizer` — 正文润色与去 AI 腔 |
 | [`two-skills`](https://github.com/little3tar/paper-anti-aigc/tree/two-skills) | `69a67c1` | 2 个 skills | + `academic-format-cleaner` — 格式层清理 |
-| `main` | — | 6 个 skills | + `thesis-writing-workflow`、`thesis-outline-planner`、`evidence-grounded-chapter-writer`、`reference-integrity-auditor` |
+| `main` | — | 7 个 skills | + `thesis-writing-workflow`、`thesis-outline-planner`、`evidence-grounded-chapter-writer`、`reference-integrity-auditor`、`docx-translator` |
 
 ```bash
 # 查看各阶段代码
