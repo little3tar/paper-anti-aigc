@@ -1,0 +1,43 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, improve-workflow]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install python-docx
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Verify _shared.py are valid Python
+        run: |
+          python -c "import py_compile; py_compile.compile('skills/engineering-paper-humanizer/scripts/_shared.py', doraise=True)"
+          python -c "import py_compile; py_compile.compile('skills/academic-format-cleaner/scripts/_shared.py', doraise=True)"
+          echo "OK: both _shared.py files are valid Python"
+
+      - name: Verify git_snapshot.py are valid Python
+        run: |
+          python -c "import py_compile; py_compile.compile('skills/thesis-writing-workflow/scripts/git_snapshot.py', doraise=True)"
+          python -c "import py_compile; py_compile.compile('skills/engineering-paper-humanizer/scripts/git_snapshot.py', doraise=True)"
+          echo "OK: both git_snapshot.py files are valid Python"
+
+      - name: Validate JSON rules files
+        run: |
+          python -c "import json; json.load(open('skills/engineering-paper-humanizer/scripts/text_rules.json', encoding='utf-8'))"
+          python -c "import json; json.load(open('skills/academic-format-cleaner/scripts/format_rules.json', encoding='utf-8'))"
+          python -c "import json; json.load(open('evals/trigger-evals.json', encoding='utf-8'))"
+          echo "OK: All JSON files valid"
