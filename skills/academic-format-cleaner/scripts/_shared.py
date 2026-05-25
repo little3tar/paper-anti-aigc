@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""check_text.py / check_format.py / generate_dict / generate_format_dict 的共享工具函数。
+"""check_format.py / generate_format_dict 的公共辅助函数。
 
-本模块提取 checker 和 dict 生成器中完全重复的辅助函数，避免维护多份副本。
-修改任一函数时只需改此处，所有调用方同步生效。
+本模块仅包含本 skill 脚本实际使用的函数。humanizer skill 的 _shared.py
+包含额外函数（mask_latex_inline_protected、is_markdown_structured_row、
+is_allowed_dash_context），两者独立维护。
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import io
 import os
 import sys
 from pathlib import Path
+import json
 
 # ── Windows GBK 兼容 ──────────────────────────────────────
 
@@ -165,25 +167,6 @@ def mask_inline_code(line: str) -> str:
     return re.sub(r"<[^>\n]+>", repl, line)
 
 
-def mask_latex_inline_protected(line: str) -> str:
-    r"""遮蔽 LaTeX 正文行内的代码、路径和链接命令。
-
-    文本 humanizer 需要检查中文正文，但不应把 \texttt{"x"}、\url{...}、
-    \href{...}{...} 或 \verb|...| 中的引号和 dash 当成正文标点。
-    这里做轻量遮蔽，避免为了标点检查误伤命令参数。
-    """
-
-    def repl(match: re.Match) -> str:
-        return " " * (match.end() - match.start())
-
-    line = re.sub(r"\\verb\*?(.).*?\1", repl, line)
-    return re.sub(
-        r"\\(?:texttt|url|path|href)\b(?:\[[^\]]*\])?\{[^{}\n]*\}(?:\{[^{}\n]*\})?",
-        repl,
-        line,
-    )
-
-
 # ── Markdown 行类型判断 ─────────────────────────────────────
 
 
@@ -191,35 +174,8 @@ def is_markdown_table_separator(line: str) -> bool:
     """Return True for Markdown table separator rows such as ``| --- | :---: |``."""
     stripped = line.strip()
     return bool(
-        re.fullmatch(r"\|?\s*:?-{2,}:?\s*(?:\|\s*:?-{2,}:?\s*)+\|?", stripped)
+        re.fullmatch(r"\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?", stripped)
     )
-
-
-def is_markdown_structured_row(line: str) -> bool:
-    """Return True for Markdown rows/lists where enumeration noise is expected."""
-    stripped = line.lstrip()
-    return bool(
-        stripped.startswith("|")
-        or re.match(r"^(?:[-*+]|\d+[.)])\s+", stripped)
-    )
-
-
-# ── Dash 上下文判断 ────────────────────────────────────────
-
-
-def is_allowed_dash_context(line: str, start: int, end: int) -> bool:
-    """判断 dash 是否属于数字范围、页码范围或技术记号。"""
-    token = line[start:end]
-    # 注意：start = 0 时显式返回空串，避免 Python 负索引环绕读取行末字符
-    prev_char = line[start - 1] if start > 0 else ""
-    next_char = line[end] if end < len(line) else ""
-
-    if token in {"–", "--", "---"}:
-        if prev_char.isdigit() and next_char.isdigit():
-            return True
-        if prev_char.isascii() and prev_char.isalnum() and next_char.isascii() and next_char.isalnum():
-            return True
-    return False
 
 
 # ── LaTeX 注释剥离 ─────────────────────────────────────────
@@ -291,7 +247,7 @@ def format_text(diagnostics: list[dict], filepath: str) -> str:
     lines.append(
         f"  汇总: {counts['error']} 错误 | {counts['warning']} 警告 | {counts['info']} 提示"
     )
-    # 按规则 ID 分组统计
+    # 按规则 ID 分组统计，便于门控检查（如步骤4自检要求 PUNCT-002/PUNCT-007 归零）
     rule_counts: dict[str, int] = {}
     for d in diagnostics:
         rid = d.get("rule", "UNKNOWN")
@@ -304,8 +260,6 @@ def format_text(diagnostics: list[dict], filepath: str) -> str:
 
 
 # ── 规则速查表生成（generate_dict / generate_format_dict 共享） ──
-
-import json  # noqa: E402
 
 
 def _categorize_rules(rules: list[dict]) -> dict[str, list[dict]]:

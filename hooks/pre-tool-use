@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """PreToolUse 钩子：论文工作流阶段门控。
 
-三道防线：
+四道防线：
 1. 主文件保护 — 全部五阶段完成前禁止写入 main-ch*.md/txt/tex
 2. 阶段门控 — P0/P1 未清零 + next_allowed 不匹配时禁止写入阶段产物
 3. 跳阶段确认 — 缺少上游产物时要求用户确认（ask，非 deny）
+4. 细纲确认阻塞 — 细纲未 confirmed 时禁止写入正文草稿
 
 门控状态按章存储：读取 .thesis-workflow/chapters/chX/status.json。
 """
@@ -14,8 +15,8 @@ import os
 import re
 import sys
 
-if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+from _win_compat import setup_windows_utf8
+setup_windows_utf8()
 from pathlib import Path
 
 
@@ -204,7 +205,7 @@ def check_stage_gate(file_path: str, workflow_dir: Path, status: dict | None):
     return None
 
 
-def check_skip_stage_confirm(file_path: str, workflow_dir: Path, status: dict | None):
+def check_skip_stage_confirm(file_path: str, workflow_dir: Path):
     """防线 3：跳阶段确认 — 缺少上游产物时要求用户确认。"""
     ch = extract_chapter(file_path)
     if not ch:
@@ -217,8 +218,8 @@ def check_skip_stage_confirm(file_path: str, workflow_dir: Path, status: dict | 
          "evidence-grounded-chapter-writer", "章节写作"),
         ("04", f"chapters/{ch}/humanized.md", f"chapters/{ch}/audit.md",
          "reference-integrity-auditor", "证据审计"),
-        ("05", f"chapters/{ch}/format-cleaned.md", f"chapters/{ch}/audit.md",
-         "reference-integrity-auditor（及 engineering-paper-humanizer）", "审计与润色"),
+        ("05", f"chapters/{ch}/format-cleaned.md", f"chapters/{ch}/humanized.md",
+         "engineering-paper-humanizer", "润色"),
     ]
 
     for stage, product, upstream, skill, desc in checks:
@@ -228,6 +229,45 @@ def check_skip_stage_confirm(file_path: str, workflow_dir: Path, status: dict | 
                 f"请确认：是否已通过 {skill} 完成{desc}？"
                 f"若用户已直接指定范围可继续；若未完成，建议先运行上游阶段以便证据追踪和后续审计。"
             )
+
+    return None
+
+
+def check_detail_outline_gate(file_path: str, workflow_dir: Path) -> dict | None:
+    """防线 4：细纲确认阻塞 — 细纲未确认时禁止写入正文草稿。
+
+    对应 workflow §强制串行规则第8条。"""
+    if not is_stage_product(file_path, "02"):
+        return None
+
+    ch = extract_chapter(file_path)
+    if not ch:
+        return None
+
+    status_path = workflow_dir / "ledger" / "chapter-status.md"
+    if not status_path.is_file():
+        return None  # ledger 不存在，跳过检查（首次运行）
+
+    try:
+        text = status_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+    for line in text.splitlines():
+        cols = [c.strip() for c in line.split("|")]
+        # 期望格式：| 章节 | 大纲 | 细纲 | 草稿 | 审计 | 润色 | 格式 | 备注 |
+        if len(cols) < 4:
+            continue
+        if cols[1] != ch:
+            continue
+        detail_outline = cols[3]  # 第3列（0-indexed）为细纲状态
+        if detail_outline != "confirmed":
+            return make_deny(
+                f"第{ch}章细纲状态为 '{detail_outline}'（非 confirmed），"
+                f"禁止写入正文草稿。请先在 evidence-grounded-chapter-writer 中"
+                f"输出细纲并等待用户显式确认。详见 workflow §强制串行规则第8条。"
+            )
+        break
 
     return None
 
@@ -271,7 +311,13 @@ def main():
         return
 
     # 防线 3：跳阶段确认
-    result = check_skip_stage_confirm(file_path, workflow_dir, status)
+    result = check_skip_stage_confirm(file_path, workflow_dir)
+    if result is not None:
+        print(json.dumps(result, ensure_ascii=False))
+        return
+
+    # 防线 4：细纲确认阻塞
+    result = check_detail_outline_gate(file_path, workflow_dir)
     if result is not None:
         print(json.dumps(result, ensure_ascii=False))
         return

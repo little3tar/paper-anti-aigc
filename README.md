@@ -71,7 +71,11 @@ cd paper-anti-aigc
 ```bash
 cp -r skills/* your-project/.claude/skills/
 cp -r hooks/* your-project/.claude/hooks/
+cp settings.json your-project/.claude/settings.json
 ```
+
+> `hooks/hooks.json` 已弃用（Claude Code 改用 settings.json），仅保留供 OpenCode/Cursor 参考。复制后如不使用这些外部工具可删除此文件。
+> **关于 settings.json**：Claude Code 通过此文件启用 PreToolUse 钩子（主文件保护 + 阶段门控）和 SessionStart 钩子（会话启动时注入工作流状态）。如果不复制此文件，钩子保护机制不会生效，仅 AI 工作流层面的规则会执行。
 
 **OpenCode**
 
@@ -87,6 +91,73 @@ cp -r skills/* your-project/.agents/skills/
 cp -r hooks/* your-project/.cursorkit/hooks/
 ```
 
+> **关于 `skills/*/agents/openai.yaml`**：这些文件是 OpenCode/Cursor 兼容层（`interface.display_name` / `short_description` / `default_prompt`），Claude Code 忽略它们。Claude Code 的 agent 定义应放置在 `.claude/agents/*.md`。
+
+## 快速开始
+
+安装完成后，在论文项目目录下启动 Claude Code，根据你的情况选择一句发给 AI 即可启动。
+
+### 从零开始（有任务书）
+
+```
+我有一份毕业设计任务书，帮我按论文工作流从大纲开始规划。
+先确认输出格式和主文件位置，然后逐步推进。
+```
+
+工作流会自动引导你完成：大纲规划 → 章节写作 → 证据审计 → 润色去 AI 味 → 格式收尾。
+
+### 只规划大纲
+
+```
+这是我的论文题目和导师要求：
+
+[在此粘贴你的任务书或导师要求]
+
+帮我出论文大纲，包括每章的文献需求、图表计划和公式需求判断。
+```
+
+### 已有草稿，需要审计和润色
+
+```
+我的论文第 2 章草稿在 output/main-ch2.md，帮我审计证据完整性。
+审计通过后再润色去 AI 味。
+```
+
+如果草稿还没审计过，AI 会先运行 `reference-integrity-auditor`，P0/P1 清零后自动进入润色。
+
+### 只润色一段文字（不涉及工作流）
+
+直接把文字贴给 AI：
+
+```
+润色以下文本，降低 AI 痕迹但保留技术参数：
+
+[在此粘贴你的文字]
+```
+
+> 直接粘贴文本时自动进入独立模式，不检查工作流状态，结果直接返回不落盘。
+
+### 继续之前的工作
+
+如果你的项目已有 `.thesis-workflow/` 目录，AI 会在启动时自动读取各章进度，直接告诉它"继续"即可：
+
+```
+继续写论文
+```
+
+AI 会从上次中断的阶段接着推进。
+
+### 常见问题
+
+**Q: AI 会不会自动写主文件，覆盖我的修改？**
+不会。草稿始终写入 `.thesis-workflow/chapters/chX/draft.md`，主文件（`output/main-chX.md`）只在全部五个阶段完成且你显式确认后才更新。
+
+**Q: 没有 Zotero 能用吗？**
+能。工作流会自动退回到 `.bib` 文件、PDF 和网络检索，但推荐安装 Zotero + zotero-mcp 以获得最佳文献管理体验。
+
+**Q: 中途可以换工具吗？**
+可以。所有进度保存在 `.thesis-workflow/` 的纯文本文件中，不依赖特定工具。
+
 ## 运行产物
 
 真实论文工作流默认使用论文项目根目录下的 `.thesis-workflow/`，各阶段产物说明如下。
@@ -95,7 +166,6 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 ```text
 .thesis-workflow/
-├── project-ledger.md          ← 台账索引文件（指向 ledger/ 各文件）
 ├── main-tex-context.md        ← 论文主文件结构地图
 ├── materials-inventory.md     ← 用户材料编目清单
 ├── literature-pool.md         ← 文献池全表（含 ZoteroKey 映射，分组管理）
@@ -137,13 +207,12 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 ├── backups/                   ← 主文件备份（普通备份保留最近 5 个，锚点备份不限）
 ```
 > **主文件输出**：最终章文件默认输出到论文项目根目录下的 `output/` 子目录（如 `output/main-ch1.md`），避免大量章文件散落根目录。用户指定位置或模板要求位置优先。
-```
 
 ### 各文件/目录说明
 
 #### 项目台账（ledger/）
 
-已拆分为 `ledger/` 子目录。索引文件 `project-ledger.md` 指向各子文件。
+已拆分为 `ledger/` 子目录，各 skill 直接读写对应文件，无需汇总索引。
 
 | 文件 | 记录内容 | 关键字段 |
 | --- | --- | --- |
@@ -186,7 +255,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 ```json
 {
     "stage": "audited",
-    "chapter": "ch5",
+    "chapter": "chX",
     "timestamp": "2026-05-13T22:00:00",
     "p0_count": 0,
     "p1_count": 0,
@@ -207,7 +276,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 #### evidence/（用户材料）
 
-用户提供的任务书、参考资料、数据、图纸、导师批注等，按类型分目录存放。无信息量文件名（如 `IMG_0001.jpg`）须重命名为描述性名称后再整理。同名冲突附加时间戳区分；二进制文件直接移动，文本文件统一转 UTF-8。`user-videos/` 存放用户提供的视频和动画，与 `user-figures/`（图片/照片/截图）分开放置。
+用户提供的任务书、参考资料、数据、图纸、导师批注等，按类型分目录存放。无信息量文件名（如 `IMG_0001.jpg`）须重命名为描述性名称后再整理。同名冲突附加时间戳区分；二进制文件直接移动，文本文件统一转 UTF-8。`user-videos/` 存放用户提供的视频和动画，与 `user-figures/`（图片/照片/截图）分开放置。`user-code/` 存放用户提供的程序、脚本（如 MATLAB 仿真代码、Python 数据处理脚本），与 `generated-figures/` 中 AI 生成的代码分离。
 
 所有材料在 `materials-inventory.md` 中编目：
 
@@ -226,7 +295,7 @@ cp -r hooks/* your-project/.cursorkit/hooks/
 
 #### ledger/（台账子目录）
 
-`project-ledger.md` 已拆分为 `ledger/` 下的独立文件（facts/decisions/chapter-status/questions），各自独立读写。`project-ledger.md` 为汇总索引。
+`project-ledger.md` 已拆分为 `ledger/` 下的独立文件（facts/decisions/chapter-status/questions），各自独立读写，无需汇总索引。
 
 #### chapters/chX/detailed-outline.md（章节细纲）
 

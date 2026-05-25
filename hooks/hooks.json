@@ -1,4 +1,5 @@
 {
+  "_comment": "DEPRECATED: 此文件不再生效。hooks 配置已迁移至 .claude/settings.json。保留此文件仅供外部工具（OpenCode、Cursor）参考。注意：外部工具的插件根目录环境变量可能不同——Claude Code 用 ${CLAUDE_PROJECT_DIR}/.claude，OpenCode 用 ${CLAUDE_PLUGIN_ROOT}，请根据目标工具替换下方命令中的变量。路径变量说明：Claude Code（settings.json）使用 ${CLAUDE_PROJECT_DIR}/.claude/hooks/，OpenCode/Cursor 使用 ${CLAUDE_PLUGIN_ROOT}/hooks/。本文件使用后者适配外部工具。",
   "hooks": {
     "SessionStart": [
       {

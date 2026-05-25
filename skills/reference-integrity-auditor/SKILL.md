@@ -13,7 +13,7 @@ description: >-
 
 | AI的想法 | 正确做法 |
 |---|---|
-| "只有几个 P2 问题，可以放行" | P0/P1 任一 > 0 必须阻塞下游，status.json 写 `"next_allowed": "fix-evidence"` |
+| "只有几个 P2 问题，可以放行" | AI 容易把 P0/P1 和 P2 混在一起看——"总共才几个问题，都不严重"。实际上 P0=疑似伪造/实质错误（可能改变结论），P1=重要事实缺来源，任一 > 0 说明正文的可靠性基础不成立。status.json 必须写 `"next_allowed": "fix-evidence"`，禁止下游 |
 | "引用格式不太对但意思到了" | 标准规范缺版本/年份/发布机构按 P1 处理 |
 | "验证模式下不需要严格审计" | 验证模式也须标记所有问题，只在标记后可继续 |
 | "status.json 不写也没关系" | 门控文件是 humanizer 和 format-cleaner 的强制检查点 |
@@ -24,11 +24,11 @@ description: >-
 | "用户给了候选来源或'可能是XX'，先记下来等会处理" | 用户提供的候选来源、文献线索、标准号提示，必须立即验证——查 Zotero、搜索标准平台、核实题名/版本/年份。验证结果即时更新到文献池和审计报告，不得等"后面统一处理" |
 | "审计出证据缺口，写回 outline.md" | 证据缺口写入 `chapters/chX/audit.md`。不在 outline.md 追加运行时信息。 |
 
-本 skill 用来检查论文大纲、章节草稿或小节草稿是否真的被来源支撑。它应在风格润色之前运行，避免文本变得更流畅但证据仍然薄弱。
+检查论文大纲或章节草稿的证据支撑情况。在风格润色之前运行，避免文本更流畅而证据仍然薄弱。
 
 ## 审计模式
 
-模式语义遵循 workflow §执行模式。本 skill 涉及两种模式：
+遵循 workflow §执行模式中的语义。涉及两种模式：
 
 - **Review-gated mode（即 submission mode）**：真实提交或定稿前使用。只要仍有 P0/P1 问题，就停止下游润色和格式收尾。
 - **Validation mode**：测试 workflow 或 dry-run 时使用。可以在 P0/P1 仍可见的前提下继续 humanizer 和 format check，但必须把 unsupported 正文内容移到证据缺口区。
@@ -133,7 +133,7 @@ description: >-
 ```json
 {
     "stage": "audited",
-    "chapter": "ch4",
+    "chapter": "chX",
     "timestamp": "2026-05-11T22:00:00",
     "p0_count": 0,
     "p1_count": 0,
@@ -161,3 +161,4 @@ description: >-
 | `references/audit-rules.md` | 通用 claim 证据要求和 P0-P3 分级边界 |
 | `references/formula-audit-rules.md` | 公式、参数、单位和计算链审计规则 |
 | `references/project-ledger-audit-rules.md` | 使用 project ledger 时的对照审计规则 |
+| 见 chapter-writer 参考文件 `literature-notes-cache-rules.md` | 文献笔记缓存规则（审计阶段读取缓存校验正文 claim） |

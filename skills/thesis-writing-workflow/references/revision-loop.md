@@ -24,6 +24,8 @@
 
 ## 回环中的备份
 
+备份操作遵循 `output-and-backup.md` §备份协议。回环特有规则：
+
 - L2 / L3 修改前，先通过 `git_snapshot.py <主文件>` 创建备份。
 - L3 修改前额外备份 `chapters/chX/draft.md`：`git_snapshot.py .thesis-workflow/chapters/chX/draft.md`。
 - 多次回环时，每次修改前均备份，不覆盖之前的备份。

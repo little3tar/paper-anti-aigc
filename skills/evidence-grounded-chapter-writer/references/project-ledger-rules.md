@@ -1,5 +1,7 @@
 # 项目台账规则
 
+> 简要引用。完整规则定义见 workflow router 同名参考文件 `project-ledger-rules.md`。
+
 规范的 project ledger 结构、状态标签和完整列定义见 workflow router 的同名参考文件 `project-ledger-rules.md`。本章节写作 skill 的 ledger 使用要点如下。
 
 本章节写作 skill 的 ledger 使用要点：

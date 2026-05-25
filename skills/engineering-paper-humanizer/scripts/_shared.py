@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""check_text.py / check_format.py / generate_dict / generate_format_dict 的共享工具函数。
+"""check_text.py / generate_dict / git_snapshot 的公共辅助函数。
 
-本模块提取 checker 和 dict 生成器中完全重复的辅助函数，避免维护多份副本。
-修改任一函数时只需改此处，所有调用方同步生效。
+本模块仅包含本 skill 脚本实际使用的函数。format-cleaner skill 的 _shared.py
+是独立精简副本（不含 mask_latex_inline_protected 等本 skill 专有函数），两者独立维护。
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ import io
 import os
 import sys
 from pathlib import Path
+import json
 
 # ── Windows GBK 兼容 ──────────────────────────────────────
 
@@ -304,8 +305,6 @@ def format_text(diagnostics: list[dict], filepath: str) -> str:
 
 
 # ── 规则速查表生成（generate_dict / generate_format_dict 共享） ──
-
-import json  # noqa: E402
 
 
 def _categorize_rules(rules: list[dict]) -> dict[str, list[dict]]:

@@ -6,7 +6,7 @@
 
 | 目录 | 用途 |
 |---|---|
-| `skills/` | 6 个论文工作流 skill，渐进式加载（SKILL.md + references/ + scripts/） |
+| `skills/` | 7 个 skill（6 个论文工作流 + 1 个 docx 翻译），渐进式加载（SKILL.md + references/ + scripts/） |
 | `hooks/` | SessionStart 钩子（注入工作流状态到新会话）+ PreToolUse 钩子（三道防线：主文件保护、阶段门控、跳阶段确认） |
 | `tests/` | 脚本回归测试，不参与论文项目运行 |
 | `evals/` | skill description 触发边界评估，不参与论文项目运行 |
@@ -23,11 +23,13 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 | A/B/C 分类 | `skills/thesis-writing-workflow/references/user-material-protocol.md` |
 | Zotero 笔记协议 | `skills/evidence-grounded-chapter-writer/references/literature-notes-cache-rules.md` |
 | source marker 格式 | `skills/evidence-grounded-chapter-writer/references/citation-key-rules.md` |
-| 备份协议 | workflow §备份协议 |
+| 备份协议 | `skills/thesis-writing-workflow/references/output-and-backup.md` §备份协议 |
+| 输出与文件安全（产物路径、更新规则） | `skills/thesis-writing-workflow/references/output-and-backup.md` §输出规则 |
 | 门控逻辑（各阶段准入条件） | workflow §强制串行规则 |
 | 执行模式语义（Review-gated / Preauthorized / Validation / 工作流vs独立） | workflow §执行模式 |
 | 阶段入口条件（前置条件 + 阻塞条件） | workflow §阶段输入契约 |
 | 修改回环（分级/产物更新/备份） | `skills/thesis-writing-workflow/references/revision-loop.md` |
+| 项目台账规则（结构/标签/存放位置） | `skills/thesis-writing-workflow/references/project-ledger-rules.md` |
 
 ### 不描述默认行为
 只写例外。持久文件不写"保留不删除"，正常备份不写"保留最近 N 个"。
@@ -51,6 +53,25 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 ### 修改前先研究
 修改 skills 或 hooks 前，必须通过 skill-creator 和联网搜索获取相关知识——skill 设计最佳实践、相似问题的解决模式、AI 指令执行的已知陷阱。禁止凭直觉直接改，先研究再动手。
+
+## 新用户引导
+
+当用户表达论文写作意图但未指定具体阶段时，按顺序引导，不假定用户了解工作流：
+
+1. **确认输入**：询问用户是否有任务书、设计说明、导师要求或论文题目。
+2. **确认输出**：询问输出格式（Markdown/LaTeX/纯文本）和主文件位置。未指定时默认 Markdown + `output/` 子目录。
+3. **选择入口**：
+   - 有任务书/题目 → 从大纲规划开始
+   - 已有大纲 → 从章节写作开始
+   - 已有草稿 → 从证据审计开始
+   - 粘贴文字要求润色 → 独立润色模式
+   - 不确定 → 从大纲规划开始
+4. **切换阶段时简短解释**：告诉用户当前在哪个阶段、产出什么。用中文名称描述，不假设用户知道阶段顺序。
+5. **首次使用关键提醒**：草稿不直接写主文件（中间产物在 `.thesis-workflow/`）；每个阶段有确认检查点；有 Zotero 可告知 AI 尝试连接。
+
+### 输出风格
+
+面向用户时用自然中文，避免术语缩写（"调用 skill"→"开始规划大纲"、"触发 workflow"→"启动论文流程"）。首次描述用完整句子，不依赖编号列表。
 
 ## Git
 
