@@ -19,7 +19,7 @@
 - Project ledger 放在 `ledger/` 子目录下，各 skill 直接读写对应文件。按 `references/main-tex-context-template.md` 生成的项目上下文默认放在 `.thesis-workflow/main-tex-context.md`，由 `thesis-outline-planner` 在确认输出格式后首次创建。后续各阶段读取其中的格式约定；当主文件结构、章节标题、引用方案、模板或主文件路径变化时，触发变更的阶段负责更新。
 - 文献笔记缓存按章存储：`.thesis-workflow/chapters/chX/literature-notes.md`（随章保留，不自动清空）。
 - 图表数据溯源清单默认放在 `.thesis-workflow/figure-data-manifest.md`（持久文件，数据文件路径、生成脚本、输出格式）。
-- **生成图存放**：AI 根据 Mermaid 代码块、matplotlib 脚本、DOT 文件或提示词模板渲染产生的图片文件，统一存放在 `.thesis-workflow/generated-figures/`。命名格式 `Fig X-Y 描述.png`，与 manifest 中 Figure ID 对应。该目录与 `evidence/user-figures/` 分工明确——用户原始图片不放此处。规则见 `evidence-grounded-chapter-writer/references/figure-data-manifest-rules.md`。
+- **生成图存放**：AI 根据 Mermaid 代码块、matplotlib 脚本、DOT 文件或提示词模板渲染产生的图片文件，统一存放在 `.thesis-workflow/generated-figures/`。命名格式 `Fig X-Y 描述.png`，与 manifest 中 Figure ID 对应。该目录与 `evidence/user-figures/` 分工明确——用户原始图片不放此处。规则见 chapter-writer 参考文件 `figure-data-manifest-rules.md`。
 - **用户视频存放**：用户提供的视频、动画、演示录像存放在 `.thesis-workflow/evidence/user-videos/`。规则见 `references/user-material-protocol.md`。
 - 计算记录默认放在 `.thesis-workflow/calculation-records.md`（计算底稿，正文数值的唯一权威数据源）。
 - 每次直接修改用户论文主文件前，先通过 `scripts/git_snapshot.py <文件>` 创建备份。脚本优先使用 Git 分支备份，回退到 `.thesis-workflow/backups/` 下的文件复制备份。不要把备份写进 skill 仓库。备份对应章文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
