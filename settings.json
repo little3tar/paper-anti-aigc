@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start\"",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start\"",
             "async": false
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-tool-use\"",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-tool-use\"",
             "timeout": 15
           }
         ]

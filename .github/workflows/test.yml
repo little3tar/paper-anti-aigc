@@ -37,6 +37,16 @@ jobs:
           python -c "import py_compile; py_compile.compile('skills/academic-format-cleaner/scripts/git_snapshot.py', doraise=True)"
           echo "OK: all git_snapshot.py files are valid Python"
 
+      - name: Verify check scripts are valid Python
+        run: |
+          python -c "import py_compile; py_compile.compile('skills/engineering-paper-humanizer/scripts/check_text.py', doraise=True)"
+          python -c "import py_compile; py_compile.compile('skills/engineering-paper-humanizer/scripts/generate_dict.py', doraise=True)"
+          python -c "import py_compile; py_compile.compile('skills/academic-format-cleaner/scripts/check_format.py', doraise=True)"
+          python -c "import py_compile; py_compile.compile('skills/academic-format-cleaner/scripts/generate_format_dict.py', doraise=True)"
+          python -c "import py_compile; py_compile.compile('hooks/session-start', doraise=True)"
+          python -c "import py_compile; py_compile.compile('hooks/pre-tool-use', doraise=True)"
+          echo "OK: all check/hook scripts are valid Python"
+
       - name: Validate JSON rules files
         run: |
           python -c "import json; json.load(open('skills/engineering-paper-humanizer/scripts/text_rules.json', encoding='utf-8'))"

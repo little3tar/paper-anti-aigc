@@ -323,7 +323,7 @@ AI 会从上次中断的阶段接着推进。
 
 ## 脚本
 
-全部脚本只依赖 Python 标准库（≥3.7）。
+全部脚本只依赖 Python 标准库（≥3.7）。DOCX 翻译脚本（`apply_translations.py`、`export_paragraphs.py`）额外依赖 `python-docx`。
 
 ### 正文检查（降 AI 腔 + 中文标点）
 
