@@ -87,7 +87,7 @@ description: >-
    - 将 `[此处插入图片：...]` 和 `[此处插入表格：...]` 放在正文第一次需要出现图表的位置；尾部清单只能汇总，不能替代正文插入点。
    - 对于占位符中的简单流程图、架构图、算法框图，在输出"图片与表格占位符清单"时附加对应的 Mermaid 代码块或 Python matplotlib 脚本作为可渲染附件，不要仅留空白占位符。复杂示意图（需自由绘制）使用提示词模板。
    - 公式统一用 LaTeX math，便于在 Markdown、LaTeX 和 Word/MathType 流程之间迁移。
-   - 工程计算段按”公式、符号表、参数来源表、代入、结果、单位检查、设计裕量”展开，**任一环节缺失时不得给出计算结果**。缺失环节必须通过三级信息源（Zotero → 用户 → 网络）补齐，或标为 `[设计假设: ...]`。计算链先写入 `.thesis-workflow/calculation-records.md`（完整底稿），再选取关键步骤写入正文段落（计算叙述）。规则见 `references/calculation-records-rules.md` 和 `references/formula-calculation-rules.md`。
+   - 工程计算段按 `formula-calculation-rules.md` 定义的 8 步计算链（设计目标→公式与来源→符号定义→参数表与来源类型→代入数值→结果→单位检查→工程裕量/选型结论）展开，**任一环节缺失时不得给出计算结果**。缺失环节必须通过三级信息源（Zotero → 用户 → 网络）补齐，或标为 `[设计假设: ...]`。计算链先写入 `.thesis-workflow/calculation-records.md`（完整底稿），再选取关键步骤写入正文段落（计算叙述）。规则见本 skill 参考文件 `calculation-records-rules.md` 和 `formula-calculation-rules.md`。
    - **发现计算缺口时主动补充（⭐）**：编写工程计算段落时，若发现正文需要某个计算类数值（如缸径、推力、功率）但 `calculation-records.md` 中无对应记录，**必须先补充完整计算记录**（公式→符号表→参数来源→代入→结果→单位检查→标准选型），再选取关键步骤写入正文。不得绕过计算记录直接给估算值或跳过推导。
    - 缺少证据或参数时，不把 unsupported fact、parameter、formula 或 conclusion 写入正文；记录到 `未写入正文的待补资料`、`证据缺口清单` 或 project ledger。
    - 后续章节需要用户自制材料时，直接列入 `待用户补充的信息`，例如图纸、结构尺寸、实验记录、仿真截图、程序输出、设备选型依据、现场照片或导师批注；不要用常识替用户补造。
