@@ -147,3 +147,5 @@ digraph G {
 - `[此处插入图片：...]` 放在正文第一次引用的位置。
 - `[此处插入表格：...]` 放在正文第一次引用的位置。
 - 章尾图表汇总清单只用于参考，不能替代正文中的插入点。
+
+Mermaid/matplotlib/DOT 代码块在后续格式转换阶段（format-cleaner）的保护规则见 format-cleaner 参考文件 `format-guide.md` §图表代码块保护。
