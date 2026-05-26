@@ -44,8 +44,8 @@
 
 ## 图表数据清单
 
-`.thesis-workflow/figure-data-manifest.md` 格式（详见 `references/figure-data-manifest-rules.md`）：
+`.thesis-workflow/figure-data-manifest.md` 格式（完整列定义见 `references/figure-data-manifest-rules.md`）：
 
-| Figure | Data file | Real/mock | Source | Script | Outputs |
-|---|---|---|---|---|---|
-| Fig 3-1 | data/ch3/curve.csv | real | 实验台采集 | scripts/ch3/fig01.py | PNG, SVG |
+| Figure ID | 数据文件 | 真实/mock | 来源说明 | 生成脚本 | 输出格式 | 状态 |
+|---|---|---|---|---|---|---|
+| Fig 3-1 | data/ch3/curve.csv | real | 实验台采集 | scripts/ch3/fig01.py | PNG, SVG | draft |

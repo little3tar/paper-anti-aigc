@@ -1,6 +1,6 @@
 # 项目台账规则
 
-默认位置：论文项目根目录下的 `.thesis-workflow/ledger/` 子目录，汇总索引为 `.thesis-workflow/project-ledger.md`。不要在可复用的 skill 目录中创建或更新项目台账。
+默认位置：论文项目根目录下的 `.thesis-workflow/ledger/` 子目录。不要在可复用的 skill 目录中创建或更新项目台账。
 
 项目台账用于长期论文项目，需要已确认的事实、数据、公式、来源和决策跨章节和跨 Agent 会话保留。在活跃的论文工作流中，台账是常规运行产物：每个阶段开始时读取，阶段结束时若变更了已确认信息或开放证据缺口则更新。
 
@@ -15,7 +15,6 @@
     decisions.md      ← 已确认的决策（输出格式/路径/引用方案等）
     chapter-status.md ← 章节进展追踪（每章 6 列：大纲/细纲/草稿/审计/润色/格式）
     questions.md      ← 结构化待确认问题
-  project-ledger.md   ← 汇总索引（指向 ledger/ 各文件）
 ```
 
 ## 数值型参数规则

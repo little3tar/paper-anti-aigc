@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 """论文工作流智能备份脚本
 
-规范源：skills/thesis-writing-workflow/scripts/git_snapshot.py
-humanizer skill 中有一份完整副本（skills/engineering-paper-humanizer/scripts/git_snapshot.py），
-修改本文件时需同步更新该副本。
+humanizer 和 format-cleaner skill 中各有精简副本（仅含 cmd_snapshot 备份入口），
+修改共享函数时只更新使用了该函数的副本。
 
 智能备份策略（按优先级）：
 1. Git 分支备份 - 当前目录已经是 Git 仓库且已有提交时使用

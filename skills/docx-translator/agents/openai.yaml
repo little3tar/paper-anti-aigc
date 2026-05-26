@@ -1,0 +1,4 @@
+interface:
+  display_name: "DOCX Translator"
+  short_description: "Translate Word documents to Chinese while preserving formatting."
+  default_prompt: "Translate this .docx file to Chinese, preserving the original document formatting."

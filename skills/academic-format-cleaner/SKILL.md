@@ -52,12 +52,9 @@ description: >-
 5. **数学和代码环境保护**：检查公式环境是否完整，避免把公式、变量、单位、编号、代码块当作正文润色对象。
 6. **列表格式**：检测 `\item \textbf{名词：}` 这类机械清单格式，提示转为连贯段落或符合模板的列表结构。
 7. **Markdown 数学块一致性**：同一 Markdown 文件中优先使用一种块级数学格式，例如 fenced `math`、`$$...$$` 或 `\[...\]`，除非模板要求混用。
-8. **source marker 格式**：工作稿可使用 `[参考文献]` 和 `[文献题名]` 标记来源，重复题名使用 `[题名 作者 年份]`。最终定稿前再统一转换为学校模板要求的编号引用、脚注或 BibTeX/LaTeX 引用。
-9. **缺来源正文残留**：正文中的 `[待补来源: ...]` 属于未清理证据缺口。最终格式清理前应移出正文，放入 `未写入正文的待补资料`、`证据缺口清单` 或项目台账。
-10. **标准规范工作标记**：正文中的 `[标准规范: ...]` 不能直接进入最终定稿。已核验标准应改写为正式正文依据并配 `[参考文献]` 或模板要求的引用；未核验标准移入 `证据缺口清单`。
-11. **用户材料残留标记**：`[用户材料: ...]`、`[Mxx]`、`[内部参考: ...]` 等内部工作标记不得出现在最终定稿中。检测到后强制清除标记本身，保留实质性内容（设计假设、推导过程或工程解释）。
-12. **marker 内容完整性**（润色后核对）：对照 `.thesis-workflow/chapters/chX/draft.md`（内容权威源）中的 source marker 清单，检查主文件中 `[文献题名]` 方括号内的题名文字是否保持原样。被缩写、翻译、改写或缺失的 marker 视为 P2 问题，需从原始草稿恢复。注意：`chapters/chX/humanized.md` 是变更清单（非全文副本），不能用作 marker 完整性校验源。
-13. **Unicode 转义序列还原**：最终输出稿中不得出现 Unicode 转义序列。中文引号 `“` `”` 必须还原为 `"` `"`，单引号 `‘` `’` 还原为 `'` `'`，其他可见字符的转义序列同样还原为实际 Unicode 字符。此项在 LaTeX、Markdown 和 plain text 中均需检查。
+8. **source marker 格式与残留标记清理**：marker 类型定义见 chapter-writer 参考文件 `citation-key-rules.md`。本阶段负责清除正文中的残留工作标记——`[待补来源: ...]`（移入证据缺口清单）、`[标准规范: ...]`（已核验转正式引用，未核验移入缺口清单）、`[用户材料: ...]` 和 `[Mxx]`（保留实质内容，清除标记本身）。`[文献题名]` marker 保留至主文件。
+9. **marker 内容完整性**（润色后核对）：对照 `.thesis-workflow/chapters/chX/draft.md`（内容权威源）中的 source marker 清单，检查主文件中 `[文献题名]` 方括号内的题名文字是否保持原样。被缩写、翻译、改写或缺失的 marker 视为 P2 问题，需从原始草稿恢复。注意：`chapters/chX/humanized.md` 是变更清单（非全文副本），不能用作 marker 完整性校验源。
+10. **Unicode 转义序列还原**：最终输出稿中不得出现 Unicode 转义序列。中文引号 `”` `”` 必须还原为 `”` `”`，单引号 `’` `’` 还原为 `’` `’`，其他可见字符的转义序列同样还原为实际 Unicode 字符。此项在 LaTeX、Markdown 和 plain text 中均需检查。
 
 Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要在 `--format markdown` 下执行。处理 LaTeX 或 plain text 时，按本节规则人工复核同类问题。
 
@@ -80,7 +77,7 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 1. 先判断运行模式（见 §运行模式）和用户目标：格式检查，而不是正文润色、证据审计或章节写作。
    - **独立模式**：跳过产物文件写入和备份步骤。运行检查脚本 → 修复问题 → 返回结果。
    - **工作流模式**：执行以下步骤。
-2. 如需直接修改论文主文件，修改前先通过 `thesis-writing-workflow/scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮格式修复记录（变更清单，非全文副本）写入 `.thesis-workflow/chapters/chX/format-cleaned.md`，最终清理后文本写入对应章主文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
+2. 如需直接修改论文主文件，修改前先通过 `scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮格式修复记录（变更清单，非全文副本）写入 `.thesis-workflow/chapters/chX/format-cleaned.md`，最终清理后文本写入对应章主文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
    文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/format-cleaned.md`（格式修复记录，非全文副本）。
 3. 如有目标文件，运行格式检查脚本：
 
@@ -117,3 +114,4 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 | `scripts/format_rules.json` | 格式规则数据 |
 | `scripts/generate_format_dict.py` | 生成格式规则速查表 |
 | `references/format-guide.md` | 格式规则说明 |
+| `scripts/git_snapshot.py` | 智能备份脚本（修改主文件前创建备份） |

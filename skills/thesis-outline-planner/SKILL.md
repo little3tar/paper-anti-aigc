@@ -61,10 +61,9 @@ description: >-
    - 关键信息缺失时，只问最小必要确认问题。
 
 3. **确认输出格式**
-   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/outline.md`（总大纲，章→节→小节层级）、`.thesis-workflow/literature-pool.md`（文献池全表，按主题分组）和 `.thesis-workflow/main-tex-context.md`（项目上下文，按 workflow router 中的主文件上下文模板填充）。章节细纲在写作阶段生成，存放于 `.thesis-workflow/chapters/chX/detailed-outline.md`。
-   - 只有当交付格式影响工作时才问：”请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
-   - 如果用户要求 Word 文档，先以 `.tex`、`.md` 或 `.txt` 完成并确认计划，再通过 pandoc 或 `python-docx` 转换为 `.docx`。
-   - **创建项目上下文**：确认输出格式后，读取 workflow 的 `references/main-tex-context-template.md`，将已确定的格式选择（输出格式、标题格式、中英双语规范、图表编号、段落风格、引用方案、章节结构）填入模板生成 `.thesis-workflow/main-tex-context.md`。当前无法确定的字段留空或标注"待确认"，后续阶段补充。
+   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/outline.md`（总大纲，章→节→小节层级）、`.thesis-workflow/literature-pool.md`（文献池全表，按主题分组）和 `.thesis-workflow/main-tex-context.md`（项目上下文）。
+   - 只有当交付格式影响工作时才问输出格式。如果用户要求 Word 文档，先以 `.md` 或 `.txt` 完成并确认计划，再转换为 `.docx`。
+   - **创建项目上下文**：确认输出格式后，读取 workflow 的 `references/main-tex-context-template.md`，将已确定的格式选择填入模板生成 `.thesis-workflow/main-tex-context.md`。当前无法确定的字段留空或标注”待确认”，后续阶段补充。
 
 4. **建立文献池**
    - 遵循强制三级检索协议（见 workflow §来源策略）：Zotero → 用户 → 网络，每项都要尝试，不得只查一项就停止。
@@ -110,6 +109,8 @@ description: >-
 | --- | --- |
 | `references/evidence-rules.md` | 文献检索、source marker 设计和来源 fallback |
 | `references/figures-guide.md` | 图表生成路径、流程图提示词模板和表格规范 |
+| 见 workflow router 参考文件 `user-material-protocol.md` | 用户材料收录协议（A/B/C 分类、编目、消化规则） |
+| 见 chapter-writer 参考文件 `citation-key-rules.md` | Source marker 格式统一定义 |
 
 ## 推荐输出结构
 

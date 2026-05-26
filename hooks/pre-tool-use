@@ -55,7 +55,7 @@ def read_status(workflow_dir: Path, file_path: str = "") -> dict | None:
     return None
 
 
-def read_main_file_path(workflow_dir: Path) -> set[str]:
+def get_protected_main_files(workflow_dir: Path) -> set[str]:
     """生成主文件保护名单。覆盖按章拆分模式（main-ch*.md/txt/tex）。"""
     main_files: set[str] = set()
     for i in range(1, 20):
@@ -85,7 +85,7 @@ def is_main_thesis_file(file_path: str, workflow_dir: Path) -> bool:
     if "/skills/" in file_path:
         return False
     fname = os.path.basename(file_path)
-    main_names = read_main_file_path(workflow_dir)
+    main_names = get_protected_main_files(workflow_dir)
     if fname in main_names:
         return True
     for ext in (".md", ".txt", ".tex"):
@@ -171,6 +171,14 @@ def check_main_file_protection(file_path: str, workflow_dir: Path, status: dict 
 def check_stage_gate(file_path: str, workflow_dir: Path, status: dict | None):
     """防线 2：阶段门控 — P0/P1 未清零 + next_allowed 不匹配时禁止写入阶段产物。"""
     if status is None:
+        # status.json 不存在 → 审计未运行，阻断 humanizer 和 format-cleaner 产物写入
+        if is_stage_product(file_path, "04") or is_stage_product(file_path, "05"):
+            ch = extract_chapter(file_path) or "?"
+            return make_deny(
+                f"第{ch}章 status.json 不存在，说明审计阶段未运行。"
+                f"请先运行 reference-integrity-auditor 完成证据审计，"
+                f"审计通过后会自动创建 status.json。详见 workflow §强制串行规则。"
+            )
         return None
 
     p0 = status.get("p0_count", -1)

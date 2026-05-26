@@ -219,9 +219,9 @@ class CheckerScriptTests(unittest.TestCase):
                 self.assertIn(key, d)
 
     def test_git_snapshot_cleanup_dry_run(self) -> None:
-        """--cleanup --dry-run 不实际删除任何备份。"""
+        """--cleanup --dry-run 不实际删除任何备份（仅 workflow 完整版支持）。"""
         result = run_script(
-            "skills/engineering-paper-humanizer/scripts/git_snapshot.py",
+            "skills/thesis-writing-workflow/scripts/git_snapshot.py",
             "--cleanup",
             "--dry-run",
         )
@@ -250,7 +250,7 @@ class CheckerScriptTests(unittest.TestCase):
             target = tmp_path / "paper.md"
             for i in range(7):
                 target.write_text(f"draft v{i}", encoding="utf-8")
-                run_script(str(script), "--max-backups", "3", str(target), cwd=tmp_path)
+                run_script(str(script), "--max-backups=3", str(target), cwd=tmp_path)
             backup_dir = tmp_path / ".thesis-workflow" / "backups"
             backups = list(backup_dir.glob("paper_*"))
             self.assertLessEqual(len(backups), 3, f"应保留最多3个备份，实际: {len(backups)}")
@@ -262,10 +262,10 @@ class CheckerScriptTests(unittest.TestCase):
             tmp_path = Path(tmp)
             target = tmp_path / "paper.md"
             target.write_text("anchor version", encoding="utf-8")
-            run_script(str(script), "--anchor", "--max-backups", "1", str(target), cwd=tmp_path)
+            run_script(str(script), "--anchor", "--max-backups=1", str(target), cwd=tmp_path)
             for i in range(3):
                 target.write_text(f"regular v{i}", encoding="utf-8")
-                run_script(str(script), "--max-backups", "1", str(target), cwd=tmp_path)
+                run_script(str(script), "--max-backups=1", str(target), cwd=tmp_path)
             backup_dir = tmp_path / ".thesis-workflow" / "backups"
             anchors = list(backup_dir.glob("*.anchor"))
             self.assertGreater(len(anchors), 0, "锚点备份不应被淘汰")
@@ -285,14 +285,14 @@ class CheckerScriptTests(unittest.TestCase):
             self.assertIn("内容相同，跳过备份", r3.stdout)
 
     def test_git_snapshot_rollback_needs_file(self) -> None:
-        """--rollback 不带目标文件时应给出提示。"""
-        script = ROOT / "skills/engineering-paper-humanizer/scripts/git_snapshot.py"
+        """--rollback 不带目标文件时应给出提示（仅 workflow 完整版支持）。"""
+        script = ROOT / "skills/thesis-writing-workflow/scripts/git_snapshot.py"
         result = run_script(str(script), "--rollback")
         self.assertIn("需要指定", result.stdout)
 
     def test_git_snapshot_rollback_restores_target_file(self) -> None:
-        """--rollback 只恢复指定文件，不影响其他文件。"""
-        script = ROOT / "skills/engineering-paper-humanizer/scripts/git_snapshot.py"
+        """--rollback 只恢复指定文件，不影响其他文件（仅 workflow 完整版支持）。"""
+        script = ROOT / "skills/thesis-writing-workflow/scripts/git_snapshot.py"
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             target = tmp_path / "paper.md"

@@ -2,13 +2,13 @@
 
 当章节引用文献较多（8+ 篇）或用户 Zotero 库中笔记/标注内容量大时，使用分批获取 + 磁盘缓存策略，避免一次性拉取全部笔记撑爆上下文窗口。
 
-缓存文件是 AI 从 Zotero 拉取的**工作辅助材料**，不是用户提供的原始材料，因此放在 `.thesis-workflow/` 根下，与 `project-ledger.md` 同级，**不**放入 `evidence/`（用户材料目录）。
+缓存文件是 AI 从 Zotero 拉取的**工作辅助材料**，不是用户提供的原始材料，因此按章存放在 `.thesis-workflow/chapters/chX/` 下，**不**放入 `evidence/`（用户材料目录）。
 
 ## 缓存文件
 
 位置：`.thesis-workflow/chapters/chX/literature-notes.md`
 
-生命周期：写作阶段按需创建，随章保留不自动清空。
+生命周期：写作阶段按需创建。
 
 ### 文件结构
 

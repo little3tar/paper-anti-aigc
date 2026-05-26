@@ -1,3 +1,5 @@
 # 论文工作流 Skills 仓库
 
-> **首次操作前必须先读取 `AGENTS.md`** 获取完整规则（合并策略、单一权威定义表、编写约束等）。本文件仅作为入口指针。
+@AGENTS.md
+
+> 本文件仅作为入口指针，完整规则见上方导入的 AGENTS.md。非 Claude Code 工具（OpenCode、Cursor）请手动读取 AGENTS.md。

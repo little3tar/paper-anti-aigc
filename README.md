@@ -158,6 +158,14 @@ AI 会从上次中断的阶段接着推进。
 **Q: 中途可以换工具吗？**
 可以。所有进度保存在 `.thesis-workflow/` 的纯文本文件中，不依赖特定工具。
 
+### 使用心得
+
+这套工作流的本意是自动化产出一篇 LaTeX 论文，但我们学校只提供了不算完整的 Word 模板，要让 AI 编写完全符合模板格式的 Word 内容依然比较困难。最后我直接使用工作流产出的 `.txt` 文件，自己复制粘贴到 Word 模板里，反而省了很多事。
+
+关于 LaTeX，最初写论文时老师没说最后必须交 Word，我自作主张用了一段时间 LaTeX，但后续确认必须使用 Word，就中途放弃了 LaTeX 路线。因此 skills 里的 LaTeX 格式检查（`check_format.py`）可能并不完善，如果你用 LaTeX 写论文，格式方面建议自己再仔细过一遍。
+
+虽说最初整理这套 skills 的目标是尽可能自动化，但直到现在我的论文快结束了，在使用过程中不断发现和解决问题，依然没能做到完全自动化，AI 还是会在各种意想不到的地方出错。所以**推荐每一步结束后至少做一次人工检查**，不要把 AI 的输出直接当定稿。
+
 ## 运行产物
 
 真实论文工作流默认使用论文项目根目录下的 `.thesis-workflow/`，各阶段产物说明如下。
@@ -172,7 +180,7 @@ AI 会从上次中断的阶段接着推进。
 ├── figure-data-manifest.md    ← 图表数据溯源清单（数据文件、生成脚本、输出格式）
 ├── calculation-records.md     ← 数值唯一权威源（公式代入、参数来源、标准选型）
 ├── operations-log.md          ← 操作日志（项目检查、章节清除等一次性操作，只追加）
-├── outline.md                 ← 阶段 1：总大纲（章→节→小节）+ 文献池分组摘要
+├── outline.md                 ← 阶段 1：总大纲（章→节→小节）
 │
 ├── chapters/                  ← 按章归档的阶段产物（每章独立，不互相覆盖）
 │   ├── ch1/
@@ -204,7 +212,7 @@ AI 会从上次中断的阶段接着推进。
 │
 ├── generated-figures/         ← AI 生成的图（Mermaid/matplotlib/DOT/提示词渲染产物，可重新生成）
 │
-├── backups/                   ← 主文件备份（普通备份保留最近 5 个，锚点备份不限）
+├── backups/                   ← 主文件备份（锚点备份不限）
 ```
 > **主文件输出**：最终章文件默认输出到论文项目根目录下的 `output/` 子目录（如 `output/main-ch1.md`），避免大量章文件散落根目录。用户指定位置或模板要求位置优先。
 
@@ -229,7 +237,7 @@ AI 会从上次中断的阶段接着推进。
 
 | 文件 | 产生阶段 | 内容 | 更新时机 |
 | --- | --- | --- | --- |
-| `outline.md` | thesis-outline-planner | 总大纲（章→节→小节）+ 文献池分组摘要 | 大纲确认后 |
+| `outline.md` | thesis-outline-planner | 总大纲（章→节→小节） | 大纲确认后 |
 | `literature-pool.md` | thesis-outline-planner | 文献池全表（含 ZoteroKey，分组管理） | 大纲确认后 |
 | `chapters/chX/detailed-outline.md` | evidence-grounded-chapter-writer | 章节细纲（段落级写作点） | 细纲确认后 |
 | `chapters/chX/draft.md` | evidence-grounded-chapter-writer | 第 X 章正文草稿（内容权威源） | 每章草稿完成后 |
@@ -291,7 +299,7 @@ AI 会从上次中断的阶段接着推进。
 
 #### backups/
 
-修改论文主文件前由 `git_snapshot.py` 自动创建。优先使用 Git 分支备份，回退到文件复制备份。普通备份保留最近 5 个（可配置），锚点备份（`--anchor`）永不自动淘汰。
+修改论文主文件前由 `git_snapshot.py` 自动创建。优先使用 Git 分支备份，回退到文件复制备份。锚点备份（`--anchor`）永不自动淘汰。
 
 #### ledger/（台账子目录）
 
