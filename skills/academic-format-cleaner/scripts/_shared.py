@@ -267,7 +267,7 @@ def _categorize_rules(rules: list[dict]) -> dict[str, list[dict]]:
     PREFIX_MAP = {
         "CITE": "引用格式问题（LaTeX）",
         "LATEX": "LaTeX 专属问题",
-        "PUNCT": "标点与格式问题",
+        "PUNCT": "格式层标点与排版问题",
         "STYLE": "排版风格问题",
         "AIGC": "AI 高频词与敏感短语",
     }
