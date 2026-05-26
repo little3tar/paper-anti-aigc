@@ -538,8 +538,8 @@ class CheckerScriptTests(unittest.TestCase):
         self.assertNotIn("Oscillating Disc Cutting", contexts)
         self.assertNotIn("31.5 MPa", contexts)
 
-    def test_humanizer_no_punct_in_latex_comments(self) -> None:
-        """LaTeX 注释行内的标点不应触发 PUNCT 规则。"""
+    def test_humanizer_minimal_section_low_diagnostics(self) -> None:
+        """内容极少的节不应产生大量诊断。"""
         result = run_script(
             "skills/engineering-paper-humanizer/scripts/check_text.py",
             "tests/fixtures/sample_multisection.tex",
@@ -547,14 +547,14 @@ class CheckerScriptTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         diagnostics = json.loads(result.stdout)
-        # 第 2 节是注释区，不应有大量诊断
+        # 第 2 节仅一行正文，不应有大量诊断
         self.assertLessEqual(len(diagnostics), 5,
-                             f"注释区内诊断应很少，实际: {len(diagnostics)}")
+                             f"极短节内诊断应很少，实际: {len(diagnostics)}")
 
     # ── 连接词泛滥检测 ────────────────────────────────────
 
-    def test_humanizer_connective_detection(self) -> None:
-        """AIGC-CONN: 检测段首/句首连接词泛滥。"""
+    def test_humanizer_connective_dedup(self) -> None:
+        """AIGC-CONN: 被更具体的 AIGC 规则覆盖的连接词不应重复报告。"""
         result = run_script(
             "skills/engineering-paper-humanizer/scripts/check_text.py",
             "tests/fixtures/sample_humanizer.md",
