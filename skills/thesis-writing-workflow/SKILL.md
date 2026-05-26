@@ -111,6 +111,40 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 - 同一问题最多循环 3 轮；3 轮后仍未解决，将对应段落移出正文放入 `证据缺口清单`，在论文中显式标注为"待补证据"后继续。
 - 用户可在任意一轮确认"该项接受当前状态"，标记为 `accepted-by-user` 后放行。
 
+### status.json 状态机
+
+`status.json` 的 `next_allowed` 字段控制各阶段准入，以下为完整流转链。**此定义为本仓库 status.json 状态机的单一权威定义。**
+
+```
+auditor 创建 status.json
+    │
+    ├── P0/P1 > 0 → next_allowed = "fix-evidence"
+    │       │
+    │       └── 修复后重审计 → P0/P1 = 0 → next_allowed = "humanizer"
+    │
+    └── P0/P1 = 0 → next_allowed = "humanizer"
+            │
+            ▼
+    humanizer 读取 status.json
+            │
+            完成步骤 4 自检（三项归零）→ 更新 next_allowed = "format-cleaner"
+            │
+            ▼
+    format-cleaner 读取 status.json
+            │
+            完成格式清理 → 更新 next_allowed = "next-chapter"
+```
+
+**字段职责**：
+
+| 字段 | 写入者 | 读取者 | 取值 |
+|---|---|---|---|
+| `stage` | auditor 创建，humanizer/format-cleaner 更新 | 所有下游 skill | `"audited"` → `"humanized"` → `"format-cleaned"` |
+| `next_allowed` | auditor 创建，humanizer/format-cleaner 更新 | PreToolUse 钩子 + 下游 skill | `"fix-evidence"` → `"humanizer"` → `"format-cleaner"` → `"next-chapter"` |
+| `p0_count` / `p1_count` | auditor 创建并更新 | humanizer 门控检查 | 整数，均为 0 方可进入 humanizer |
+
+**子 skill 规则**：auditor、humanizer、format-cleaner 的 SKILL.md 中各自描述本阶段的状态读取和更新操作，不复制完整状态链。修改状态链时只需更新此处。
+
 ## 用户材料收录协议
 
 用户材料的收录、分类（A/B/C）、编目和消化规则见 `references/user-material-protocol.md`。核心要点：

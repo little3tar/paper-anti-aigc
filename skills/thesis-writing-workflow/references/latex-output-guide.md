@@ -4,7 +4,7 @@
 
 ## 模板检测
 
-检查用户是否在 `latex-templates/` 或项目根目录提供了 LaTeX 模板文件（`.cls`、`.sty`、主 `.tex` 示例）。
+检查用户是否在论文项目根目录的 `latex-templates/` 或项目根目录直接提供了 LaTeX 模板文件（`.cls`、`.sty`、主 `.tex` 示例）。`latex-templates/` 相对于用户论文项目根目录，不是相对于本 skill 仓库。
 
 **有模板时**：
 1. 解析模板的 `\documentclass` 和导言区。
@@ -25,14 +25,13 @@ thesis-latex/
 │   ├── 00-abstract.tex
 │   ├── 01-introduction.tex
 │   ├── 02-literature-review.tex
-│   ├── 03-methodology.tex
-│   ├── 04-results-analysis.tex
-│   ├── 05-discussion.tex
-│   └── 06-conclusion.tex
+│   └── ...
 ├── figures/              # 图片文件
 ├── references.bib        # BibTeX 参考文献
 └── latex-templates/      # 原始模板（只读）
 ```
+
+> 上图为示意结构，文件名采用语义化命名便于理解。**实际工作流默认使用按章编号的文件名**（如 `ch1.tex`、`ch2.tex`），与 workflow §输出规则中 `main-chX.tex` 命名一致。如果用户项目中已有明确的各章独立文件或其他命名约定，优先沿用用户现有命名。
 
 ## main.tex 模板
 
