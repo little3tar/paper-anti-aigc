@@ -117,7 +117,7 @@ def _default_context() -> str:
         "论文写作技能已就绪。五个阶段：thesis-outline-planner → "
         "evidence-grounded-chapter-writer → reference-integrity-auditor → "
         "engineering-paper-humanizer → academic-format-cleaner。"
-        "默认按顺序执行全部五步。用户明确指定\"只运行X\"时才允许局部执行。"
+        "默认按顺序执行全部五步。用户明确指定\"只运行X\"时才允许局部执行。\n"
         + FILE_SAFETY
     )
 

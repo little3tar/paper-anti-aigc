@@ -13,7 +13,10 @@ JSON format:
 """
 
 import json, os, sys, base64
+from pathlib import Path
 from docx import Document
+
+SKILL_DIR = Path(__file__).resolve().parent.parent
 
 
 def main():
@@ -36,7 +39,11 @@ def main():
 
     translations = {}
     for k, v in b64_data.items():
-        translations[k] = base64.b64decode(v).decode('utf-8')
+        try:
+            translations[k] = base64.b64decode(v).decode('utf-8')
+        except (ValueError, UnicodeDecodeError) as e:
+            print(f"[WARNING] 跳过索引 {k}：base64 解码失败 — {e}")
+            continue
 
     print(f"Loaded {len(translations)} translations")
 

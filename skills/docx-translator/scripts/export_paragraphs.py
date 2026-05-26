@@ -8,6 +8,9 @@ Output format per line: [index] [style_name] text_content_first_200_chars
 """
 
 import sys, os
+from pathlib import Path
+
+SKILL_DIR = Path(__file__).resolve().parent.parent
 from docx import Document
 
 def main():

@@ -262,7 +262,11 @@ def check_detail_outline_gate(file_path: str, workflow_dir: Path) -> dict | None
         return None
 
     for line in text.splitlines():
-        cols = [c.strip() for c in line.split("|")]
+        # 加固表格解析：strip 首尾管道符及空白，取非空列
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        cols = [c.strip() for c in stripped.strip("|").split("|")]
         # 期望格式：| 章节 | 大纲 | 细纲 | 草稿 | 审计 | 润色 | 格式 | 备注 |
         if len(cols) < 4:
             continue
