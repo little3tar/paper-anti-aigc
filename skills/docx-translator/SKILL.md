@@ -93,7 +93,7 @@ print(f'Saved {len(encoded)} translations')
 - 字典 key 是段落索引（字符串格式，与 `export_paragraphs.py` 输出一致）
 - 翻译文本中的引号必须使用弯引号 `""`，如果误用 ASCII `"` 会破坏 Python 字符串语法
 - `ensure_ascii=True` 确保 JSON 中只有 ASCII 字符
-- 可以分多次执行（每次追加一部分翻译），也可以一次性写完
+- 分多次执行（每次追加一部分翻译），或一次性写完
 
 ### Step 5：应用翻译到 docx
 

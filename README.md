@@ -412,6 +412,10 @@ git checkout single-skill   # 仅润色去 AI 腔
 git checkout two-skills     # 润色 + 格式清理
 ```
 
+## 待办
+
+- **Hooks 多平台兼容**：当前 `pre-tool-use`（四道防线门控）和 `session-start`（状态注入）仅支持 Claude Code。Cursor 的 `preToolUse` 事件格式不同但可适配（camelCase stdin/stdout、`permission` 替代 `permissionDecision`）。Codex CLI 和 OpenCode 缺少 PreToolUse 等价事件，只能适配 session-start。方案：新增 `hooks/_platform.py` 平台检测与格式适配层，配合各平台独立配置文件（`cursor-hooks.json`、`codex-hooks.json`），核心门控逻辑复用不改。
+
 ## 致谢
 
 本项目受以下项目启发：

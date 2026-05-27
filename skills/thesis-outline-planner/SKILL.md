@@ -79,7 +79,7 @@ description: >-
      - 这是**一次性询问**，同批文献只问一次
      - 笔记内容是用户个人理解，用作内部参考，**不替代对文献原文的核实**
    - **题名转录规则**：从 Zotero 或 `.bib` 文件获取的文献，题名、作者、年份必须原样转录，保留特殊字符（希腊字母、上下标、变音符号）。英文题名保留原始大小写。Web 搜索获取的文献同样原样记录检索到的题名；不确定准确性时在题名后标注 `[题名待核验]` 并在 project ledger 中备注。
-   - **保留校验基准**：如通过 Zotero MCP 获取文献，建议将 Zotero 文献库导出为 `.bib` 文件放入 `.thesis-workflow/evidence/zotero-export/` 目录，作为后续审计阶段的文献信息校验基准。
+   - **保留校验基准**：如通过 Zotero MCP 获取文献，将 Zotero 文献库导出为 `.bib` 文件放入 `.thesis-workflow/evidence/zotero-export/` 目录，作为后续审计阶段的文献信息校验基准。
 
 5. **创建大纲**
    - 输出完整章结构、节级内容和章节逻辑。
@@ -112,7 +112,7 @@ description: >-
 | 见 workflow router 参考文件 `user-material-protocol.md` | 用户材料收录协议（A/B/C 分类、编目、消化规则） |
 | 见 chapter-writer 参考文件 `citation-key-rules.md` | Source marker 格式统一定义 |
 
-## 推荐输出结构
+## 输出结构
 
 outline.md 仅含以下四段。不写入文献池摘要、图表溯源、设计参数、决策、进度或证据缺口。
 

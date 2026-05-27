@@ -11,7 +11,7 @@
 - 用户要求生成文件但未指定目录时，默认创建或使用论文项目根目录下的 `.thesis-workflow/`。如果当前工作目录位于 skill 仓库内，不能把运行产物写进 skill 仓库；应使用用户论文项目根目录，无法判断时先确认。
 - 用户要求生成文件但未指定格式时，默认按章拆分输出 `main-chX.md` / `main-chX.txt` / `main-chX.tex`（每章一个独立文件）。如项目中已有明确的各章独立文件（如 `chapters/ch1.tex`），优先沿用现有命名。
 - 论文真实主文件优先使用用户提供或项目中可明确识别的现有文件名；无法判断时先确认。若用户始终没有指定，按章使用 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
-- 推荐运行产物默认文件名按任务选择：大纲为 `.thesis-workflow/outline.md`，章节写作产物按章归档为 `.thesis-workflow/chapters/chX/detailed-outline.md`、`.thesis-workflow/chapters/chX/draft.md`、`.thesis-workflow/chapters/chX/audit.md`、`.thesis-workflow/chapters/chX/status.json`、`.thesis-workflow/chapters/chX/humanized.md`、`.thesis-workflow/chapters/chX/format-cleaned.md`，不要把这些运行产物写进 skill 仓库。
+- 运行产物默认文件名按任务选择：大纲为 `.thesis-workflow/outline.md`，章节写作产物按章归档为 `.thesis-workflow/chapters/chX/detailed-outline.md`、`.thesis-workflow/chapters/chX/draft.md`、`.thesis-workflow/chapters/chX/audit.md`、`.thesis-workflow/chapters/chX/status.json`、`.thesis-workflow/chapters/chX/humanized.md`、`.thesis-workflow/chapters/chX/format-cleaned.md`，不要把这些运行产物写进 skill 仓库。
 - Project ledger 已拆分为 `ledger/` 子目录：`ledger/facts.md`（设计参数）、`ledger/decisions.md`（决策记录）、`ledger/chapter-status.md`（章节进展）、`ledger/questions.md`（待确认问题）。各 skill 直接读写对应文件，无需索引文件。
 - 文献池独立文件：`.thesis-workflow/literature-pool.md`（文献全表，含 ZoteroKey 映射；分组原则见 outline-planner §建立文献池）。
 - 章节细纲按章存放：`.thesis-workflow/chapters/chX/detailed-outline.md`（每章一份，段落级写作点）。大纲文件 `outline.md` 只保留到小节标题层级。
@@ -24,7 +24,7 @@
 - 计算记录默认放在 `.thesis-workflow/calculation-records.md`（计算底稿，正文数值的唯一权威数据源）。
 - 每次直接修改用户论文主文件前，先通过 `scripts/git_snapshot.py <文件>` 创建备份。脚本优先使用 Git 分支备份，回退到 `.thesis-workflow/backups/` 下的文件复制备份。不要把备份写进 skill 仓库。备份对应章文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
 - 直接修改真实论文主文件后，将本轮变更清单（改了什么、为什么改）写入 `.thesis-workflow/chapters/chX/` 对应阶段产物（`humanized.md` 或 `format-cleaned.md`）。这些产物是操作记录，不存全文副本。全文以主文件为唯一权威输出。
-- `.thesis-workflow/` 内运行产物默认主动更新，但不对每次更新创建备份；重要确认版、主文件结构大改、用户原始材料变更和真实主文件修改才创建备份或快照。重大确认版本建议使用 `--anchor` 参数创建锚点备份，锚点备份永不自动淘汰。
+- `.thesis-workflow/` 内运行产物默认主动更新，但不对每次更新创建备份；重要确认版、主文件结构大改、用户原始材料变更和真实主文件修改才创建备份或快照。重大确认版本使用 `--anchor` 参数创建锚点备份，锚点备份永不自动淘汰。
 - 以下 `.thesis-workflow/` 产物在关键节点应额外备份：`ledger/` 目录（每次确认后）、`outline.md`（总大纲确认后）、`chapters/chX/draft.md`（细纲确认后）。备份命令同主文件：`git_snapshot.py .thesis-workflow/outline.md --anchor`。
 - 普通备份保留数量可通过 `GIT_SNAPSHOT_MAX_BACKUPS` 环境变量或 `--max-backups N` 参数调整。锚点备份不受此限制。
 - 多轮项目中，把输出格式、主文件路径、备份位置和已确认的文件生成授权记录到 project ledger 或 handoff。
@@ -41,9 +41,9 @@
 
 1. 确认目标是用户论文主文件，不是 skill 仓库内的 `SKILL.md` 或脚本。
 2. 调用 `git_snapshot.py <文件>` 创建备份。脚本自动选择 Git 分支备份（仓库内）或文件复制备份（非 Git 目录）。
-3. 备份文件名格式：文件模式为 `<原文件名>_YYYYMMDD-HHMMSS-NN.<扩展名>`（NN 为厘秒精度，由脚本自动生成）；Git 模式为 `backup/humanizer/YYYYMMDD-HHMMSS-NN` 分支。锚点备份在时间戳后附加 `-anchor` 标记。手动创建的备份建议沿用同格式并附加说明性后缀（如 `-r2` 表示第二轮修订）。
+3. 备份文件名格式：文件模式为 `<原文件名>_YYYYMMDD-HHMMSS-NN.<扩展名>`（NN 为厘秒精度，由脚本自动生成）；Git 模式为 `backup/humanizer/YYYYMMDD-HHMMSS-NN` 分支。锚点备份在时间戳后附加 `-anchor` 标记。手动创建的备份沿用同格式并附加说明性后缀（如 `-r2` 表示第二轮修订）。
 4. 修改完成后，将本轮结果另存到对应阶段产物，例如 `chapters/chX/humanized.md` 或 `chapters/chX/format-cleaned.md`；若是章节写作或证据补全，则更新 `chapters/chX/draft.md` 或 `chapters/chX/audit.md`。
 5. 在输出或 handoff 中报告主文件路径、备份路径、另存产物路径和复查命令结果。
 6. 超出数量限制的普通备份静默淘汰。锚点备份永不自动淘汰。手动清理所有备份（含锚点）使用 `git_snapshot.py --cleanup`。
 
-重要确认版本（大纲确认、细纲确认、主文件结构大改、用户原始材料变更）建议使用 `--anchor` 创建锚点备份，确保不会被自动淘汰覆盖。
+重要确认版本（大纲确认、细纲确认、主文件结构大改、用户原始材料变更）使用 `--anchor` 创建锚点备份，确保不会被自动淘汰覆盖。

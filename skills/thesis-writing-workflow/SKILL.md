@@ -152,7 +152,7 @@ auditor 创建 status.json
 | `timestamp` | 每次更新 status.json 的阶段写入 | 各阶段元数据参考 | ISO 8601 时间戳 |
 | `notes` | 各阶段可选写入 | 下游阶段可选读取 | 简短说明字符串 |
 
-**子 skill 规则**：auditor、humanizer、format-cleaner 的 SKILL.md 中各自描述本阶段的状态读取和更新操作，不复制完整状态链。修改状态链时只需更新此处。
+**子 skill 规则**：auditor、humanizer、format-cleaner 的 SKILL.md 中各自描述本阶段的状态读取和更新操作，不复制完整状态链。修改状态链时仅更新此处。
 
 ## 用户材料收录协议
 
@@ -196,7 +196,7 @@ auditor 创建 status.json
 
 当用户要求测试、验证、dry-run 或检查 skill 行为时使用。保持证据集较小，明确标注 synthetic inputs，并把产物写到用户指定的 validation folder。
 
-推荐 validation artifacts 放在 `.thesis-workflow/validation/`：
+Validation artifacts 放在 `.thesis-workflow/validation/`：
 
 1. `task-book.md`
 2. `ledger/`（facts.md / decisions.md / chapter-status.md / questions.md）
@@ -345,7 +345,7 @@ auditor 创建 status.json
 产物路径、文件更新规则、备份协议、Skills 仓库维护文件边界，见 `references/output-and-backup.md`。核心要点：
 
 - `.thesis-workflow/` 内运行产物随阶段运行主动更新；总大纲、细纲、P0/P1 处理方案和主文件修改仍需用户确认。
-- 修改主文件前必须 `git_snapshot.py <文件>` 备份（锚点备份建议用于重大确认版本）。
+- 修改主文件前必须 `git_snapshot.py <文件>` 备份（锚点备份用于重大确认版本）。
 - 不要将运行产物写进 skill 仓库，`tests/` 和 `evals/` 不参与论文项目运行。
 
 ## 用户材料与标准规范
@@ -385,7 +385,7 @@ auditor 创建 status.json
 
 - 所有计算类数值（缸径、推力、流量、功率等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。draft.md 工作稿中可用计算记录 ID（如 C3-01）标记数值来源，便于审计追踪。计算记录 ID 仅限 `.thesis-workflow/` 内部使用，**写入主文件（main-chX.md）前必须清除**，正文中直接呈现数值和标准选型结论，不得出现 C3-01 等内部编号。
 - `ledger/facts.md` 只记录参数名、类型、来源和关联计算记录 ID。`main-tex-context.md` 引用 `ledger/facts.md`，不复制参数表。
-- 数值变更/公式修正/代入纠错/标准选型调整时，只需更新 `calculation-records.md` 一处（旧记录标 `superseded`，追加新行，不原地编辑）。draft.md 工作稿和 ledger 中引用计算记录 ID 指向最新有效记录，无需多处同步数值。审计时对照计算记录核验正文数值。
+- 数值变更/公式修正/代入纠错/标准选型调整时，仅更新 `calculation-records.md` 一处（旧记录标 `superseded`，追加新行，不原地编辑）。draft.md 工作稿和 ledger 中引用计算记录 ID 指向最新有效记录，无需多处同步数值。审计时对照计算记录核验正文数值。
 
 ## 阶段产物职责分离
 
