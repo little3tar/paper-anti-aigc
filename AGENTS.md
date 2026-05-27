@@ -59,6 +59,21 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 常见的不一致高发区：skill 名称大小写（`thesis-writing-workflow` vs `Thesis Writing Workflow`）、stage code 与阶段编号（`"02"` vs `阶段2`）、产物文件名（`main-tex-context.md` vs `main-tex-context-template.md`）。
 
+### Skill 指令语气
+
+Skill 是给 AI 执行的指令，不是给人看的文档。**必须用祈使句**（动词开头的直接动作指令），不用描述句或能力陈述。
+
+| 类型 | 写法 | AI 的理解 |
+|------|------|------|
+| 祈使句 | "调用 Bash 工具" | 必须执行的步骤 |
+| 描述句 | "你可以使用 Bash 工具" | 可选，不做也行 |
+| 祈使句 | "读取 Y 文档，逐条对照" | 强制加载 |
+| 建议句 | "建议查阅 Y 文档" | 跳过也无妨 |
+| 祈使句 | "询问用户是否确认" | 必须交互 |
+| 猜测句 | "用户可能需要确认" | 自己判断，倾向于不问 |
+
+**Why**：描述句给 AI 的信号是"做不做随意"，祈使句给 AI 的信号是"这是必须执行的动作"。长上下文压缩后，描述句的约束力几乎为零。此外，指令文件的措辞风格会通过启动效应（priming effect）影响 AI 的输出风格：用描述句写的 skill，AI 执行时更倾向描述该做什么而非直接做；用破折号连接的 skill，AI 输出也更倾向保留破折号。
+
 ### 子 skill 引用 workflow，不复述
 文件产出 boilerplate 只在 workflow §输出与文件安全 定义。子 skill 步骤 1 写："文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/xxx.md`。"
 
