@@ -1,13 +1,13 @@
 # 论文工作流 Skills 仓库
 
-一套中文工程类毕业论文 AI 辅助写作工作流。**本仓库是 skills 维护项目**，不是论文项目本身——论文产物写入用户项目的 `.thesis-workflow/`。
+一套中文工程类毕业论文 AI 辅助写作工作流。**本仓库是 skills 维护项目**，不是论文项目本身，论文产物写入用户项目的 `.thesis-workflow/`。
 
 ## 组件
 
 | 目录 | 用途 |
 |---|---|
 | `skills/` | 7 个 skill（6 个论文工作流 + 1 个 docx 翻译），渐进式加载（SKILL.md + references/ + scripts/） |
-| `hooks/` | SessionStart 钩子（注入工作流状态到新会话）+ PreToolUse 钩子（四道防线：主文件保护、阶段门控、跳阶段确认、细纲确认阻塞） |
+| `hooks/` | Hook 脚本（`session-start` 注入工作流状态、`pre-tool-use` 四道防线）。触发配置在 `.claude/settings.json`，`hooks/hooks.json` 已废弃 |
 | `tests/` | 脚本回归测试，不参与论文项目运行 |
 | `evals/` | skill description 触发边界评估，不参与论文项目运行 |
 
@@ -35,6 +35,8 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 | 图表数据溯源规则（Figure ID、数据文件、生成脚本、状态） | `skills/evidence-grounded-chapter-writer/references/figure-data-manifest-rules.md` |
 | 文献池分层（Tier 1/2/3 数量与职责） | `skills/thesis-outline-planner/references/evidence-rules.md` |
 | 计算链（8 步强制展开顺序） | `skills/evidence-grounded-chapter-writer/references/formula-calculation-rules.md` |
+| 用户确认信息的落盘规则（落盘映射表、覆盖范围） | `skills/thesis-writing-workflow/references/confirmation-save-rules.md` |
+| 确认问题模板（8 个确认门话术） | `skills/thesis-writing-workflow/references/confirmation-templates.md` |
 | status.json 状态机（fix-evidence → humanizer → format-cleaner → next-chapter） | workflow §强制串行规则 |
 
 ### 不描述默认行为
@@ -45,7 +47,7 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 ### ⭐ 标记约定
 
-`⭐` 标记表示"AI 容易跳过或遗漏的强制步骤"——不标 ⭐ 的步骤 AI 可能因对话压缩、上下文丢失或直觉判断而省略。仅用于真实存在的 AI 遗漏模式，不用作通用强调。
+`⭐` 标记表示"AI 容易跳过或遗漏的强制步骤"。不标 ⭐ 的步骤 AI 可能因对话压缩、上下文丢失或直觉判断而省略。仅用于真实存在的 AI 遗漏模式，不用作通用强调。
 
 ### 中文排版
 
@@ -64,13 +66,13 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 每个 skill 的 `scripts/` 不跨 skill 导入代码。如需共享工具函数，在各 skill 的 `scripts/` 下维护独立副本（如 `_shared.py`），每个副本只包含该 skill 实际使用的函数，确保每个 skill 可独立部署。
 
-修改共享函数时，只更新使用了该函数的 skill 副本，不同步到不使用该函数的 skill。当前分布：`git_snapshot.py`（workflow 含全部命令，humanizer 和 format-cleaner 仅含 `cmd_snapshot` 备份入口）、`_shared.py`（workflow 仅含 `setup_windows_utf8`，humanizer 版额外含 `mask_latex_inline_protected` 等函数，format-cleaner 版不含 humanizer 专有函数）。
+修改共享函数时，只更新使用了该函数的 skill 副本，不同步到不使用该函数的 skill。当前分布：`git_snapshot.py`（workflow 含全部命令含 list/rollback/diff/cleanup，humanizer 和 format-cleaner 仅含 `cmd_snapshot` + `main`，不含 list/rollback/diff/cleanup）、`_shared.py`（workflow 仅含 `setup_windows_utf8`，humanizer 版额外含 `mask_latex_inline_protected` 等函数，format-cleaner 版不含 humanizer 专有函数）。
 
 ### 新增产物同步
 新增 `.thesis-workflow/` 产物 → 同步更新 `README.md` 目录树 + 产物表、`workflow SKILL.md` 产出物列表。新增 `chapters/chX/` 下的阶段产物 → 同步更新目录树。新增 reference 文件 → 在所属 skill 参考文件表追加一行，并同步本文件（AGENTS.md）的单一权威定义表。
 
 ### 修改前先研究
-修改 skills 或 hooks 前，必须通过 skill-creator 和联网搜索获取相关知识——skill 设计最佳实践、相似问题的解决模式、AI 指令执行的已知陷阱。禁止凭直觉直接改，先研究再动手。
+修改 skills 或 hooks 前，必须通过 skill-creator 和联网搜索获取相关知识：skill 设计最佳实践、相似问题的解决模式、AI 指令执行的已知陷阱。禁止凭直觉直接改，先研究再动手。
 
 ## 新用户引导
 

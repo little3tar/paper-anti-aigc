@@ -23,13 +23,13 @@ description: >-
 | “用户说'写第X章'，细纲不用确认” | 必须输出细纲并等待用户显式确认，才能进入正文写作 |
 | “用户给了电机型号，直接写成'MC51 采用 XX 电机'” | 用户提供的型号/参数必须先确认 A/B/C 分类，B 类禁止用 A 类语气写成产品定论 |
 
-编排各阶段 skill 的调用顺序。不替代各阶段 skills——决定下一步该调用哪个 skill、何时暂停确认、何时阻止下游润色或格式收尾。
+编排各阶段 skill 的调用顺序。不替代各阶段 skills，决定下一步该调用哪个 skill、何时暂停确认、何时阻止下游润色或格式收尾。
 
 ## 执行约束
 
 **默认必须按 1→2→3→4→5 顺序执行全部五个阶段。** 用户要求”写论文””帮我跑一遍””完整论文写作”等未明确指定范围的请求，一律按完整流程执行，不跳过任何步骤。
 
-仅当用户消息中**明确写出**”只运行 X””只做 X””只做第 X 步””只跑 X 和 Y”等限定词时，才将执行范围限制到用户指定的阶段。模糊说法如”先做大纲””从审计开始””润色一下”不算明确指定范围——这些情况下仍需确认：是只做这一步，还是从这一步开始并完成后续所有步骤。
+仅当用户消息中**明确写出**”只运行 X””只做 X””只做第 X 步””只跑 X 和 Y”等限定词时，才将执行范围限制到用户指定的阶段。模糊说法如”先做大纲””从审计开始””润色一下”不算明确指定范围，这些情况下仍需确认：是只做这一步，还是从这一步开始并完成后续所有步骤。
 
 ### 例外场景（仅用户明确指定范围时）
 
@@ -65,10 +65,12 @@ description: >-
 2. 读取目标阶段依赖的上游产物（如 `outline.md`、`chapters/chX/draft.md`、`chapters/chX/audit.md`）。
 3. 读取 `.thesis-workflow/ledger/facts.md` 和 `.thesis-workflow/ledger/decisions.md`（如存在），获取已确认设计参数和决策。
 4. 若上游产物不存在或状态非 `confirmed`，且用户未明确声明跳过，**拒绝执行**并提示先运行上游阶段。
-5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**；若 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。`"format-cleaner"` 和 `"next-chapter"` 放行以支持修改回环。若 `status.json` 不存在且非独立模式，说明审计未运行，**强制拒绝**。**独立润色模式**（用户在消息中直接粘贴文本，而非引用论文文件或章节）不适用本门控——humanizer 将跳过 `status.json` 检查，润色结果直接返回，不写入产物文件。
-6. `academic-format-cleaner` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**；若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。此条件与 PreToolUse 钩子防线2 一致——format-cleaner 必须在 humanizer 完成后运行。**独立模式**（用户在消息中直接粘贴文本，而非引用论文文件）不适用本门控。
+5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**；若 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。`"format-cleaner"` 和 `"next-chapter"` 放行以支持修改回环。若 `status.json` 不存在且非独立模式，说明审计未运行，**强制拒绝**。**独立润色模式**（用户在消息中直接粘贴文本，而非引用论文文件或章节）不适用本门控，humanizer 将跳过 `status.json` 检查，润色结果直接返回，不写入产物文件。
+6. `academic-format-cleaner` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**；若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。此条件与 PreToolUse 钩子防线2 一致，format-cleaner 必须在 humanizer 完成后运行。**独立模式**（用户在消息中直接粘贴文本，而非引用论文文件）不适用本门控。
 7. 跨章阻塞规则：前一章的 `chapters/chX/status.json` 中 `next_allowed` 为 `"fix-evidence"` 时，**禁止开始下一章写作**。必须先将 P0/P1 清零并完成 humanizer+format-cleaner，`next_allowed` 变为 `"next-chapter"` 后才能进入下一章。
 8. 细纲确认阻塞规则：在 `ledger/chapter-status.md` 中，当前章细纲状态非 `confirmed` 时，**禁止进入正文写作**（即 `evidence-grounded-chapter-writer` 的步骤 3 和步骤 4）。细纲状态为 `draft` 时不得继续。
+
+**流转方向**：阶段必须按 审计 → humanizer → format-cleaner → 下一章 的顺序执行，不得倒序或跳过（humanizer 和 format-cleaner 的独立模式除外）。主文件输出后的修改回环（L1/L2/L3）遵循 §主文件输出后的修改回环，仍须经过润色和格式检查，不得跳过直接交付。
 
 ## 审计退回修复闭环
 
@@ -106,9 +108,10 @@ status.json 写 next_allowed = "fix-evidence"（禁止进入 humanizer 和下一
 ```
 
 **循环规则**：
-- 每一轮审计必须更新 `chapters/chX/audit.md`，记录本轮新发现和已修复项。修复信息只在文件中持久——对话上下文会被压缩，如果不落盘，下一轮审计（或下一个会话）无法知道哪些已修复、如何修复。
+- 每一轮审计必须更新 `chapters/chX/audit.md`，记录本轮新发现和已修复项。修复信息只在文件中持久。对话上下文会被压缩，如果不落盘，下一轮审计（或下一个会话）无法知道哪些已修复、如何修复。
 - `ledger/questions.md` 或 `chapters/chX/audit.md` 记录每条 P0/P1 的修复决策和来源。
 - 同一问题最多循环 3 轮；3 轮后仍未解决，将对应段落移出正文放入 `证据缺口清单`，在论文中显式标注为"待补证据"后继续。
+- 循环上限的完整定义见 revision-loop.md §循环上限。
 - 用户可在任意一轮确认"该项接受当前状态"，标记为 `accepted-by-user` 后放行。
 
 ### status.json 状态机
@@ -142,6 +145,12 @@ auditor 创建 status.json
 | `stage` | auditor 创建，humanizer/format-cleaner 更新 | 所有下游 skill | `"audited"` → `"humanized"` → `"format-cleaned"` |
 | `next_allowed` | auditor 创建，humanizer/format-cleaner 更新 | PreToolUse 钩子 + 下游 skill | `"fix-evidence"` → `"humanizer"` → `"format-cleaner"` → `"next-chapter"` |
 | `p0_count` / `p1_count` | auditor 创建并更新 | humanizer 门控检查 | 整数，均为 0 方可进入 humanizer |
+| `p2_count` | auditor 写入 | humanizer、format-cleaner 记录参考 | 整数，供下游知晓格式类问题数量，不阻塞 |
+| `green_paragraphs` | auditor 写入 | humanizer 步骤 1 | 段落编号列表（如 `["§2.1", "§3.2"]`），可正常润色 |
+| `blocked_paragraphs` | auditor 写入 | humanizer 步骤 1 | 段落编号列表（如 `["§2.3"]`），只做标点/连接词修正，不得改变技术表述确定性 |
+| `chapter` | auditor 创建时写入 | 各阶段元数据参考 | 字符串，如 `"ch3"` |
+| `timestamp` | 每次更新 status.json 的阶段写入 | 各阶段元数据参考 | ISO 8601 时间戳 |
+| `notes` | 各阶段可选写入 | 下游阶段可选读取 | 简短说明字符串 |
 
 **子 skill 规则**：auditor、humanizer、format-cleaner 的 SKILL.md 中各自描述本阶段的状态读取和更新操作，不复制完整状态链。修改状态链时只需更新此处。
 
@@ -274,7 +283,7 @@ auditor 创建 status.json
    - **前置条件**：`.thesis-workflow/outline.md` 存在且大纲已确认，或用户明确指定了写作范围。
    - 为选定章节生成细纲。
    - 只有章节包含建模、计算、设计选型、实验、仿真、算法或定量比较时，才添加公式/参数计划。
-   - **细纲必须经用户显式确认后才能进入正文写作。** Review-gated 和 preauthorized 模式均适用——预授权不跳过细纲内容确认。
+   - **细纲必须经用户显式确认后才能进入正文写作。** Review-gated 和 preauthorized 模式均适用，预授权不跳过细纲内容确认。
    - 检索证据并写出带 `[参考文献]`、title-based source marker 和图表占位符的章节草稿。
 
 3. **`reference-integrity-auditor`**
@@ -321,6 +330,8 @@ auditor 创建 status.json
    - 更新 `.thesis-workflow/ledger/chapter-status.md` 和 `operations-log.md`，记录写入时间、备份路径和最终版本号。
 5. **交付清单**：在输出中列出主文件路径（每章 1 个）、备份路径、各阶段产物路径和推荐下一步（如：编译 LaTeX、提交导师审阅）。
 
+> **此写入后如需进一步修改**（用户审阅发现错别字、表述调整、数据修正等），遵循 `references/revision-loop.md` 的分级处理路径（L1/L2/L3），不得以"工作流已完成"为由跳过润色和格式复查直接交付。
+
 ## 主文件输出后的修改回环
 
 修改分级（L1/L2/L3）、产物更新和备份规则见 `references/revision-loop.md`。核心要点：
@@ -349,36 +360,11 @@ auditor 创建 status.json
 
 ## 确认问题
 
-确认门只问当前必要问题，不要一次性问完所有问题。
-
-可使用这些模板：
-
-- 初始输出格式：“请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？未指定时我默认用对话 Markdown。”
-- 论文主文件：“请确认论文主文件存放位置和命名。默认放在 `output/` 子目录下按章使用 `output/main-ch1.md` ~ `output/main-chN.md`。如果你有指定位置或模板要求的目录，我以你指定的为准。”主文件路径确认后记录到 `ledger/decisions.md`。
-- 总大纲确认：“请确认是否按此总大纲进入第 X 章细纲；如需调整，请指出章节或研究重点。”
-- 细纲确认：”请确认本章细纲是否可以进入正文写作；如需调整，请指出需要增删的段落或图表。”
-- 证据缺口：”以下内容缺少来源。请提供材料，或允许我改为网络检索/降级表述。”
-- 真实主文件修改：”请确认是否直接修改论文主文件。确认后我会先备份原文件，再写回主文件，并把本轮结果另存到 `.thesis-workflow/` 对应阶段产物。”
-- 材料收录：”检测到你提供了以下材料：[文件清单]。是否同意我统一整理到 `.thesis-workflow/evidence/` 下，便于后续各阶段使用？”
-- 全流程完成：“第 X 章已通过全部五个阶段，审核均通过。是否将最终文本写入主文件？”（主文件路径已在输出格式确认时记录到 `ledger/decisions.md`）
+确认门只问当前必要问题，不要一次性问完所有问题。完整模板见 `references/confirmation-templates.md`。
 
 ### 用户确认/补充信息的落盘规则（⭐ 全流程适用）
 
-用户在**任何确认门**的回复中提供的新信息、纠正、补充细节，**必须在回复后立即写入对应 ledger 文件**，不得等到下一阶段或写作时再补。对话上下文可能被压缩，用户纠正的信息会丢失。
-
-| 信息类型 | 落盘目标 | 操作 |
-|---|---|---|
-| 新确认/修正的参数（B 类设计选择、C 类初值更新等） | `ledger/facts.md` | 追加新行，旧值标 `superseded` |
-| 计算类数值的修正（如”缸径改为 100mm”） | `calculation-records.md` | 旧记录标 `superseded`，追加新行，附修正说明 |
-| 新确认的决策（选型方向、计算方法、输出格式等） | `ledger/decisions.md` | 追加新行 |
-| 新增的待确认问题 | `ledger/questions.md` | 追加新行 |
-| 补充的文献/来源/标准 | `literature-pool.md` | 追加新行 |
-| 用户对 P0/P1 修复的确认或替代方案 | `chapters/chX/audit.md` | 追加修复记录 |
-| 用户提供的补充材料/数据 | `materials-inventory.md` | 追加编目行 |
-
-此规则覆盖**所有确认门**：总大纲确认、细纲确认、证据缺口确认、材料收录确认、A/B/C 分类确认、审计修复确认、主文件修改确认。
-
-落盘后向用户一句话确认：”以上信息已写入 `ledger/facts.md` / `calculation-records.md`。”
+用户在**任何确认门**的回复中提供的新信息、补充细节，必须在回复后立即写入对应文件。完整落盘映射表和覆盖范围见 `references/confirmation-save-rules.md`。落盘后向用户一句话确认：”以上信息已写入对应文件。”
 
 ## 输出默认值
 
@@ -397,7 +383,7 @@ auditor 创建 status.json
 
 ## 数据单一权威源
 
-- 所有计算类数值（缸径、推力、流量、功率等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。draft.md 工作稿中可用计算记录 ID（如 C3-01）标记数值来源，便于审计追踪。计算记录 ID 仅限 `.thesis-workflow/` 内部使用——**写入主文件（main-chX.md）前必须清除**，正文中直接呈现数值和标准选型结论，不得出现 C3-01 等内部编号。
+- 所有计算类数值（缸径、推力、流量、功率等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。draft.md 工作稿中可用计算记录 ID（如 C3-01）标记数值来源，便于审计追踪。计算记录 ID 仅限 `.thesis-workflow/` 内部使用，**写入主文件（main-chX.md）前必须清除**，正文中直接呈现数值和标准选型结论，不得出现 C3-01 等内部编号。
 - `ledger/facts.md` 只记录参数名、类型、来源和关联计算记录 ID。`main-tex-context.md` 引用 `ledger/facts.md`，不复制参数表。
 - 数值变更/公式修正/代入纠错/标准选型调整时，只需更新 `calculation-records.md` 一处（旧记录标 `superseded`，追加新行，不原地编辑）。draft.md 工作稿和 ledger 中引用计算记录 ID 指向最新有效记录，无需多处同步数值。审计时对照计算记录核验正文数值。
 
@@ -408,8 +394,8 @@ auditor 创建 status.json
 - `chapters/chX/audit.md`：第 X 章审计报告 + 文献修正记录（**全量覆盖写入**，不追加）。每轮审计用最新完整报告覆盖，报告中包含本轮全部问题及修复状态。不存正文副本。按章隔离。
 - `chapters/chX/status.json`：第 X 章门控状态（**覆盖写入**）。由 auditor 首次创建，humanizer 和 format-cleaner 更新 stage 和 next_allowed。下游阶段启动时读取此文件判断是否放行。按章隔离。
 - `chapters/chX/literature-notes.md`：第 X 章文献笔记缓存（**追加写入**）。写作和审计阶段按节分批获取后追加。
-- `chapters/chX/humanized.md`：第 X 章润色操作记录 + 变更清单（**不存全文副本**）。至少记录高风险片段对照、marker 完整性确认结论和 check_text.py 复查关键指标。最终润色后文本写入主文件。
-- `chapters/chX/format-cleaned.md`：第 X 章格式修复记录 + 变更清单（**不存全文副本**）。至少记录 marker 逐条核对结果、Unicode 转义序列检查结论和 check_format.py 最终 error 数。最终清理后文本写入主文件。
+- `chapters/chX/humanized.md`：第 X 章润色操作记录 + 变更清单（**不存全文副本**）。至少记录高风险片段对照、marker 完整性确认结论和 check_text.py 复查关键指标。主文件写入由全流程完成仪式执行，见 §全流程完成仪式。
+- `chapters/chX/format-cleaned.md`：第 X 章格式修复记录 + 变更清单（**不存全文副本**）。至少记录 marker 逐条核对结果、Unicode 转义序列检查结论和 check_format.py 最终 error 数。主文件写入由全流程完成仪式执行，见 §全流程完成仪式。
 - 主文件（`main-chX.md` / `main-chX.txt` / `main-chX.tex`）：第 X 章唯一对外输出文件。`.md` 为 Markdown 中间格式，`.txt` 为纯文本最终交付格式。
 - `outline.md`：论文总大纲（规划阶段产物，确认后冻结）。仅含任务理解、章节规划、任务对应、公式需求判断四段。进度、事实、证据缺口等运行时信息写入各自专属文件，不回写 outline.md。
 - `main-tex-context.md`：项目上下文（规划阶段首次创建，各阶段按需更新）。含章节结构、标题格式、中英双语规范、图表编号、引用方案、排版约定。各阶段读取其中的格式约定。

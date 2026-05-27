@@ -19,11 +19,11 @@
 - Project ledger 放在 `ledger/` 子目录下，各 skill 直接读写对应文件。按 `references/main-tex-context-template.md` 生成的项目上下文默认放在 `.thesis-workflow/main-tex-context.md`，由 `thesis-outline-planner` 在确认输出格式后首次创建。后续各阶段读取其中的格式约定；当主文件结构、章节标题、引用方案、模板或主文件路径变化时，触发变更的阶段负责更新。
 - 文献笔记缓存按章存储：`.thesis-workflow/chapters/chX/literature-notes.md`（随章保留，不自动清空）。
 - 图表数据溯源清单默认放在 `.thesis-workflow/figure-data-manifest.md`（持久文件，数据文件路径、生成脚本、输出格式）。
-- **生成图存放**：AI 根据 Mermaid 代码块、matplotlib 脚本、DOT 文件或提示词模板渲染产生的图片文件，统一存放在 `.thesis-workflow/generated-figures/`。命名格式 `Fig X-Y 描述.png`，与 manifest 中 Figure ID 对应。该目录与 `evidence/user-figures/` 分工明确——用户原始图片不放此处。规则见 chapter-writer 参考文件 `figure-data-manifest-rules.md`。
+- **生成图存放**：AI 根据 Mermaid 代码块、matplotlib 脚本、DOT 文件或提示词模板渲染产生的图片文件，统一存放在 `.thesis-workflow/generated-figures/`。命名格式 `Fig X-Y 描述.png`，与 manifest 中 Figure ID 对应。该目录与 `evidence/user-figures/` 分工明确，用户原始图片不放此处。规则见 chapter-writer 参考文件 `figure-data-manifest-rules.md`。
 - **用户视频存放**：用户提供的视频、动画、演示录像存放在 `.thesis-workflow/evidence/user-videos/`。规则见 `references/user-material-protocol.md`。
 - 计算记录默认放在 `.thesis-workflow/calculation-records.md`（计算底稿，正文数值的唯一权威数据源）。
 - 每次直接修改用户论文主文件前，先通过 `scripts/git_snapshot.py <文件>` 创建备份。脚本优先使用 Git 分支备份，回退到 `.thesis-workflow/backups/` 下的文件复制备份。不要把备份写进 skill 仓库。备份对应章文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
-- 直接修改真实论文主文件后，将本轮变更清单（改了什么、为什么改）写入 `.thesis-workflow/chapters/chX/` 对应阶段产物（`humanized.md` 或 `format-cleaned.md`）。这些产物是操作记录，不存全文副本——全文以主文件为唯一权威输出。
+- 直接修改真实论文主文件后，将本轮变更清单（改了什么、为什么改）写入 `.thesis-workflow/chapters/chX/` 对应阶段产物（`humanized.md` 或 `format-cleaned.md`）。这些产物是操作记录，不存全文副本。全文以主文件为唯一权威输出。
 - `.thesis-workflow/` 内运行产物默认主动更新，但不对每次更新创建备份；重要确认版、主文件结构大改、用户原始材料变更和真实主文件修改才创建备份或快照。重大确认版本建议使用 `--anchor` 参数创建锚点备份，锚点备份永不自动淘汰。
 - 以下 `.thesis-workflow/` 产物在关键节点应额外备份：`ledger/` 目录（每次确认后）、`outline.md`（总大纲确认后）、`chapters/chX/draft.md`（细纲确认后）。备份命令同主文件：`git_snapshot.py .thesis-workflow/outline.md --anchor`。
 - 普通备份保留数量可通过 `GIT_SNAPSHOT_MAX_BACKUPS` 环境变量或 `--max-backups N` 参数调整。锚点备份不受此限制。

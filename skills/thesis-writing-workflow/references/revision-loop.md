@@ -2,7 +2,7 @@
 
 全流程完成、文本写入主文件后，用户审阅时可能发现需要修改。此时 `status.json` 中 `next_allowed` 为 `"next-chapter"`，PreToolUse 钩子已放行主文件写入。修改后的内容仍须经过润色和格式审核，不得因为"工作流已完成"就直接交付未处理的文本。
 
-写回目标为对应章节文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。修改回环规则按章独立适用——改哪章就对该章文件执行备份和分级处理，不波及未修改的章。
+写回目标为对应章节文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。修改回环规则按章独立适用，改哪章就对该章文件执行备份和分级处理，不波及未修改的章。
 
 ## 修改分级与处理路径
 
@@ -30,11 +30,21 @@
 - L3 修改前额外备份 `chapters/chX/draft.md`：`git_snapshot.py .thesis-workflow/chapters/chX/draft.md`。
 - 多次回环时，每次修改前均备份，不覆盖之前的备份。
 
+## 循环上限
+
+> **本节是修改回环循环上限的单一权威定义。** 各子 skill SKILL.md 中涉及循环上限的描述均引用自此节。
+
+- 同一章节的修改回环（L1/L2/L3）最多 **3 轮**。
+- 3 轮后用户仍未满意，暂停自动修改流程，提示用户选择：(a) 接受当前版本；(b) 提供具体修改指令后人工介入；(c) 将争议段落标记为 `needs-human-review` 后继续下一章。
+- 用户在任意一轮确认"该项接受当前状态"可提前结束循环。
+
+注意：此上限仅适用于**主文件输出后的修改回环**（L1/L2/L3）。**审计修复闭环**（P0/P1 > 0 时的 fix-evidence 循环，见 workflow §审计退回修复闭环）有独立的 3 轮上限，由 workflow SKILL.md §审计退回修复闭环定义。
+
 ## 禁止事项
 
 - 不得因为"工作流已完成"就将 L2/L3 级修改直接写入主文件而不重跑检查和润色。
-- L3 级修改不得只改主文件而不同步 `chapters/chX/draft.md`——草稿是内容权威源，主文件是输出快照。
+- L3 级修改不得只改主文件而不同步 `chapters/chX/draft.md`，草稿是内容权威源，主文件是输出快照。
 - 拆分模式下，不得因修改第 X 章而未经检查就同步改动其他章的主文件。
-- 回环中不得修改 `status.json` 的 `next_allowed`——该字段由各阶段的正式流程依次更新：审计（`"humanizer"`）→ humanizer（`"format-cleaner"`）→ format-cleaner（`"next-chapter"`）。回环修改不进正式流程，不更新门控状态。
-	
-	**适用范围**：此规则适用于主文件输出后的用户审阅修改回环（L1/L2/L3 级修改）。**审计修复闭环**（P0/P1 > 0 时的 fix-evidence 循环，见 workflow §审计退回修复闭环）独立管理——该闭环中 auditor 在 P0/P1 清零后必须更新 `next_allowed` 为 `"humanizer"`，不受此限制。
+- **回环中不得修改 `status.json` 的 `next_allowed`**。该字段由各阶段的正式流程依次更新：审计（`"humanizer"`）→ humanizer（`"format-cleaner"`）→ format-cleaner（`"next-chapter"`）。回环修改不进正式流程，不更新门控状态。
+
+  **适用范围**：此规则仅适用于**主文件输出后的用户审阅修改回环**（L1/L2/L3 级修改）。**审计修复闭环**（P0/P1 > 0 时的 fix-evidence 循环，见 workflow §审计退回修复闭环）独立管理，该闭环中 auditor 在 P0/P1 清零后**必须更新** `next_allowed` 为 `"humanizer"`，不受此限制。
