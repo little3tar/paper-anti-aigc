@@ -80,15 +80,17 @@ cp settings.json your-project/.claude/settings.json
 
 ```bash
 cp -r skills/* your-project/.opencode/skills/
-cp -r hooks/* your-project/.opencode/hooks/
 ```
+
+> OpenCode 支持 SKILL.md 格式的 skills，但 **不支持 Claude Code 的 Hook 协议**（PreToolUse/PostToolUse/Stop 事件格式不同）。hooks 目录仅供 Claude Code 使用，OpenCode 下无需复制。
 
 **Cursor / 其他**
 
 ```bash
 cp -r skills/* your-project/.agents/skills/
-cp -r hooks/* your-project/.cursorkit/hooks/
 ```
+
+> Cursor 的 Hook 配置使用 `~/.cursor/hooks.json`（camelCase 事件名 + 不同 JSON schema），与 Claude Code 的 `settings.json` 格式不兼容。hooks 目录仅供 Claude Code 使用，Cursor 下无需复制。
 
 > **关于 `skills/*/agents/openai.yaml`**：这些文件是 OpenCode/Cursor 兼容层（`interface.display_name` / `short_description` / `default_prompt`），Claude Code 忽略它们。Claude Code 的 agent 定义应放置在 `.claude/agents/*.md`。
 
