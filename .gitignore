@@ -29,7 +29,7 @@ format-dict-*.md
 # 仅当从 skills 目录运行脚本且未正确设置工作目录时才会意外生成于此。
 # 保留这些规则以防止开发/测试时的误提交。
 .thesis-workflow/
-.humanizer-backups/
+# *.bak 和 *.anchor 为防御性规则，防止编辑器临时文件和备份残留被误提交
 *.bak
 *.anchor
 **/references/main-tex-context.md

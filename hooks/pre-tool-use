@@ -95,7 +95,16 @@ def is_main_thesis_file(file_path: str, workflow_dir: Path) -> bool:
 
 
 def is_stage_product(file_path: str, stage: str) -> bool:
-    """检查文件路径是否匹配指定阶段的产物。"""
+    """检查文件路径是否匹配指定阶段的产物。
+
+    stage 代码与 workflow 阶段编号的映射：
+      "02" = 阶段2 evidence-grounded-chapter-writer → draft.md
+      "03" = 阶段3 reference-integrity-auditor → audit.md
+      "04" = 阶段4 engineering-paper-humanizer → humanized.md
+      "05" = 阶段5 academic-format-cleaner → format-cleaned.md
+    阶段1（thesis-outline-planner）产物为 outline.md，位于 .thesis-workflow/ 根目录，
+    不属于按章产物，因此本 Hook 不检查。
+    """
     products_new = {
         "02": re.compile(r"chapters/ch\d+/draft\.md$"),
         "03": re.compile(r"chapters/ch\d+/audit\.md$"),
@@ -267,18 +276,37 @@ def check_detail_outline_gate(file_path: str, workflow_dir: Path) -> dict | None
     except OSError:
         return None
 
+    # 第一遍：解析表头行，定位"细纲"列索引（不硬编码列位置）
+    detail_col: int | None = None
     for line in text.splitlines():
-        # 加固表格解析：strip 首尾管道符及空白，取非空列
         stripped = line.strip()
         if not stripped.startswith("|"):
             continue
         cols = [c.strip() for c in stripped.strip("|").split("|")]
-        # 期望格式：| 章节 | 大纲 | 细纲 | 草稿 | 审计 | 润色 | 格式 | 备注 |
-        if len(cols) < 4:
+        if len(cols) < 2:
+            continue
+        # 表头行特征：首列为"章节"
+        if cols[0] == "章节":
+            for i, col in enumerate(cols):
+                if col == "细纲":
+                    detail_col = i
+                    break
+            break
+
+    if detail_col is None:
+        return None  # 找不到"细纲"列，表格格式可能已变更，静默跳过不误判
+
+    # 第二遍：查找目标章的数据行，读取动态定位的细纲列
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        cols = [c.strip() for c in stripped.strip("|").split("|")]
+        if len(cols) <= detail_col:
             continue
         if cols[0] != ch:
             continue
-        detail_outline = cols[2]  # 第2列（0-indexed）为细纲状态
+        detail_outline = cols[detail_col]
         if detail_outline != "confirmed":
             return make_deny(
                 f"第{ch}章细纲状态为 '{detail_outline}'（非 confirmed），"

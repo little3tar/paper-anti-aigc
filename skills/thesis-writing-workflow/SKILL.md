@@ -405,3 +405,17 @@ auditor 创建 status.json
 遵循 `references/source-policy.md`。
 
 核心规则：不能为了推动流程而发明看似有来源的 claim。unsupported facts、parameters、formulas 和 conclusions 不进入正文；应放入 `未写入正文的待补资料`、`证据缺口清单` 或 project ledger，或向用户索要材料。
+
+## 参考文件
+
+| 文件 | 用途 |
+| --- | --- |
+| `references/output-and-backup.md` | 产物路径、文件更新规则、备份协议 |
+| `references/source-policy.md` | 三级来源检索协议（Zotero → 用户 → 网络） |
+| `references/user-material-protocol.md` | 用户材料收录、A/B/C 分类与消化规则 |
+| `references/project-ledger-rules.md` | 项目台账结构、标签与存放规则 |
+| `references/revision-loop.md` | 主文件输出后的分级修改回环 |
+| `references/confirmation-templates.md` | 各确认门提示模板（8 个话术） |
+| `references/confirmation-save-rules.md` | 用户确认信息的落盘映射表 |
+| `references/main-tex-context-template.md` | 论文主文件上下文模板（格式约定字段） |
+| `references/latex-output-guide.md` | LaTeX 项目生成指南（模板检测、Markdown→LaTeX 转换、编译流程） |

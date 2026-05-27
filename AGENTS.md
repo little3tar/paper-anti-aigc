@@ -33,7 +33,7 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 | 三级来源检索协议（Zotero → 用户 → 网络） | `skills/thesis-writing-workflow/references/source-policy.md` |
 | 主文件上下文模板（格式约定字段） | `skills/thesis-writing-workflow/references/main-tex-context-template.md` |
 | 图表数据溯源规则（Figure ID、数据文件、生成脚本、状态） | `skills/evidence-grounded-chapter-writer/references/figure-data-manifest-rules.md` |
-| 文献池分层（Tier 1/2/3 数量与职责） | `skills/thesis-outline-planner/references/evidence-rules.md` |
+| 文献池规模分级（按任务量：30-50/10+/2-5 篇） | `skills/thesis-outline-planner/references/evidence-rules.md` |
 | 计算链（8 步强制展开顺序） | `skills/evidence-grounded-chapter-writer/references/formula-calculation-rules.md` |
 | 用户确认信息的落盘规则（落盘映射表、覆盖范围） | `skills/thesis-writing-workflow/references/confirmation-save-rules.md` |
 | 确认问题模板（8 个确认门话术） | `skills/thesis-writing-workflow/references/confirmation-templates.md` |

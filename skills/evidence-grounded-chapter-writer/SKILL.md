@@ -2,9 +2,10 @@
 name: evidence-grounded-chapter-writer
 description: >-
   用于基于证据撰写、扩写或修订中文工程类毕业论文章节。用户要求写第X章/写某一节、
-  继续写/接着写、扩写/展开这一段、修改/修订草稿、draft/expand/revise/continue 某一章，
-  并需要 Zotero-first literature retrieval、source marker、citation placeholders、
-  图表占位、公式/参数计划、calculation chains、evidence gap lists 或 approval checkpoints 时使用。
+  继续写/接着写、扩写/展开这一段、修改/修订草稿，并需要文献检索、source marker、引用占位符、
+  图表占位、公式/参数计划、计算链、证据缺口清单或确认检查点时使用。
+  也适用于 draft/expand/revise/continue a chapter, Zotero-first literature retrieval,
+  citation placeholders, calculation chains, evidence gap lists。
   应在大纲或章节目标明确后运行。
 ---
 
@@ -160,3 +161,5 @@ description: >-
 | `references/project-ledger-rules.md` | 项目台账规则 |
 | `references/experiment-planning-rules.md` | 仿真、实验、计算验证的协议规划和 mock 数据边界 |
 | `references/literature-review-rules.md` | 文献综述的 evidence map、段落蓝图和反罗列规则 |
+| 见 workflow router 参考文件 `source-policy.md` | 三级来源检索协议（Zotero → 用户 → 网络），证据检索和缺口补齐时使用 |
+| 见 workflow router 参考文件 `user-material-protocol.md` | 用户材料 A/B/C 分类与表述语气规则 |

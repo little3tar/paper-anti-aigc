@@ -215,4 +215,4 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE>
 | `references/rewrite-guide.md` | 中文工程论文改写规则 |
 | `references/punctuation-guide.md` | 引号和破折号专项规则 |
 | `references/optional-checks.md` | 可选质量评判 |
-| 见 workflow router 参考文件 `main-tex-context-template.md` | 论文主文件结构地图模板；由 outline-planner 首次创建，humanizer 读取其中格式约定 |
+| 见 workflow router 参考文件 `main-tex-context-template.md` | 项目上下文格式定义；humanizer 读取由模板生成的 `.thesis-workflow/main-tex-context.md` 获取格式约定 |

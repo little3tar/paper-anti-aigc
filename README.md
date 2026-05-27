@@ -360,6 +360,10 @@ python skills/thesis-writing-workflow/scripts/git_snapshot.py --list
 python skills/thesis-writing-workflow/scripts/git_snapshot.py --rollback paper.tex
 ```
 
+### LaTeX 项目生成
+
+格式清理完成后，可通过 workflow router 的 `latex-output-guide.md` 将 Markdown 章节转换为 LaTeX 项目（`main.tex` + 章节 `.tex` 文件 + `references.bib`），支持学校模板检测和 `ctexart` 默认模板。
+
 ### DOCX 翻译
 
 `docx-translator` 不参与论文写作流程，是独立的文档翻译工具。主要用途是将外文论文、技术文档等翻译为中文并保留原始 Word 格式。
