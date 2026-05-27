@@ -136,6 +136,8 @@ class PreToolUseHookTests(unittest.TestCase):
             base = Path(tmp)
             (base / ".thesis-workflow").mkdir()
             (base / ".thesis-workflow" / "chapters" / "ch1").mkdir(parents=True)
+            # 防线 3 会检查上游产物 outline.md 是否存在，补充它以隔离"仅缺 status.json"的条件
+            (base / ".thesis-workflow" / "outline.md").touch()
 
             output = self._run(
                 "Write",
