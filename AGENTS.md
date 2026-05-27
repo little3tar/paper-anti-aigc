@@ -53,14 +53,24 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 技术文档自身的中文正文使用弯引号 `""`、`''`，代码块和 YAML frontmatter 中的字符串使用 ASCII 直引号。
 
+### 术语一致性
+
+同一概念在全仓库使用**唯一名称**。新增概念时在本文档的单一权威定义表中记录权威名称，其他文件一律使用该名称引用。修改概念名称时 `grep` 搜索全仓库替换，不保留旧名称别名（如"文献池分层"改为"文献池规模分级"后，全仓库不得残留旧术语）。
+
+常见的不一致高发区：skill 名称大小写（`thesis-writing-workflow` vs `Thesis Writing Workflow`）、stage code 与阶段编号（`"02"` vs `阶段2`）、产物文件名（`main-tex-context.md` vs `main-tex-context-template.md`）。
+
 ### 子 skill 引用 workflow，不复述
 文件产出 boilerplate 只在 workflow §输出与文件安全 定义。子 skill 步骤 1 写："文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/xxx.md`。"
+
+**门控条件是复述最高发区**：humanizer 和 format-cleaner 需要在启动时自检门控条件，AI 容易把 workflow §强制串行规则中的 `next_allowed` 取值枚举、P0/P1 判断逻辑完整抄进子 skill SKILL.md。正确做法是写"本阶段门控条件见 workflow §强制串行规则第X条，此处不重述具体取值枚举"，只保留一句阻塞后果说明（如"P0/P1 > 0 时拒绝继续"）。当前 humanizer 和 format-cleaner 已遵循此模式，新增子 skill 或修改门控逻辑时参照执行。
 
 ### 跨 skill 引用可解析
 
 用文字说明（"见 workflow router 的同名参考文件"），不写 `../other-skill/references/xxx.md`。
 
 子 skill 参考文件表中的跨 skill 引用统一使用"见 <skill> 参考文件 `xxx.md`"格式，用途列填写该文件在本 skill 中的使用场景。
+
+**正文引用必须入表**：子 skill 正文中任何位置（Red Flags、工作流程、步骤说明）通过"见 <skill> 参考文件 `xxx.md`"引用的跨 skill 文件，**必须在末尾参考文件表中也列出一行**。仅正文引用不入表视为遗漏，审计时按不一致问题处理。
 
 ### 脚本自包含
 
@@ -71,8 +81,13 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 ### 新增产物同步
 新增 `.thesis-workflow/` 产物 → 同步更新 `README.md` 目录树 + 产物表、`workflow SKILL.md` 产出物列表。新增 `chapters/chX/` 下的阶段产物 → 同步更新目录树。新增 reference 文件 → 在所属 skill 参考文件表追加一行，并同步本文件（AGENTS.md）的单一权威定义表。
 
+**原子提交**：新增文件与引用该文件的修改必须在**同一次提交**中完成。不允许先提交引用再补文件（导致 checkout 后引用悬空），也不允许先提交文件再补引用（导致文件孤立无人知晓）。
+
 ### 修改前先研究
+
 修改 skills 或 hooks 前，必须通过 skill-creator 和联网搜索获取相关知识：skill 设计最佳实践、相似问题的解决模式、AI 指令执行的已知陷阱。禁止凭直觉直接改，先研究再动手。
+
+**修改后检查影响范围**：修改单一权威定义文件中的规则后，必须 `grep` 搜索全仓库引用该规则的所有文件，检查是否需要连带更新。重点检查：子 skill SKILL.md 中的引用描述、Hook 脚本中的匹配逻辑、AGENTS.md 单一权威定义表中的路径。子 skill 中的引用与权威定义不一致时，以权威定义为准并同步修正子 skill。
 
 ## 新用户引导
 
