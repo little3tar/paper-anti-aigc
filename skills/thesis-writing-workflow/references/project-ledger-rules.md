@@ -1,6 +1,6 @@
 # 项目台账规则
 
-默认位置：论文项目根目录下的 `.thesis-workflow/ledger/` 子目录，汇总索引为 `.thesis-workflow/project-ledger.md`。不要在可复用的 skill 目录中创建或更新项目台账。
+默认位置：论文项目根目录下的 `.thesis-workflow/ledger/` 子目录。不要在可复用的 skill 目录中创建或更新项目台账。
 
 项目台账用于长期论文项目，需要已确认的事实、数据、公式、来源和决策跨章节和跨 Agent 会话保留。在活跃的论文工作流中，台账是常规运行产物：每个阶段开始时读取，阶段结束时若变更了已确认信息或开放证据缺口则更新。
 
@@ -15,12 +15,11 @@
     decisions.md      ← 已确认的决策（输出格式/路径/引用方案等）
     chapter-status.md ← 章节进展追踪（每章 6 列：大纲/细纲/草稿/审计/润色/格式）
     questions.md      ← 结构化待确认问题
-  project-ledger.md   ← 汇总索引（指向 ledger/ 各文件）
 ```
 
 ## 数值型参数规则
 
-计算类数值（缸径、推力、流量等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。`ledger/facts.md` 只记录参数名、类型、来源和关联计算记录 ID，不复制数值。draft.md 工作稿中用计算记录 ID 标记数值来源，写入主文件前清除——正文中直接呈现数值，不得出现 C3-01 等内部编号。
+计算类数值（缸径、推力、流量等）的唯一权威源为 `.thesis-workflow/calculation-records.md`。`ledger/facts.md` 只记录参数名、类型、来源和关联计算记录 ID，不复制数值。若 `ledger/facts.md` 中记录的参数值与 `calculation-records.md` 中的计算记录不一致，以 `calculation-records.md` 为准——facts.md 仅供参考索引，不存储最终数值。draft.md 工作稿中用计算记录 ID 标记数值来源，写入主文件前清除——正文中直接呈现数值，不得出现 C3-01 等内部编号。
 
 ## 何时询问
 

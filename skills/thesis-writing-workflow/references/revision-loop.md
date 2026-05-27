@@ -24,6 +24,8 @@
 
 ## 回环中的备份
 
+备份操作遵循 `output-and-backup.md` §备份协议。回环特有规则：
+
 - L2 / L3 修改前，先通过 `git_snapshot.py <主文件>` 创建备份。
 - L3 修改前额外备份 `chapters/chX/draft.md`：`git_snapshot.py .thesis-workflow/chapters/chX/draft.md`。
 - 多次回环时，每次修改前均备份，不覆盖之前的备份。
@@ -34,3 +36,5 @@
 - L3 级修改不得只改主文件而不同步 `chapters/chX/draft.md`——草稿是内容权威源，主文件是输出快照。
 - 拆分模式下，不得因修改第 X 章而未经检查就同步改动其他章的主文件。
 - 回环中不得修改 `status.json` 的 `next_allowed`——该字段由各阶段的正式流程依次更新：审计（`"humanizer"`）→ humanizer（`"format-cleaner"`）→ format-cleaner（`"next-chapter"`）。回环修改不进正式流程，不更新门控状态。
+	
+	**适用范围**：此规则适用于主文件输出后的用户审阅修改回环（L1/L2/L3 级修改）。**审计修复闭环**（P0/P1 > 0 时的 fix-evidence 循环，见 workflow §审计退回修复闭环）独立管理——该闭环中 auditor 在 P0/P1 清零后必须更新 `next_allowed` 为 `"humanizer"`，不受此限制。

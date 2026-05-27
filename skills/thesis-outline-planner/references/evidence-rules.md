@@ -50,4 +50,4 @@
 
 ## 公式需求分级
 
-公式需求分级遵循 evidence-grounded-chapter-writer 的 `references/formula-calculation-rules.md` §公式需求分级（四分法：无需/可选/建议/必须）。规划阶段按此分级标记每章的预期公式需求，不在规划阶段编造具体公式。
+公式需求分级见 chapter-writer 参考文件 `formula-calculation-rules.md` §公式需求分级（四分法：无需/可选/建议/必须）。规划阶段按此分级标记每章的预期公式需求，不在规划阶段编造具体公式。

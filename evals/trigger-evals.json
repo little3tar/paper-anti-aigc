@@ -6,10 +6,94 @@
     "expected_reason": "请求完整 thesis workflow、确认点和多阶段协作。"
   },
   {
+    "skill_name": "thesis-writing-workflow",
+    "query": "论文第4章草稿写好了，接下来该审计还是润色？告诉我下一步做什么。",
+    "should_trigger": true,
+    "expected_reason": "询问工作流下一步，属于 workflow router 职责。"
+  },
+  {
+    "skill_name": "thesis-writing-workflow",
+    "query": "我的论文已经做完审计了，帮我决定现在该跑 humanizer 还是 format-cleaner。",
+    "should_trigger": true,
+    "expected_reason": "multi-skill orchestration 决策请求。"
+  },
+  {
+    "skill_name": "thesis-writing-workflow",
+    "query": "run the full thesis pipeline with staged review gates and approval checkpoints",
+    "should_trigger": true,
+    "expected_reason": "英文完整工作流编排请求，含确认点。"
+  },
+  {
+    "skill_name": "thesis-writing-workflow",
+    "query": "我需要管理 project ledger，几章之间的状态需要统一协调。",
+    "should_trigger": true,
+    "expected_reason": "project ledger 和跨章协调是 workflow router 的职责。"
+  },
+  {
+    "skill_name": "thesis-writing-workflow",
+    "query": "把这段英文翻译成中文。",
+    "should_trigger": false,
+    "expected_reason": "翻译需求，不是论文工作流编排。"
+  },
+  {
+    "skill_name": "thesis-writing-workflow",
+    "query": "帮我写一段 Python 代码处理 CSV 文件。",
+    "should_trigger": false,
+    "expected_reason": "通用编程请求，与论文写作无关。"
+  },
+  {
+    "skill_name": "thesis-writing-workflow",
+    "query": "检查这个 LaTeX 文件的引用格式有没有问题。",
+    "should_trigger": false,
+    "expected_reason": "单一阶段请求，无需 workflow 编排。"
+  },
+  {
     "skill_name": "thesis-outline-planner",
     "query": "根据我的毕业设计任务书，帮我规划一份中文工程类论文大纲，列出每章需要的文献、图表和后续要补的实验材料。",
     "should_trigger": true,
     "expected_reason": "任务书到章节结构、证据需求和图表计划。"
+  },
+  {
+    "skill_name": "thesis-outline-planner",
+    "query": "导师给了我这个题目和几个关键要求，帮我出一份论文大纲，要包含文献规划和章节映射。",
+    "should_trigger": true,
+    "expected_reason": "导师要求到章节规划，含文献规划。"
+  },
+  {
+    "skill_name": "thesis-outline-planner",
+    "query": "Turn this design brief into a chapter-by-chapter thesis outline with a Zotero-first literature pool.",
+    "should_trigger": true,
+    "expected_reason": "英文 design brief 到大纲转换，含 Zotero 文献池。"
+  },
+  {
+    "skill_name": "thesis-outline-planner",
+    "query": "我的研究 proposal 有5个研究问题，帮我规划成论文章节结构，每章需要什么类型的证据也标出来。",
+    "should_trigger": true,
+    "expected_reason": "research proposal 到章节映射，含证据类型规划。"
+  },
+  {
+    "skill_name": "thesis-outline-planner",
+    "query": "帮我把任务书里的设计参数、验收标准和参考文献全部提取出来，然后出大纲。",
+    "should_trigger": true,
+    "expected_reason": "任务书解析 + 大纲生成，outline-planner 的核心功能。"
+  },
+  {
+    "skill_name": "thesis-outline-planner",
+    "query": "帮我修改论文第三章的措辞，让它读起来更自然。",
+    "should_trigger": false,
+    "expected_reason": "正文润色需求，应触发 humanizer 而非大纲规划。"
+  },
+  {
+    "skill_name": "thesis-outline-planner",
+    "query": "检查这个 Markdown 文件里的表格格式对不对。",
+    "should_trigger": false,
+    "expected_reason": "通用格式检查，不是论文大纲规划。"
+  },
+  {
+    "skill_name": "thesis-outline-planner",
+    "query": "查一下 2025 年煤矿安全规程的最新版本号。",
+    "should_trigger": false,
+    "expected_reason": "标准检索请求，不是论文大纲规划。"
   },
   {
     "skill_name": "evidence-grounded-chapter-writer",
@@ -18,10 +102,94 @@
     "expected_reason": "基于已确认章节目标起草，并要求 source markers 和 evidence gaps。"
   },
   {
+    "skill_name": "evidence-grounded-chapter-writer",
+    "query": "接着写第四章，上回写到 4.1 节了，这次从 4.2 开始。",
+    "should_trigger": true,
+    "expected_reason": "继续写/接着写的章节写作续写请求。"
+  },
+  {
+    "skill_name": "evidence-grounded-chapter-writer",
+    "query": "第三章 3.1 节写得太简略了，帮我扩写这一段，要加上公式推导的 calculation chain。",
+    "should_trigger": true,
+    "expected_reason": "扩写请求，含公式计算链要求。"
+  },
+  {
+    "skill_name": "evidence-grounded-chapter-writer",
+    "query": "Draft section 2.3 of my engineering thesis with Zotero-backed citations and figure placeholders.",
+    "should_trigger": true,
+    "expected_reason": "英文章节写作请求，含 Zotero 引用和图表占位。"
+  },
+  {
+    "skill_name": "evidence-grounded-chapter-writer",
+    "query": "我这里有电机参数表，帮我基于这些数据写驱动系统选型分析，注意 A/B/C 分类，不确定的参数标设计假设。",
+    "should_trigger": true,
+    "expected_reason": "带用户数据的章节写作，含 A/B/C 分类和设计假设要求。"
+  },
+  {
+    "skill_name": "evidence-grounded-chapter-writer",
+    "query": "帮我把这段文字里的破折号都处理掉，再把语气改得自然一点。",
+    "should_trigger": false,
+    "expected_reason": "正文润色需求，应触发 humanizer。"
+  },
+  {
+    "skill_name": "evidence-grounded-chapter-writer",
+    "query": "检查这篇论文的引用有没有造假。",
+    "should_trigger": false,
+    "expected_reason": "证据审计需求，应触发 reference-integrity-auditor。"
+  },
+  {
+    "skill_name": "evidence-grounded-chapter-writer",
+    "query": "总结一下这篇英文文献的摘要。",
+    "should_trigger": false,
+    "expected_reason": "文献摘要总结，非章节写作。"
+  },
+  {
     "skill_name": "reference-integrity-auditor",
     "query": "审计这段论文草稿有没有 unsupported claims、疑似编造文献、标准规范缺版本号和公式无法复现的问题。",
     "should_trigger": true,
     "expected_reason": "明确要求证据完整性、标准规范和计算链审计。"
+  },
+  {
+    "skill_name": "reference-integrity-auditor",
+    "query": "帮我把第二章的所有 source marker 检查一遍，看看有没有题名对不上的或者缺来源的。",
+    "should_trigger": true,
+    "expected_reason": "source marker 一致性和完整性审计。"
+  },
+  {
+    "skill_name": "reference-integrity-auditor",
+    "query": "Audit chapter 4 for fabricated-looking literature, weak citations, and P0/P1 issues.",
+    "should_trigger": true,
+    "expected_reason": "英文审计请求，含 P0/P1 分类。"
+  },
+  {
+    "skill_name": "reference-integrity-auditor",
+    "query": "这篇论文里引用了好几个国家标准，帮我校验标准号、版本年份和适用范围对不对。",
+    "should_trigger": true,
+    "expected_reason": "标准规范来源核验。"
+  },
+  {
+    "skill_name": "reference-integrity-auditor",
+    "query": "第三章的计算公式我怀疑有些参数是编的，帮我逐一核实参数来源和推导链。",
+    "should_trigger": true,
+    "expected_reason": "公式可复现性和参数来源审计。"
+  },
+  {
+    "skill_name": "reference-integrity-auditor",
+    "query": "帮我把这段文字改得更自然一点，去掉 AI 味道。",
+    "should_trigger": false,
+    "expected_reason": "润色需求，应触发 humanizer。"
+  },
+  {
+    "skill_name": "reference-integrity-auditor",
+    "query": "帮我写第五章的引言部分。",
+    "should_trigger": false,
+    "expected_reason": "章节写作请求，应触发 chapter-writer。"
+  },
+  {
+    "skill_name": "reference-integrity-auditor",
+    "query": "这个 CSV 文件的数据有没有异常值？",
+    "should_trigger": false,
+    "expected_reason": "数据分析请求，不是论文审计。"
   },
   {
     "skill_name": "engineering-paper-humanizer",
@@ -30,34 +198,141 @@
     "expected_reason": "正文润色、去 AI 味，并保护技术含义。"
   },
   {
+    "skill_name": "engineering-paper-humanizer",
+    "query": "下面这段文字读起来太像 AI 写的了，帮我改得自然一点，像普通本科生写的工程论文。",
+    "should_trigger": true,
+    "expected_reason": "降低 AI 痕迹、要求自然表达。"
+  },
+  {
+    "skill_name": "engineering-paper-humanizer",
+    "query": "Humanize this Chinese engineering thesis prose to reduce AI detection patterns while keeping all technical parameters intact.",
+    "should_trigger": true,
+    "expected_reason": "英文化 humanize 请求。"
+  },
+  {
+    "skill_name": "engineering-paper-humanizer",
+    "query": "帮我处理一下这段话里的中文引号问题，还有破折号、多余括号，但要保留技术缩写括号和标准号。",
+    "should_trigger": true,
+    "expected_reason": "中文标点处理。"
+  },
+  {
+    "skill_name": "engineering-paper-humanizer",
+    "query": "整章润色完后再检查一遍有没有残留的模板化套话和连接词泛滥。",
+    "should_trigger": true,
+    "expected_reason": "模板化套话清理和连接词过密检查。"
+  },
+  {
+    "skill_name": "engineering-paper-humanizer",
+    "query": "帮我在这一章里补几篇参考文献，把缺的证据都填上。",
+    "should_trigger": false,
+    "expected_reason": "证据补全需求，应先用 auditor 再用 chapter-writer，不能直接 humanizer。"
+  },
+  {
+    "skill_name": "engineering-paper-humanizer",
+    "query": "检查这个 tex 文件的引用命令有没有放在中文句号里。",
+    "should_trigger": false,
+    "expected_reason": "LaTeX 引用格式检查，应触发 format-cleaner。"
+  },
+  {
+    "skill_name": "engineering-paper-humanizer",
+    "query": "帮我写一份 3000 字的文献综述。",
+    "should_trigger": false,
+    "expected_reason": "章节写作请求，不是 existing text 的润色。"
+  },
+  {
     "skill_name": "academic-format-cleaner",
-    "query": "帮我检查这个 tex 文件的 \\cite{} 位置、百分号转义、命令断行和临时占位符，正文内容不要润色。",
+    "query": "帮我检查这个 tex 文件的引用位置、百分号转义、命令断行和临时占位符，正文内容不要润色。",
     "should_trigger": true,
     "expected_reason": "LaTeX 格式层清理。"
   },
   {
-    "skill_name": "engineering-paper-humanizer",
-    "query": "帮我把这份论文草稿里的每个结论都补上真实参考文献，缺的你直接找几篇看起来合适的。",
-    "should_trigger": false,
-    "expected_reason": "这是证据补全/来源核验风险场景，应先用 reference-integrity-auditor 或检索流程，不能直接 humanizer。"
+    "skill_name": "academic-format-cleaner",
+    "query": "论文定稿前帮我做最后的格式检查：引用位置、列表格式、数学块保护和残留标记。",
+    "should_trigger": true,
+    "expected_reason": "格式收尾的多项检查。"
   },
   {
     "skill_name": "academic-format-cleaner",
-    "query": "帮我重写第二章研究现状，让表达更像中文论文。",
-    "should_trigger": false,
-    "expected_reason": "这是正文改写需求，应触发 engineering-paper-humanizer 或章节写作，不是格式清理。"
+    "query": "Check my LaTeX paper for citation placement issues, BibTeX formatting, and unprotected percent signs.",
+    "should_trigger": true,
+    "expected_reason": "英文 LaTeX 格式检查请求。"
   },
   {
-    "skill_name": "thesis-outline-planner",
-    "query": "只检查 README 里的 Markdown 表格有没有断列。",
-    "should_trigger": false,
-    "expected_reason": "普通 Markdown 格式检查，不是论文任务书到大纲规划。"
+    "skill_name": "academic-format-cleaner",
+    "query": "这份 Markdown 草稿有很多格式问题，帮我清理一下代码块、数学公式和列表的格式。",
+    "should_trigger": true,
+    "expected_reason": "Markdown 格式清理。"
   },
   {
-    "skill_name": "reference-integrity-auditor",
-    "query": "把这段文字改得更自然一点，语气不要像 AI。",
+    "skill_name": "academic-format-cleaner",
+    "query": "帮我把这个 Markdown 文件转成纯文本，去掉所有格式标记但保留图表占位和代码块。",
+    "should_trigger": true,
+    "expected_reason": "Markdown 到纯文本转换。"
+  },
+  {
+    "skill_name": "academic-format-cleaner",
+    "query": "帮我重写这一段，让表达更像中文论文。",
     "should_trigger": false,
-    "expected_reason": "润色需求，不是证据完整性审计。"
+    "expected_reason": "正文改写需求，应触发 humanizer 或 chapter-writer。"
+  },
+  {
+    "skill_name": "academic-format-cleaner",
+    "query": "这篇论文的图需要重新画一下，用 matplotlib。",
+    "should_trigger": false,
+    "expected_reason": "图表绘制请求，不是格式清理。"
+  },
+  {
+    "skill_name": "academic-format-cleaner",
+    "query": "帮我把这个 JSON 文件格式化一下。",
+    "should_trigger": false,
+    "expected_reason": "通用 JSON 格式化，不是学术格式清理。"
+  },
+  {
+    "skill_name": "docx-translator",
+    "query": "帮我把这个英文论文的 docx 文件翻译成中文，保留原文档的格式和样式。",
+    "should_trigger": true,
+    "expected_reason": "明确的 docx 翻译请求。"
+  },
+  {
+    "skill_name": "docx-translator",
+    "query": "我需要将这份技术报告的 Word 文件翻译为中文，里面有表格和图表标题，都要保留。",
+    "should_trigger": true,
+    "expected_reason": "技术报告 docx 翻译，含表格处理。"
+  },
+  {
+    "skill_name": "docx-translator",
+    "query": "Translate this academic paper from English to Chinese, keep the original Word formatting.",
+    "should_trigger": true,
+    "expected_reason": "英文学术论文 docx 翻译。"
+  },
+  {
+    "skill_name": "docx-translator",
+    "query": "这份英文 docx 里有大量工程术语，翻译成中文时要注意术语准确性和一致性。",
+    "should_trigger": true,
+    "expected_reason": "工程文档 docx 翻译，含术语处理。"
+  },
+  {
+    "skill_name": "docx-translator",
+    "query": "请将这个 docx 文件中的英文翻译为中文。",
+    "should_trigger": true,
+    "expected_reason": "通用 docx 翻译请求。"
+  },
+  {
+    "skill_name": "docx-translator",
+    "query": "帮我把这篇中文论文的 docx 翻译成英文。",
+    "should_trigger": false,
+    "expected_reason": "中译英是 docx-translator 的反向操作，当前 skill 仅支持外译中。"
+  },
+  {
+    "skill_name": "docx-translator",
+    "query": "直接帮我翻译这段文字：Abstract: This paper presents a novel approach...",
+    "should_trigger": false,
+    "expected_reason": "粘贴文本翻译，不是 docx 文件翻译。"
+  },
+  {
+    "skill_name": "docx-translator",
+    "query": "帮我把 PDF 文件里的英文翻译成中文。",
+    "should_trigger": false,
+    "expected_reason": "PDF 翻译，不是 docx 文件格式。"
   }
 ]
-

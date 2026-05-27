@@ -1,12 +1,11 @@
 ---
 name: engineering-paper-humanizer
 description: >-
-  用于中文工程类论文正文润色与去 AI 味。用户要求润色文本、润色以下文本/处理以下文本（粘贴段落）、润色一段/一章、先润色再写入、
-  改写论文段落、优化表述、改得自然一点、降低 AI 痕迹、减少机器感/模板化套话、处理中文引号
-  或破折号、humanize thesis prose、academic Chinese polishing 时使用。
-  适用于 LaTeX、Markdown、plain text 中的正文内容；不处理 citation placement、BibTeX/LaTeX
-  命令或 Markdown 格式问题，这些交给 academic-format-cleaner。
-  用户在消息中直接粘贴待润色文本时，自动进入独立模式，跳过工作流门控。
+  用于中文工程类论文正文润色与去 AI 味。用户要求润色/改写论文段落、优化表述、
+  改得自然一点、降低 AI 痕迹/模板化套话、处理中文引号破折号括号、
+  humanize thesis prose、academic Chinese polishing 时使用。
+  适用于 LaTeX/Markdown/plain text 正文；用户直接粘贴文本时自动独立模式。
+  不处理引用位置/LaTeX 命令/Markdown 格式（交给 academic-format-cleaner）。
 ---
 
 # Engineering Paper Humanizer
@@ -17,8 +16,8 @@ description: >-
 |---|---|
 | "这段写得太平淡，加点升华" | 工程论文用参数、约束和代价说话，不加宏大叙事 |
 | "破折号改成逗号太麻烦，保留" | 中文正文破折号必须处理，不得保留 `——` |
-| "括号里只是参数说明，保留吧" | 中文解释性括号默认清理——参数数值、量程单位、条件补充全部通过语言叙述替代，不得保留括号形式。只保留专业缩写英文全称、标准号、型号括号 |
-| "status.json 里 P0 还在，先润色" | P0/P1 未清零时拒绝润色（validation mode 除外），退回到审计 |
+| "括号里只是参数说明，保留吧" | 中文解释性括号默认清理——参数数值、量程单位、条件补充全部通过语言叙述替代，不得保留括号形式。只保留专业缩写英文全称括号；标准号和型号在正文中通过语言叙述引用（策略见 rewrite-guide.md §标准引用括号专项处理），表格内可保留括号 |
+| "status.json 里 P0 还在，先润色" | AI 以为"证据有问题是审计的事，润色是文字的事，分开处理就行"。实际上 P0/P1 未清零说明正文中仍有不可靠的结论，润色只会让它们看起来更可信。必须先退回审计修复证据（validation mode 除外） |
 | "这个结论的证据我帮它补上" | 不补写来源、数据、实验条件，缺证据移入缺口清单 |
 | "润色就是压缩文字" | 保留数据口径、方法条件、指标含义和结论边界，不删必要信息 |
 | "marker 里的题名太长，缩写一下" | 题名是 Zotero/.bib 文献匹配的唯一键——缩写一个词、改一个字符，bibliography 自动解析就匹配不上，参考文献列表会缺条目。不论题名多长，原文照录，不缩写、不询问用户 |
@@ -26,28 +25,33 @@ description: >-
 | "这段有很多参数，检测器应该不会判 AI" | 真实报告显示，参数密集但结论过圆、结构过整齐的段落仍会高风险 |
 | "先按我的规则统一润色，报告只是参考" | 用户提供 AI 检测报告时，高风险片段优先级高于通用敏感词清单 |
 
-本 skill 负责中文工程论文的正文表达和通用中文标点，不承担 LaTeX、Markdown 或 txt 的格式检查职责。它可以读取 `.tex`、`.md`、`.txt`，但目标是正文内容，而不是命令、引用位置、标题层级或代码块格式。
+处理中文工程论文的正文表达与通用中文标点。读取 `.tex`、`.md`、`.txt` 文件，以正文内容为目标——不触碰 LaTeX 命令、引用位置、标题层级或代码块格式，这些交给 academic-format-cleaner。
 
 运行脚本需要 Python 3.7 或更高版本；Git 仅在需要查看差异时使用。
 
 ## 运行模式
 
-本 skill 根据用户输入来源自动判断入口模式，无需用户手动指定：
+根据用户输入来源自动判断入口模式，无需用户手动指定：
 
 | 场景 | 判断依据 | 模式 |
 |---|---|---|
-| 用户粘贴文本到消息中（如"润色以下文本：……""处理这段文字：……"） | 消息中包含待润色的完整段落（多句、有实质技术内容） | **独立模式** |
+| 用户粘贴文本到消息中（如"润色以下文本：……""处理这段文字：……"） | 用户在消息中直接粘贴待润色文本 | **独立模式** |
 | 用户指定论文文件或章节（如"润色 output/main-ch3.md""润色 §3.2"） | 消息中引用文件路径或章节编号 | **工作流模式** |
 
 **独立模式**：不检查 `status.json`，不读取审计报告，不写入产物文件。跳过步骤 1（读取上下文）的工作流检查部分，只执行核心润色：运行文本检查 → 按规则改写 → 标点专项 → 二次 AI 痕迹审计 → 输出。结果直接返回，不落盘。
 
 **工作流模式**：遵循下方完整流程，包括门控检查、审计报告读取、备份、产物落盘和 `chapters/chX/status.json` 更新。若 `.thesis-workflow/chapters/chX/status.json` 不存在但用户要求润色论文文件，先提示用户完成上游阶段（审计），用户确认后方可继续。
 
-无论使用哪种入口，humanizer 的默认完成状态都是“尽量降低 AI 检测风险”。改写时优先改变句式骨架、语序和连接方式，降低过度成熟、过度整齐、过度精炼的模型痕迹；可把非关键专业表达改成更普通的说法，允许适度口语化。默认保留并适当增加“的、了、把、这个、这样、前面算出来的、后面还需要”等普通承接词。数值、单位、型号、标准号、引用和核心技术关系仍需保留。
+无论使用哪种入口，humanizer 的默认完成状态都是”尽量降低 AI 检测风险”。改写时优先改变句式骨架、语序和连接方式，降低过度成熟、过度整齐、过度精炼的模型痕迹；可把非关键专业表达改成更普通的说法，允许适度口语化。默认保留并适当增加”的、了、把、这个、这样、前面算出来的、后面还需要”等普通承接词。数值、单位、型号、标准号、引用和核心技术关系仍需保留。
+
+**工作流模式**下细分为三种子模式（由 workflow router 设定，详见 workflow §执行模式）：
+- Review-gated：所有确认点暂停，P0/P1 硬性阻断
+- Preauthorized：跳过文件/格式询问，但细纲确认不跳过，P0/P1 仍阻塞
+- Validation：P0/P1 可不为 0，产物写入 validation 目录
 
 ## 在 Thesis Workflow 中的位置
 
-本 skill 应位于 `reference-integrity-auditor` 之后、`academic-format-cleaner` 之前。
+位于 `reference-integrity-auditor` 之后、`academic-format-cleaner` 之前。
 
 推荐顺序：
 
@@ -113,10 +117,15 @@ description: >-
 
 ### 2. 运行文本检查
 
+根据文件扩展名选择对应格式运行 `check_text.py`：
+
 ```bash
-python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE>
+# .md 文件
 python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE> --format markdown
+# .txt 文件
 python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE> --format plain
+# .tex 文件（默认 LaTeX 格式）
+python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE>
 ```
 
 统一使用 `check_text.py` 作为正文检查入口。
@@ -175,6 +184,8 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE> --format plain
 - **ASCII 直双引号** `"..."`：必须为 0（英文整句引用除外）
 以上三项**任一非零** → 列出每条的具体行号和上下文，逐处修复，修复后重新运行 `check_text.py` 确认归零。**三项未全部归零禁止进入步骤5。**
 
+**修复循环上限**：步骤 4 修复循环最多 2 轮。2 轮后仍未归零的项，记录具体行号和未解决原因到 `humanized.md`，标记为"人工审核"后进入步骤 5。
+
 ### 5. 二次 AI 痕迹审计
 
 完成初稿后，做一次短审：
@@ -185,9 +196,8 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE> --format plain
 4. 对照用户提供的检测报告复核：最高风险片段是否已经改变句式骨架，而不仅是替换同义词。
 
 **步骤5自检**：再次运行 `check_text.py`，逐项确认：
-1. **PUNCT-002（破折号）和 PUNCT-007（解释性括号）数量是否均为 0？** 非零 → 返回步骤4，不得继续
-2. errors/warnings 总量是否比步骤2明显下降？无明显改善 → 返回步骤3-4重做
-3. AI 痕迹密度是否降低？
+1. errors/warnings 总量是否比步骤2明显下降？无明显改善 → 返回步骤3-4重做
+2. AI 痕迹密度是否降低？
 
 ### 6. 输出
 
@@ -210,7 +220,9 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE> --format plain
 | `scripts/check_text.py` | 通用中文文本检查 |
 | `scripts/text_rules.json` | 文本规则数据 |
 | `scripts/generate_dict.py` | 生成文本规则速查表 |
+| `scripts/git_snapshot.py` | 智能备份脚本（修改主文件前创建备份） |
+| `scripts/_shared.py` | checker 和 dict 生成器共享工具函数 |
 | `references/rewrite-guide.md` | 中文工程论文改写规则 |
 | `references/punctuation-guide.md` | 引号和破折号专项规则 |
 | `references/optional-checks.md` | 可选质量评判 |
-| `thesis-writing-workflow/references/main-tex-context-template.md` | 论文主文件结构地图模板；由 outline-planner 首次创建，humanizer 读取其中格式约定 |
+| 见 workflow router 参考文件 `main-tex-context-template.md` | 论文主文件结构地图模板；由 outline-planner 首次创建，humanizer 读取其中格式约定 |

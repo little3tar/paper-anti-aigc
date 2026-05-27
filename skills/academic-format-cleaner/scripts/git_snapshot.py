@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""论文工作流智能备份脚本（humanizer 专用精简版）
+"""论文工作流智能备份脚本（format-cleaner 专用精简版）
 
 规范源：skills/thesis-writing-workflow/scripts/git_snapshot.py（含全部命令）。
-本副本仅包含 humanizer 实际使用的 cmd_snapshot 备份入口，不含 list/rollback/diff/cleanup。
+本副本仅包含 format-cleaner 实际使用的 cmd_snapshot 备份入口，不含 list/rollback/diff/cleanup。
 
 智能备份策略（按优先级）：
 1. Git 分支备份 - 当前目录已经是 Git 仓库且已有提交时使用

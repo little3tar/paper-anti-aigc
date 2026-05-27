@@ -38,3 +38,6 @@ node_modules
 package.json
 package-lock.json
 bun.lock
+
+# 运行时生成的基准测试结果
+evals/benchmark.json

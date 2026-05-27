@@ -1,28 +1,3 @@
 {
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
-            "async": false
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/pre-tool-use\"",
-            "timeout": 15
-          }
-        ]
-      }
-    ]
-  }
+  "_comment": "DEPRECATED: 此文件不再生效。hooks 配置已迁移至 .claude/settings.json（Claude Code）。OpenCode/Cursor 等其他工具请参照各工具的配置文件格式。本文件仅作历史参考，不再包含有效配置。"
 }

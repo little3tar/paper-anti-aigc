@@ -21,9 +21,8 @@
 
 ## 计算验证协议
 
-- **参数来源表**：每个参数给出符号、含义、数值、来源（文献/标准/用户材料/设计假设）、单位。
-- **代入步骤**：逐步展示数值代入过程，便于复查。
-- **单位检查**：检验量纲一致性和最终单位正确性。
+计算验证遵循 `formula-calculation-rules.md` 定义的 8 步计算链。本章实验验证特有的补充规则如下：
+
 - **裕量校核**：与规范限值、安全系数、工程经验值对比。
 - **公式可复现性**：从原始公式到最终结果的完整链，缺任何一环不得写计算结论。
 
@@ -44,8 +43,8 @@
 
 ## 图表数据清单
 
-`.thesis-workflow/figure-data-manifest.md` 格式（详见 `references/figure-data-manifest-rules.md`）：
+`.thesis-workflow/figure-data-manifest.md` 格式（完整列定义见 `references/figure-data-manifest-rules.md`）：
 
-| Figure | Data file | Real/mock | Source | Script | Outputs |
-|---|---|---|---|---|---|
-| Fig 3-1 | data/ch3/curve.csv | real | 实验台采集 | scripts/ch3/fig01.py | PNG, SVG |
+| Figure ID | 数据文件 | 真实/mock | 来源说明 | 生成脚本 | 输出格式 | 状态 |
+|---|---|---|---|---|---|---|
+| Fig 3-1 | data/ch3/curve.csv | real | 实验台采集 | scripts/ch3/fig01.py | PNG, SVG | draft |

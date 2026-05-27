@@ -21,7 +21,7 @@ description: >-
 | "Zotero 题名太长，缩写一下方便读" | Zotero 题名必须原样转录，不缩写、不翻译、不改写 |
 | "Web 搜到的文献，题名差不多就行" | Web 来源也需原样记录检索到的题名，不确定时标注 `[题名待核验]` |
 
-本 skill 把任务书、设计说明或导师要求转成可审阅、可追踪证据来源的论文计划。它是 thesis workflow 的第一步，应在章节撰写前使用。
+将任务书、设计说明或导师要求转化为可审阅、可追踪证据来源的论文计划。作为 thesis workflow 第一步，在章节撰写前运行。
 
 ## 前置交互：当任务边界不明确时
 
@@ -40,9 +40,7 @@ description: >-
 3. **研究题目** → 暂定也可以，后续可调。
 4. **主要方法** → 仿真/实验/理论推导/设计计算/算法/数据分析，影响证据需求和公式计划。
 5. **设计边界确认**（⭐ 关键步骤）→ 帮用户区分以下三类信息：
-   - **A 类 — 产品/对象的公开规格**：研究对象已有的、可从产品手册、数据表、标准配置清单等公开来源查证的参数和配置。例如"MC51 标配 JOY 某型截割头"。写作时用"XX 采用/配备..."的客观陈述语气，配外部引用。
-   - **B 类 — 用户的设计选择**：用户经过多因素权衡后自行确认的设计参数、选型、配置，不是产品公开数据。例如"本文选取 YX3-280M-4 型电机，额定功率 90 kW，理由为..."。写作时用"本文选取/确定/选用..."的设计决策语气，说明选取依据。
-   - **C 类 — 待计算/待推导的参数**：需要通过负载分析、选型计算、仿真或实验才能最终确定的参数，目前仅有初值或范围。写作时展示推导过程，不可直接写成定论。
+   - 完整定义和写作语气对照见 workflow §用户材料收录协议（`user-material-protocol.md`）。简要来说：A 类=产品公开规格（写作"XX 配备..."），B 类=用户设计选择（写作"本文选取..."），C 类=待推导验证（不可写成定论）。
    - 主动询问用户："你提供的参数中，哪些是产品本身已有的公开规格（A 类），哪些是你自己分析后做的设计选择（B 类）？"给出初步分类建议让用户确认。
 6. **章节结构推荐** → 根据以上信息给出推荐结构，让用户确认或微调。
 7. **汇总确认** → 展示全部信息（含 A/B/C 分类结果），获得确认后进入正式大纲规划。
@@ -63,10 +61,9 @@ description: >-
    - 关键信息缺失时，只问最小必要确认问题。
 
 3. **确认输出格式**
-   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/outline.md`（总大纲，章→节→小节层级）、`.thesis-workflow/literature-pool.md`（文献池全表，按主题分组）和 `.thesis-workflow/main-tex-context.md`（项目上下文，按 `thesis-writing-workflow/references/main-tex-context-template.md` 填充）。章节细纲在写作阶段生成，存放于 `.thesis-workflow/chapters/chX/detailed-outline.md`。
-   - 只有当交付格式影响工作时才问：”请确认输出格式：直接在对话中给出 Markdown，还是生成 `.tex`、`.md` 或 `.txt` 文件？”
-   - 如果用户要求 Word 文档，先以 `.tex`、`.md` 或 `.txt` 完成并确认计划，再通过 pandoc 或 `python-docx` 转换为 `.docx`。
-   - **创建项目上下文**：确认输出格式后，读取 workflow 的 `references/main-tex-context-template.md`，将已确定的格式选择（输出格式、标题格式、中英双语规范、图表编号、段落风格、引用方案、章节结构）填入模板生成 `.thesis-workflow/main-tex-context.md`。当前无法确定的字段留空或标注"待确认"，后续阶段补充。
+   - 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/outline.md`（总大纲，章→节→小节层级）、`.thesis-workflow/literature-pool.md`（文献池全表，按主题分组）和 `.thesis-workflow/main-tex-context.md`（项目上下文）。
+   - 只有当交付格式影响工作时才问输出格式。如果用户要求 Word 文档，先以 `.md` 或 `.txt` 完成并确认计划，再转换为 `.docx`。
+   - **创建项目上下文**：确认输出格式后，读取 workflow 的 `references/main-tex-context-template.md`，将已确定的格式选择填入模板生成 `.thesis-workflow/main-tex-context.md`。当前无法确定的字段留空或标注”待确认”，后续阶段补充。
 
 4. **建立文献池**
    - 遵循强制三级检索协议（见 workflow §来源策略）：Zotero → 用户 → 网络，每项都要尝试，不得只查一项就停止。
@@ -102,7 +99,7 @@ description: >-
 
 涉及文献检索、source marker 设计或来源 fallback 时读取 `references/evidence-rules.md`。
 
-规划阶段使用的 source marker 遵循 `evidence-grounded-chapter-writer/references/citation-key-rules.md` 中的统一定义。核心标记：`[文献题名]`、`[网络资料: ...]`、`[标准规范: ...]`、`[用户材料: ...]`、`[设计假设: ...]`、`[待核实: ...]`。`[Mxx]` 仅供内部工作稿标记信息来源，最终输出前必须清除。缺失来源记录在 `证据缺口清单` 或 project ledger。
+规划阶段使用的 source marker 遵循 `citation-key-rules.md`（chapter-writer 参考文件）统一定义，此处不重述。缺失来源记录在 `证据缺口清单` 或 project ledger。
 
 不要编造设备参数、性能结论、标准、实验结果或具名文献。看似合理但无来源的内容不进入正文；只在 `证据缺口清单` 中写明需要的证据类型、检索词、可能标准号或待核验版本。已核验标准可进入正文作为正式支撑；只有用户确认的设计假设可以进入正文，并必须标明为 design assumption。
 
@@ -112,6 +109,8 @@ description: >-
 | --- | --- |
 | `references/evidence-rules.md` | 文献检索、source marker 设计和来源 fallback |
 | `references/figures-guide.md` | 图表生成路径、流程图提示词模板和表格规范 |
+| 见 workflow router 参考文件 `user-material-protocol.md` | 用户材料收录协议（A/B/C 分类、编目、消化规则） |
+| 见 chapter-writer 参考文件 `citation-key-rules.md` | Source marker 格式统一定义 |
 
 ## 推荐输出结构
 

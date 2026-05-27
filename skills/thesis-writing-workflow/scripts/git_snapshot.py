@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 """论文工作流智能备份脚本
 
+humanizer 和 format-cleaner skill 中各有精简副本（仅含 cmd_snapshot 备份入口），
+修改共享函数时只更新使用了该函数的副本。
+
 智能备份策略（按优先级）：
 1. Git 分支备份 - 当前目录已经是 Git 仓库且已有提交时使用
 2. 文件复制备份 - 非 Git 目录、空 Git 仓库或 Git 不可用时使用 `.thesis-workflow/backups/`
@@ -38,7 +41,7 @@ from _shared import setup_windows_utf8
 
 setup_windows_utf8()
 
-BACKUP_PREFIX = "backup/humanizer/"
+BACKUP_PREFIX = "backup/thesis/"
 FILE_BACKUP_DIR = Path(".thesis-workflow") / "backups"
 ANCHOR_SUFFIX = ".anchor"  # 锚点标记文件后缀
 
@@ -243,8 +246,8 @@ def file_backup(filepath: str, max_backups: int, anchor: bool = False,
             print(f"[INFO] {filepath} 与已有备份 {existing.name} 内容相同，跳过备份")
             return True
 
-    # 创建带时间戳的备份文件（毫秒精度，避免秒级冲突）
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")[:18]  # 截断微秒到毫秒
+    # 创建带时间戳的备份文件（厘秒精度，避免秒级冲突）
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")[:18]  # 截断微秒到厘秒（2位）
     filename = f"{path.stem}_{timestamp}{path.suffix}"
     backup_path = backup_dir / filename
 
