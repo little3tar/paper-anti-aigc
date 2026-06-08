@@ -1,11 +1,12 @@
----
+﻿---
 name: evidence-grounded-chapter-writer
 description: >-
   用于基于证据撰写、扩写或修订中文工程类毕业论文章节。用户要求写第X章/写某一节、
-  继续写/接着写、扩写/展开这一段、修改/修订草稿，并需要文献检索、source marker、引用占位符、
+  继续写/接着写/续写/扩写/展开这一段、修改/修订草稿，并需要文献检索、source marker、引用占位符、
   图表占位、公式/参数计划、计算链、证据缺口清单或确认检查点时使用。
-  也适用于 draft/expand/revise/continue a chapter, Zotero-first literature retrieval,
-  citation placeholders, calculation chains, evidence gap lists。
+  也适用于 draft/expand/revise/continue a chapter, Zotero-first literature retrieval。
+  不处理正文润色和去 AI 味（交给 engineering-paper-humanizer）；
+  不处理标点、格式和引用位置（交给 academic-format-cleaner）。
   应在大纲或章节目标明确后运行。
 ---
 
@@ -33,6 +34,7 @@ description: >-
 | "图表占位符写了就行，代码后面再说" | 简单流程图/架构图/算法框图在输出"图片与表格占位符清单"时，必须同时附加 Mermaid 代码块、matplotlib 脚本或 Graphviz DOT 文件作为可渲染附件，复杂示意图附提示词模板。不得只留 `[此处插入图片：...]` 空占位符 |
 | "图表台账 manifest 好像有个文件，不用管" | 章节写作完成后必须更新 `.thesis-workflow/figure-data-manifest.md`，逐图填充 Figure ID、数据文件、来源说明、生成脚本、输出格式和状态。规则见 `references/figure-data-manifest-rules.md` |
 | "这章写完了，更新 outline.md 的进度/事实/缺口" | outline.md 规划阶段后冻结。进度 → `ledger/chapter-status.md`；事实 → `ledger/facts.md`；图表 → `figure-data-manifest.md`。不修改 outline.md。 |
+| "选用 XXX 传感器，量程…输出…，选用 YYY 传感器，量程…输出…" 连续 3 个元件都这样写 | 工程设计章节的元件选型、参数校核和功能模块描述句式必须轮换。连续 3 个元件的描述不得使用相同句式骨架。轮换模板见 `references/literature-review-rules.md` §工程设计段落句式轮换 |
 
 在 thesis outline 或章节目标已经明确后调用。写出有证据边界的章节草稿，杜绝为了让正文完整而编造事实、参数、公式或文献。
 

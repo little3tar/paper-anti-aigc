@@ -156,3 +156,5 @@ description: >-
 | `references/formula-audit-rules.md` | 公式、参数、单位和计算链审计规则 |
 | `references/project-ledger-audit-rules.md` | 使用 project ledger 时的对照审计规则 |
 | 见 chapter-writer 参考文件 `literature-notes-cache-rules.md` | 文献笔记缓存规则（审计阶段读取缓存校验正文 claim） |
+| 见 workflow router 参考文件 `source-policy.md` | 三级来源检索协议（缺来源时强制依次尝试 Zotero → 用户 → 网络） |
+| 见 chapter-writer 参考文件 `citation-key-rules.md` | 残留标记的完整定义和清理规则 |

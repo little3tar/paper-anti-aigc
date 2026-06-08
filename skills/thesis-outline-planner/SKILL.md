@@ -111,6 +111,7 @@ description: >-
 | `references/figures-guide.md` | 图表生成路径、流程图提示词模板和表格规范 |
 | 见 workflow router 参考文件 `user-material-protocol.md` | 用户材料收录协议（A/B/C 分类、编目、消化规则） |
 | 见 chapter-writer 参考文件 `citation-key-rules.md` | Source marker 格式统一定义 |
+| 见 chapter-writer 参考文件 `figure-data-manifest-rules.md` | 图表数据溯源规则（Figure ID、数据文件、生成脚本、状态） |
 
 ## 输出结构
 

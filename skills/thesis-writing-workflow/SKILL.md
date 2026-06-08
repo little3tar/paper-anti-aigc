@@ -1,9 +1,9 @@
----
+﻿---
 name: thesis-writing-workflow
 description: >-
   用于协调整套中文工程类毕业论文工作流。用户要求完整写论文/跑一遍论文流程/从头写论文、
   按流程来/该用哪个 skill/接下来做什么、complete thesis writing process、
-  staged agent workflow、从任务书到大纲和章节、source audit、humanized revision、
+  staged agent workflow、帮我写论文/帮我写毕业论文/写一篇毕业论文/从任务书到大纲和章节、source audit、humanized revision、
   final format cleanup、approval checkpoints、output format confirmation、
   project ledger 或 multi-skill orchestration 时使用。
   默认按序执行全部五个阶段，用户明确指定范围时才允许局部执行。
@@ -65,8 +65,8 @@ description: >-
 2. 读取目标阶段依赖的上游产物（如 `outline.md`、`chapters/chX/draft.md`、`chapters/chX/audit.md`）。
 3. 读取 `.thesis-workflow/ledger/facts.md` 和 `.thesis-workflow/ledger/decisions.md`（如存在），获取已确认设计参数和决策。
 4. 若上游产物不存在或状态非 `confirmed`，且用户未明确声明跳过，**拒绝执行**并提示先运行上游阶段。
-5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**；若 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。`"format-cleaner"` 和 `"next-chapter"` 放行以支持修改回环。若 `status.json` 不存在且非独立模式，说明审计未运行，**强制拒绝**。**独立润色模式**（用户在消息中直接粘贴文本，而非引用论文文件或章节）不适用本门控，humanizer 将跳过 `status.json` 检查，润色结果直接返回，不写入产物文件。
-6. `academic-format-cleaner` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**；若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。此条件与 PreToolUse 钩子防线2 一致，format-cleaner 必须在 humanizer 完成后运行。**独立模式**（用户在消息中直接粘贴文本，而非引用论文文件）不适用本门控。
+5. `engineering-paper-humanizer` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**（validation mode 不在此限）；若 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。`"format-cleaner"` 和 `"next-chapter"` 放行以支持修改回环。若 `status.json` 不存在且非独立模式且非 validation mode，说明审计未运行，**强制拒绝**。**独立润色模式**（用户在消息中直接粘贴文本，而非引用论文文件或章节）不适用本门控，humanizer 将跳过 `status.json` 检查，润色结果直接返回，不写入产物文件。
+6. `academic-format-cleaner` 额外检查 `status.json`：若 `p0_count` 或 `p1_count` > 0，**强制拒绝**（validation mode 不在此限）；若 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，**强制拒绝**。此条件与 PreToolUse 钩子防线2 一致，format-cleaner 必须在 humanizer 完成后运行。**独立模式**（用户在消息中直接粘贴文本，而非引用论文文件）不适用本门控。
 7. 跨章阻塞规则：前一章的 `chapters/chX/status.json` 中 `next_allowed` 为 `"fix-evidence"` 时，**禁止开始下一章写作**。必须先将 P0/P1 清零并完成 humanizer+format-cleaner，`next_allowed` 变为 `"next-chapter"` 后才能进入下一章。
 8. 细纲确认阻塞规则：在 `ledger/chapter-status.md` 中，当前章细纲状态非 `confirmed` 时，**禁止进入正文写作**（即 `evidence-grounded-chapter-writer` 的步骤 3 和步骤 4）。细纲状态为 `draft` 时不得继续。
 

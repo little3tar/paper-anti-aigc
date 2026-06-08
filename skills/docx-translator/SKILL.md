@@ -6,7 +6,7 @@ description: >-
   Word document translation 时使用。也适用于需要保留原文档格式的学术论文、技术报告、工程文档翻译场景。
 ---
 
-# DOCX 文档翻译工作流
+# Docx Translator
 
 将英文（或其他语言）.docx 文件翻译为中文，生成翻译后的 .docx，保留原文格式与语境风格。
 

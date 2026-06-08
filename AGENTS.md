@@ -17,7 +17,7 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 ### 内容组织
 
-### 单一权威定义
+#### 单一权威定义
 每条规则只在一处完整定义，他处一句话引用。以下规则已有权威定义，不在其他文件中完整重述：
 
 | 规则 | 权威位置 |
@@ -41,22 +41,22 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 | 确认问题模板（8 个确认门话术） | `skills/thesis-writing-workflow/references/confirmation-templates.md` |
 | status.json 状态机（fix-evidence → humanizer → format-cleaner → next-chapter） | workflow §强制串行规则 |
 
-### 不描述默认行为
+#### 不描述默认行为
 只写例外。持久文件不写"保留不删除"，正常备份不写"保留最近 N 个"。
 
-### Red Flag = 反直觉的 AI 陷阱
+#### Red Flag = 反直觉的 AI 陷阱
 只放 AI 特有的直觉错误。不是规则重述。写之前问：这是 AI 才容易犯的错吗？
 
-### ⭐ 标记约定
+#### ⭐ 标记约定
 
 `⭐` 标记表示"AI 容易跳过或遗漏的强制步骤"。不标 ⭐ 的步骤 AI 可能因对话压缩、上下文丢失或直觉判断而省略。仅用于真实存在的 AI 遗漏模式，不用作通用强调。
 
-### 子 skill 引用 workflow，不复述
+#### 子 skill 引用 workflow，不复述
 文件产出 boilerplate 只在 workflow §输出与文件安全 定义。子 skill 步骤 1 写："文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/xxx.md`。"
 
 **门控条件是复述最高发区**：humanizer 和 format-cleaner 需要在启动时自检门控条件，AI 容易把 workflow §强制串行规则中的 `next_allowed` 取值枚举、P0/P1 判断逻辑完整抄进子 skill SKILL.md。正确做法是写"本阶段门控条件见 workflow §强制串行规则第X条，此处不重述具体取值枚举"，只保留一句阻塞后果说明（如"P0/P1 > 0 时拒绝继续"）。当前 humanizer 和 format-cleaner 已遵循此模式，新增子 skill 或修改门控逻辑时参照执行。
 
-### 跨 skill 引用可解析
+#### 跨 skill 引用可解析
 
 用文字说明（"见 workflow router 的同名参考文件"），不写 `../other-skill/references/xxx.md`。
 
@@ -64,7 +64,7 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 **正文引用必须入表**：子 skill 正文中任何位置（Red Flags、工作流程、步骤说明）通过"见 <skill> 参考文件 `xxx.md`"引用的跨 skill 文件，**必须在末尾参考文件表中也列出一行**。仅正文引用不入表视为遗漏，审计时按不一致问题处理。
 
-### 脚本自包含
+#### 脚本自包含
 
 每个 skill 的 `scripts/` 不跨 skill 导入代码。如需共享工具函数，在各 skill 的 `scripts/` 下维护独立副本（如 `_shared.py`），每个副本只包含该 skill 实际使用的函数，确保每个 skill 可独立部署。
 
@@ -72,7 +72,7 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 ### 语言风格
 
-### 指令风格一致性
+#### 指令风格一致性
 
 指令文件（SKILL.md、references、AGENTS.md）的标点、措辞、句式会被 AI 作为风格示范，通过启动效应（priming effect）影响其输出风格。指令文件不是"写给自己看的笔记"，它是 AI 的语体模板。
 
@@ -82,11 +82,11 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 本规则是中文排版、Skill 指令语气等规则共同的底层原理。
 
-### 中文排版
+#### 中文排版
 
 技术文档自身的中文正文使用弯引号 `""`、`''`，代码块和 YAML frontmatter 中的字符串使用 ASCII 直引号。
 
-### Skill 指令语气
+#### Skill 指令语气
 
 Skill 是给 AI 执行的指令，不是给人看的文档。**必须用祈使句**（动词开头的直接动作指令），不用描述句或能力陈述。
 
@@ -101,7 +101,7 @@ Skill 是给 AI 执行的指令，不是给人看的文档。**必须用祈使�
 
 **Why**：描述句给 AI 的信号是"做不做随意"，祈使句给 AI 的信号是"这是必须执行的动作"。长上下文压缩后，描述句的约束力几乎为零。
 
-### 术语一致性
+#### 术语一致性
 
 同一概念在全仓库使用**唯一名称**。新增概念时在本文档的单一权威定义表中记录权威名称，其他文件一律使用该名称引用。修改概念名称时 `grep` 搜索全仓库替换，不保留旧名称别名（如"文献池分层"改为"文献池规模分级"后，全仓库不得残留旧术语）。
 
@@ -109,12 +109,12 @@ Skill 是给 AI 执行的指令，不是给人看的文档。**必须用祈使�
 
 ### 流程规范
 
-### 新增产物同步
+#### 新增产物同步
 新增 `.thesis-workflow/` 产物 → 同步更新 `README.md` 目录树 + 产物表、`workflow SKILL.md` 产出物列表。新增 `chapters/chX/` 下的阶段产物 → 同步更新目录树。新增 reference 文件 → 在所属 skill 参考文件表追加一行，并同步本文件（AGENTS.md）的单一权威定义表。
 
 **原子提交**：新增文件与引用该文件的修改必须在**同一次提交**中完成。不允许先提交引用再补文件（导致 checkout 后引用悬空），也不允许先提交文件再补引用（导致文件孤立无人知晓）。
 
-### 修改前先研究
+#### 修改前先研究
 
 修改 skills 或 hooks 前，必须通过 skill-creator 和联网搜索获取相关知识：skill 设计最佳实践、相似问题的解决模式、AI 指令执行的已知陷阱。禁止凭直觉直接改，先研究再动手。
 

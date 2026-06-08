@@ -32,7 +32,6 @@ format-dict-*.md
 # *.bak 和 *.anchor 为防御性规则，防止编辑器临时文件和备份残留被误提交
 *.bak
 *.anchor
-**/references/main-tex-context.md
 
 node_modules
 package.json
