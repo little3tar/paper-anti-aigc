@@ -6,7 +6,7 @@ description: >-
   Word document translation 时使用。也适用于需要保留原文档格式的学术论文、技术报告、工程文档翻译场景。
 ---
 
-# DOCX 文档翻译工作流
+# Docx Translator
 
 将英文（或其他语言）.docx 文件翻译为中文，生成翻译后的 .docx，保留原文格式与语境风格。
 
@@ -41,7 +41,7 @@ cp "原文件.docx" input.docx
 
 Bash 可以正确处理中文文件名，此步安全。后续所有操作使用 `input.docx`。
 
-**重要**：不要用 `glob` 或 `os.walk` 模糊搜索 .docx 文件——目录中可能有多个 .docx 文件，模糊匹配可能选错文件导致段落索引偏差。始终操作确定文件名的副本。
+**重要**：不要用 `glob` 或 `os.walk` 模糊搜索 .docx 文件。目录中可能有多个 .docx 文件，模糊匹配可能选错文件导致段落索引偏差。始终操作确定文件名的副本。
 
 ### Step 2：导出段落列表
 
@@ -93,7 +93,7 @@ print(f'Saved {len(encoded)} translations')
 - 字典 key 是段落索引（字符串格式，与 `export_paragraphs.py` 输出一致）
 - 翻译文本中的引号必须使用弯引号 `""`，如果误用 ASCII `"` 会破坏 Python 字符串语法
 - `ensure_ascii=True` 确保 JSON 中只有 ASCII 字符
-- 可以分多次执行（每次追加一部分翻译），也可以一次性写完
+- 分多次执行（每次追加一部分翻译），或一次性写完
 
 ### Step 5：应用翻译到 docx
 
@@ -125,7 +125,7 @@ with open('verify.txt', 'w', encoding='utf-8') as f:
 "
 ```
 
-**不要直接在终端 print 中文**——会触发 `UnicodeEncodeError`。始终写入 UTF-8 文件再读取验证。
+**不要直接在终端 print 中文**。这会触发 `UnicodeEncodeError`。始终写入 UTF-8 文件再读取验证。
 
 ### Step 7：清理
 
@@ -179,7 +179,7 @@ doc.save('output.docx')
 
 **排查**：找到报错位置的字符（`error.pos`），检查是否为中文文本内的 ASCII 引号。
 
-**解决**：中文文本中的引号必须使用 Unicode 弯引号 `“`（"）和 `”`（"），而非 ASCII `"`（`"`）。在 `python -c` 内联代码中直接输入弯引号即可。
+**解决**：中文文本中的引号必须使用 Unicode 弯引号 `"`（“）和 `"`（”），而非 ASCII `"`（`"`）。在 `python -c` 内联代码中直接输入弯引号即可。
 
 ### `PermissionError` 在读取中文路径文件时
 
@@ -191,7 +191,7 @@ doc.save('output.docx')
 
 **原因**：段落索引不匹配。可能原因：(a) 翻译映射使用了另一个文档的索引（如用 Erarslan 论文的索引去翻译另一篇论文）；(b) 导出段落列表后文档被修改。
 
-**解决**：**每次翻译前必须对目标文件重新运行 Step 2 导出段落列表。** 不要复用旧的段落列表。不要用 glob 模糊匹配文件——始终操作确定文件名的副本（Step 1 的 `input.docx`）。
+**解决**：**每次翻译前必须对目标文件重新运行 Step 2 导出段落列表。** 不要复用旧的段落列表。不要用 glob 模糊匹配文件。始终操作确定文件名的副本（Step 1 的 `input.docx`）。
 
 ### `para.text` 赋值无效
 

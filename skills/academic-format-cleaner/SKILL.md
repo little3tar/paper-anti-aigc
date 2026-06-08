@@ -17,8 +17,9 @@ description: >-
 | "格式问题很少，目测一下就行" | 必须运行 check_format.py，依赖脚本输出判断 |
 | "`[待补来源]` 标记先留着" | 残留标记必须清理或移入证据缺口，不得留到最终稿 |
 | "引用位置差不多就行" | `\cite{}` 须紧贴被引文字，位于中文句号、逗号内侧 |
-| "P0/P1 还在，但只做格式检查没事" | 工作流模式下检查 status.json，P0/P1 > 0 时拒绝继续（详见 workflow §强制串行规则第6条）；独立模式不受此限 |
-| “ 是 JSON 的事，格式不用管” | Unicode 转义序列必须还原——HTML 实体 &quot; &ldquo; 等、Unicode 转义 “ ” ‘ ’ 等，全部还原为实际 Unicode 字符 |
+| "P0/P1 还在，但只做格式检查没事" | 工作流模式下检查 status.json，P0/P1 > 0 时拒绝继续（validation mode 不在此限，详见 workflow §强制串行规则第6条）；独立模式不受此限 |
+| "humanizer 已经跑过了，marker 不会出错，不用逐项核对" | 对照 draft.md 逐一核对主文件中每个 `[文献题名]` marker 的题名文字，验证未被缩写、翻译或改写。即使 humanizer 已确认 marker 完整性，format-cleaner 也必须独立逐项校对，不得信任上游 |
+| “ 是 JSON 的事，格式不用管” | Unicode 转义序列必须还原：HTML 实体 &quot; &ldquo; 等、Unicode 转义 “ “ ‘ ‘ 等，全部还原为实际 Unicode 字符 |
 
 只处理格式层问题，不负责改写正文风格。作为 thesis workflow 最后一道后处理，保护命令、公式、引用和 Markdown/LaTeX 结构。
 
@@ -31,15 +32,9 @@ description: >-
 - 如果发现 P0/P1 证据问题、缺来源结论或 `[待补来源: ...]` 仍在正文中，先交给 `reference-integrity-auditor` 或移入证据缺口清单，再做最终格式清理。
 - 启动前先判断运行模式（见 §运行模式）：
   - **独立模式**（用户粘贴了待检查文本）→ 跳过门控检查，直接进行格式检查。
-  - **工作流模式**（用户引用论文文件）→ 检查 `.thesis-workflow/chapters/chX/status.json`（门控规则遵循 workflow §强制串行规则第6条）：若 `p0_count` 或 `p1_count` > 0，或 `next_allowed` 不为 `"format-cleaner"` 或 `"next-chapter"`，拒绝继续并提示用户先完成上游审计和润色。若 `next_allowed` 为 `"fix-evidence"` 说明审计已发现问题但尚未修复，拒绝继续。若 `next_allowed` 为 `"humanizer"` 说明润色尚未完成，拒绝继续。若文件不存在，说明审计阶段未运行，提示用户先完成上游阶段，用户确认后方可继续。
+  - **工作流模式**（用户引用论文文件）→ 读取 `.thesis-workflow/chapters/chX/status.json`，按 workflow §强制串行规则第6条执行门控检查：P0/P1 未清零或 `next_allowed` 不匹配则拒绝继续。独立模式不受此限。完整规则和放行条件见 workflow §强制串行规则第6条，本处不重述具体取值枚举。
 
-推荐顺序：
-
-1. `thesis-outline-planner`：规划总大纲和文献池。
-2. `evidence-grounded-chapter-writer`：撰写带证据标记的章节初稿。
-3. `reference-integrity-auditor`：审查来源支撑和 source marker。
-4. `engineering-paper-humanizer`：润色中文工程论文表达。
-5. `academic-format-cleaner`：修复引用位置、格式、命令和结构问题。
+完整阶段顺序见 workflow SKILL.md §阶段顺序。
 
 ## 检查范围
 
@@ -65,7 +60,7 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 | 场景 | 判断依据 | 模式 |
 |---|---|---|
 | 用户粘贴文本到消息中（如"检查以下文本格式：……"） | 消息中包含待检查的完整文本片段 | **独立模式** |
-| 用户指定论文文件（如"检查 output/main-ch3.tex 格式"） | 消息中引用文件路径，且 `.thesis-workflow/chapters/chX/status.json` 存在 | **工作流模式** |
+| 用户指定论文文件且 status.json 存在 | 消息中引用文件路径，且 `.thesis-workflow/chapters/chX/status.json` 存在 | **工作流模式**（validation mode 下 P0/P1 可不为 0，见 workflow §强制串行规则第6条） |
 | 用户引用文件路径但 status.json 不存在 | 消息中引用文件路径，但对应章无 status.json | **提示用户**：先完成上游阶段（审计→润色），用户确认后可降级为独立模式运行 |
 
 **独立模式**：不检查 `status.json`，不写入产物文件。只运行格式检查脚本和规则修复，结果直接返回。
@@ -77,7 +72,7 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 1. 先判断运行模式（见 §运行模式）和用户目标：格式检查，而不是正文润色、证据审计或章节写作。
    - **独立模式**：跳过产物文件写入和备份步骤。运行检查脚本 → 修复问题 → 返回结果。
    - **工作流模式**：执行以下步骤。
-2. 如需直接修改论文主文件，修改前先通过 `scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮格式修复记录（变更清单，非全文副本）写入 `.thesis-workflow/chapters/chX/format-cleaned.md`，最终清理后文本写入对应章主文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
+2. 如需直接修改论文主文件，修改前先通过 `scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮格式修复记录（变更清单，非全文副本）写入 `.thesis-workflow/chapters/chX/format-cleaned.md`。主文件写入由 workflow 全流程完成仪式统一执行，不在本阶段单独写入。
    文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/format-cleaned.md`（格式修复记录，非全文副本）。
 3. 如有目标文件，运行格式检查脚本：
 
@@ -110,8 +105,7 @@ Markdown 数学块、题名 marker、缺来源标记等脚本检查目前主要�
 
 | 文件 | 用途 |
 | --- | --- |
-| `scripts/check_format.py` | 格式检查入口 |
-| `scripts/format_rules.json` | 格式规则数据 |
-| `scripts/generate_format_dict.py` | 生成格式规则速查表 |
+| `scripts/check_format.py` | 格式检查入口（脚本内部使用 `format_rules.json` 规则集） |
 | `references/format-guide.md` | 格式规则说明 |
 | `scripts/git_snapshot.py` | 智能备份脚本（修改主文件前创建备份） |
+| 见 chapter-writer 参考文件 `citation-key-rules.md` | marker 类型定义和残留标记清单（`[待补来源]`/`[标准规范]`/`[用户材料]`/`[Mxx]`/`[设计假设]`/`[待核实]`/`[计算导出]` 等七类标记的清除与转换） |

@@ -136,6 +136,8 @@ class PreToolUseHookTests(unittest.TestCase):
             base = Path(tmp)
             (base / ".thesis-workflow").mkdir()
             (base / ".thesis-workflow" / "chapters" / "ch1").mkdir(parents=True)
+            # 防线 3 会检查上游产物 outline.md 是否存在，补充它以隔离"仅缺 status.json"的条件
+            (base / ".thesis-workflow" / "outline.md").touch()
 
             output = self._run(
                 "Write",
@@ -153,6 +155,115 @@ class PreToolUseHookTests(unittest.TestCase):
             _make_status_json(ch_dir, "audited", 1, 0, "fix-evidence")
 
             output = self._run("Read", str(base / "main-ch1.md"), base)
+            self.assertEqual(output, {})
+
+    # ── 防线 3：跳阶段确认 ─────────────────────────────────────────
+
+    def test_asks_when_humanized_without_audit(self) -> None:
+        """写 humanized.md 但 audit.md 不存在时触发 ask"""
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / ".thesis-workflow").mkdir()
+            ch_dir = base / ".thesis-workflow" / "chapters" / "ch1"
+            ch_dir.mkdir(parents=True)
+            _make_status_json(ch_dir, "audited", 0, 0, "humanizer")
+
+            output = self._run(
+                "Write",
+                ".thesis-workflow/chapters/ch1/humanized.md",
+                base,
+            )
+            decision = output.get("hookSpecificOutput", {}).get("permissionDecision", "")
+            self.assertEqual(decision, "ask")
+            self.assertIn("audit.md", output["hookSpecificOutput"]["permissionDecisionReason"])
+
+    def test_asks_when_format_cleaned_without_humanized(self) -> None:
+        """写 format-cleaned.md 但 humanized.md 不存在时触发 ask"""
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / ".thesis-workflow").mkdir()
+            ch_dir = base / ".thesis-workflow" / "chapters" / "ch1"
+            ch_dir.mkdir(parents=True)
+            _make_status_json(ch_dir, "humanized", 0, 0, "format-cleaner")
+
+            output = self._run(
+                "Write",
+                ".thesis-workflow/chapters/ch1/format-cleaned.md",
+                base,
+            )
+            decision = output.get("hookSpecificOutput", {}).get("permissionDecision", "")
+            self.assertEqual(decision, "ask")
+            self.assertIn("humanized.md", output["hookSpecificOutput"]["permissionDecisionReason"])
+
+    # ── 防线 4：细纲确认阻塞 — 表头定位 ──────────────────────────
+
+    def _make_chapter_status(self, base: Path, content: str) -> None:
+        """创建 ledger/chapter-status.md。"""
+        ledger = base / ".thesis-workflow" / "ledger"
+        ledger.mkdir(parents=True, exist_ok=True)
+        (ledger / "chapter-status.md").write_text(content, encoding="utf-8")
+
+    def test_detail_outline_gate_column_reorder(self) -> None:
+        """"细纲"列不在默认位置时仍能正确定位并拒绝写入。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / ".thesis-workflow").mkdir()
+            (base / ".thesis-workflow" / "chapters" / "ch1").mkdir(parents=True)
+            (base / ".thesis-workflow" / "outline.md").touch()
+            # "细纲"在索引 3（默认是索引 2），且状态非 confirmed
+            self._make_chapter_status(base, (
+                "| 章节 | 大纲 | 草稿 | 细纲 | 审计 | 润色 | 格式 | 备注 |\n"
+                "|------|------|------|------|------|------|------|------|\n"
+                "| ch1 | confirmed | - | draft | - | - | - | |\n"
+            ))
+
+            output = self._run(
+                "Write",
+                ".thesis-workflow/chapters/ch1/draft.md",
+                base,
+            )
+            decision = output.get("hookSpecificOutput", {}).get("permissionDecision", "")
+            self.assertEqual(decision, "deny")
+
+    def test_detail_outline_gate_missing_column_skips(self) -> None:
+        """表头缺少"细纲"列时静默跳过，不误判。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / ".thesis-workflow").mkdir()
+            (base / ".thesis-workflow" / "chapters" / "ch1").mkdir(parents=True)
+            (base / ".thesis-workflow" / "outline.md").touch()
+            # 没有"细纲"列的表
+            self._make_chapter_status(base, (
+                "| 章节 | 大纲 | 草稿 | 审计 | 备注 |\n"
+                "|------|------|------|------|------|\n"
+                "| ch1 | confirmed | draft | - | |\n"
+            ))
+
+            output = self._run(
+                "Write",
+                ".thesis-workflow/chapters/ch1/draft.md",
+                base,
+            )
+            self.assertEqual(output, {})
+
+    def test_detail_outline_gate_separator_not_confused(self) -> None:
+        """表格分隔行 |---|---| 不干扰表头识别。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / ".thesis-workflow").mkdir()
+            (base / ".thesis-workflow" / "chapters" / "ch1").mkdir(parents=True)
+            (base / ".thesis-workflow" / "outline.md").touch()
+            self._make_chapter_status(base, (
+                "| 章节 | 大纲 | 细纲 | 草稿 | 审计 | 润色 | 格式 | 备注 |\n"
+                "|------|------|------|------|------|------|------|------|\n"
+                "| ch1 | confirmed | confirmed | - | - | - | - | |\n"
+            ))
+
+            output = self._run(
+                "Write",
+                ".thesis-workflow/chapters/ch1/draft.md",
+                base,
+            )
             self.assertEqual(output, {})
 
 

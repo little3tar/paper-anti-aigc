@@ -1,11 +1,12 @@
----
+﻿---
 name: engineering-paper-humanizer
 description: >-
-  用于中文工程类论文正文润色与去 AI 味。用户要求润色/改写论文段落、优化表述、
+  用于中文工程类论文正文润色与去 AI 味。用户要求润色/改写论文段落/改一下表述/调整措辞、优化表述、
   改得自然一点、降低 AI 痕迹/模板化套话、处理中文引号破折号括号、
   humanize thesis prose、academic Chinese polishing 时使用。
   适用于 LaTeX/Markdown/plain text 正文；用户直接粘贴文本时自动独立模式。
-  不处理引用位置/LaTeX 命令/Markdown 格式（交给 academic-format-cleaner）。
+  不处理引用位置/LaTeX 命令/Markdown 格式（交给 academic-format-cleaner）；
+  不处理证据补全/文献检索/参数来源（交给 reference-integrity-auditor 或 chapter-writer）。
 ---
 
 # Engineering Paper Humanizer
@@ -16,16 +17,22 @@ description: >-
 |---|---|
 | "这段写得太平淡，加点升华" | 工程论文用参数、约束和代价说话，不加宏大叙事 |
 | "破折号改成逗号太麻烦，保留" | 中文正文破折号必须处理，不得保留 `——` |
-| "括号里只是参数说明，保留吧" | 中文解释性括号默认清理——参数数值、量程单位、条件补充全部通过语言叙述替代，不得保留括号形式。只保留专业缩写英文全称括号；标准号和型号在正文中通过语言叙述引用（策略见 rewrite-guide.md §标准引用括号专项处理），表格内可保留括号 |
+| "括号里只是参数说明，保留吧" | 中文解释性括号默认清理：参数数值、量程单位、条件补充全部通过语言叙述替代，不得保留括号形式。只保留专业缩写英文全称括号；标准号和型号在正文中通过语言叙述引用（策略见 rewrite-guide.md §标准引用括号专项处理），表格内可保留括号 |
 | "status.json 里 P0 还在，先润色" | AI 以为"证据有问题是审计的事，润色是文字的事，分开处理就行"。实际上 P0/P1 未清零说明正文中仍有不可靠的结论，润色只会让它们看起来更可信。必须先退回审计修复证据（validation mode 除外） |
 | "这个结论的证据我帮它补上" | 不补写来源、数据、实验条件，缺证据移入缺口清单 |
 | "润色就是压缩文字" | 保留数据口径、方法条件、指标含义和结论边界，不删必要信息 |
-| "marker 里的题名太长，缩写一下" | 题名是 Zotero/.bib 文献匹配的唯一键——缩写一个词、改一个字符，bibliography 自动解析就匹配不上，参考文献列表会缺条目。不论题名多长，原文照录，不缩写、不询问用户 |
+| "marker 里的题名太长，缩写一下" | 题名是 Zotero/.bib 文献匹配的唯一键。缩写一个词、改一个字符，bibliography 自动解析就匹配不上，参考文献列表会缺条目。不论题名多长，原文照录，不缩写、不询问用户 |
 | "md 转 txt 写个脚本处理一下" | Markdown → 纯文本转换使用 `academic-format-cleaner/scripts/check_format.py <file> --fix --format plain --output <file>`，不自己写转换脚本 |
 | "这段有很多参数，检测器应该不会判 AI" | 真实报告显示，参数密集但结论过圆、结构过整齐的段落仍会高风险 |
 | "先按我的规则统一润色，报告只是参考" | 用户提供 AI 检测报告时，高风险片段优先级高于通用敏感词清单 |
+| "口语化表达能降 AI 率，多用'了、的、这个'" | 句式骨架多样化才是降 AI 率的核心手段，口语化只会触发导师批注。实验验证：正式词汇 + 多变句式 = 0.69%，口语化词汇反被导师标注 5 处"口语化" |
+| "文献综述就是把每篇文献做了什么按顺序列出来" | 最高风险模式是"某某等通过A研究了B，得到了C"连续罗列。每段换一种叙述方式：有的直述结论，有的先提方法再评价，有的从问题切入再引出文献，有的穿插判断句断开整齐节奏 |
+| "这段参数很密，但意思没问题，先过下一段" | 工程密集型段落（选型、校核、规范引用）即使没有空泛套话，句式骨架过整齐也会被检测器判为 90%+ 高风险。润色时必须优先处理 AIGC-065/068/069/070 命中的行，再处理词汇层问题 |
+| "检测报告高风险片段太多了，按章节顺序逐段处理" | 先定位报告中 ≥80% 概率的片段，按风险概率降序处理，不按章节顺序平均用力。同一章内优先处理连续重复句式（如连续出现 ≥3 次的"选用 XXX"句式），再处理散在的词汇层问题 |
+| "blocked_paragraphs 里有些降级表述太保守，改成肯定语气更流畅" | blocked_paragraphs 含 P0/P1、缺数据或 unsupported claims，**只做标点和连接词修正**。将其中的"可能""初步""待验证"等降级表述改为肯定语气会改变论文结论的确定性——这是比 AI 腔更严重的学术错误。被 blocked 的段落宁可保留原有的保守措辞 |
+| "独立模式只润色几段文字，步骤 4 的三项归零自检可以跳过" | 独立模式只跳过步骤 1 的工作流门控检查。步骤 4 的 PUNCT-002/PUNCT-007/ASCII 直双引号三项归零是硬性门控，独立模式也必须执行
 
-处理中文工程论文的正文表达与通用中文标点。读取 `.tex`、`.md`、`.txt` 文件，以正文内容为目标——不触碰 LaTeX 命令、引用位置、标题层级或代码块格式，这些交给 academic-format-cleaner。
+处理中文工程论文的正文表达与通用中文标点。读取 `.tex`、`.md`、`.txt` 文件，以正文内容为目标，不触碰 LaTeX 命令、引用位置、标题层级或代码块格式，这些交给 academic-format-cleaner。
 
 运行脚本需要 Python 3.7 或更高版本；Git 仅在需要查看差异时使用。
 
@@ -42,7 +49,7 @@ description: >-
 
 **工作流模式**：遵循下方完整流程，包括门控检查、审计报告读取、备份、产物落盘和 `chapters/chX/status.json` 更新。若 `.thesis-workflow/chapters/chX/status.json` 不存在但用户要求润色论文文件，先提示用户完成上游阶段（审计），用户确认后方可继续。
 
-无论使用哪种入口，humanizer 的默认完成状态都是”尽量降低 AI 检测风险”。改写时优先改变句式骨架、语序和连接方式，降低过度成熟、过度整齐、过度精炼的模型痕迹；可把非关键专业表达改成更普通的说法，允许适度口语化。默认保留并适当增加”的、了、把、这个、这样、前面算出来的、后面还需要”等普通承接词。数值、单位、型号、标准号、引用和核心技术关系仍需保留。
+无论使用哪种入口，humanizer 的默认完成状态都是”降低 AI 检测风险”。改写以句式骨架多样化为首要手段——改变语序、穿插长短句、轮换承接方式、打破整齐排比。文献综述段落每段换一种叙述方式：连续段落不得使用相同的”某某等通过A研究了B，得到了C”类句式骨架，可轮换为直述结论、先提方法再评价、从问题切入引出文献、穿插短判断句断开节奏等。词汇层面保持学术书面语底线——不使用口语句式和口语词汇，核心术语和参数不降级。学术书面语底线以下的口语化表达（如”某某他们”、”比较吃力了”、”说清楚了”、”配不配得上”、”有好几种”、”搞了一套”）必须修正为书面表达（”某某等”、”适用性受限”、”进行了阐述”、”是否匹配”、”主要包括”、”开发了”）。数值、单位、型号、标准号、引用和核心技术关系仍需保留。
 
 **工作流模式**下细分为三种子模式（由 workflow router 设定，详见 workflow §执行模式）：
 - Review-gated：所有确认点暂停，P0/P1 硬性阻断
@@ -51,36 +58,26 @@ description: >-
 
 ## 在 Thesis Workflow 中的位置
 
-位于 `reference-integrity-auditor` 之后、`academic-format-cleaner` 之前。
-
-推荐顺序：
-
-1. `thesis-outline-planner`：规划总大纲和文献池。
-2. `evidence-grounded-chapter-writer`：撰写带证据标记的章节初稿。
-3. `reference-integrity-auditor`：检查无来源结论、source marker 和待补证据。
-4. `engineering-paper-humanizer`：在证据可靠后润色正文，降低 AI 腔。
-5. `academic-format-cleaner`：最后处理引用位置、LaTeX/Markdown 格式和命令保护。
-
-若草稿仍存在 P0/P1 证据问题，先退回证据审计或章节写作，不要直接润色成更像定论的文字。
+位于 `reference-integrity-auditor` 之后、`academic-format-cleaner` 之前。完整阶段顺序见 workflow SKILL.md §阶段顺序。
 
 启动前先判断运行模式（见 §运行模式）：
 
 - **独立模式**（用户粘贴了待润色文本）→ 跳过本节门控检查，直接进入步骤 2。
-- **工作流模式**（用户引用论文文件或章节）→ 检查 `.thesis-workflow/chapters/chX/status.json`（门控规则遵循 workflow §强制串行规则第5条）：若 `p0_count` 或 `p1_count` > 0，或 `next_allowed` 不为 `"humanizer"`、`"format-cleaner"` 或 `"next-chapter"`，拒绝继续并提示先运行 `reference-integrity-auditor` 并将 P0/P1 清零。若 `next_allowed` 为 `"fix-evidence"` 说明审计已发现问题但尚未修复，拒绝继续。若文件不存在，说明审计阶段未运行，提示用户先完成上游阶段，用户确认后方可继续。`"format-cleaner"` 和 `"next-chapter"` 状态允许润色以支持修改回环（见 workflow §修改回环）。Validation mode 下可忽略此门控。
+- **工作流模式**（用户引用论文文件或章节）→ 读取 `.thesis-workflow/chapters/chX/status.json`，按 workflow §强制串行规则第5条执行门控检查：P0/P1 未清零或 `next_allowed` 不匹配则拒绝继续。`"format-cleaner"` 和 `"next-chapter"` 放行以支持修改回环（见 workflow §修改回环）。Validation mode 下可忽略此门控。完整规则和放行条件见 workflow §强制串行规则第5条，本处不重述具体取值枚举。
 
 ## 处理范围
 
 处理这些问题：
 
 1. **AI 腔与模板化表达**：如“具有重要意义”“应运而生”“值得注意的是”“综上所述”“广阔应用前景”等空泛套话。
-2. **普通论文语气**：用具体工况、参数和基本说明替代空泛升华，但表达要像普通学生写出来，不追求过度专业。
+2. **普通论文语气**：用具体工况、参数和基本说明替代空泛升华。表达自然但不口语化，词汇保持在学术书面语底线之上。
 3. **通用中文标点**：ASCII 直双引号、中英文引号混用、半边引号、破折号、异常 dash 和解释性括号。
 4. **中文化规则**：清理无主语动作句、权威感套话、引导式开场、口号式尾部否定、碎片化标题和堆叠句。
 5. **文本级自检**：运行 `scripts/check_text.py` 定位正文表达问题。
 6. **检测报告回灌**：若用户提供 AI 检测报告，先提取总风险、分档比例和 80% 以上片段，再按报告高风险片段制定润色优先级。
-7. **普通学生稿效果**：默认降低表达成熟度，使文本更像普通本科生按资料整理出的基础论文段落，而不是过度规范、过度精炼的模型稿。
+7. **句式骨架多样化**：降 AI 率的核心手段是改变句式骨架而非降低词汇层次。保持学术书面语词汇，但打碎整齐的句式结构：长短句穿插、承接词轮换、文献综述每段换叙述方式、避免"某某等通过A研究了B，得到了C"的连续罗列。禁止将学术词汇降级为口语表达。
 
-不处理：LaTeX 命令、Markdown 格式结构、公式/代码环境内部内容、变量/数值/单位、缺来源结论——这些交给 format-cleaner 或 auditor。**source marker 方括号及题名文字绝对不动**，只改 marker 前后的连接词。
+不处理：LaTeX 命令、Markdown 格式结构、公式/代码环境内部内容、变量/数值/单位、缺来源结论，这些交给 format-cleaner 或 auditor。**source marker 方括号及题名文字绝对不动**，只改 marker 前后的连接词。
 
 ## 核心原则
 
@@ -88,7 +85,7 @@ description: >-
 2. **标点服务语义**：引号只用于真实引用、特指术语、语义距离；破折号默认改成逗号、分号、句号或自然连接词；中文解释性括号默认拆进正文或删除。
 3. **公式数据保护**：只改公式前后的说明文字，不改 LaTeX 数学环境、参数符号、单位、数值和计算结论。
 4. **证据边界保护**：含 `[待补来源: ...]`、`needs-source`、P0/P1 的内容移出正文，放入证据缺口或台账。润色只处理已有来源支撑的正文。
-5. **Source marker 保护**：`[文献题名]`、`[Mxx]`、`[参考文献]` 等方括号标记不动方括号、不动题名文字——不缩写、不翻译、不删减。只改 marker 前后的连接词和句式。
+5. **Source marker 保护**：`[文献题名]`、`[Mxx]`、`[参考文献]` 等方括号标记不动方括号、不动题名文字，不缩写、不翻译、不删减。只改 marker 前后的连接词和句式。
 
 ## 工作流程
 
@@ -102,18 +99,18 @@ description: >-
 
 判断文本类型和用户目标。若用户只要求格式修复，转用 `academic-format-cleaner`。若用户要求润色、降 AI 味或修复中文标点，继续本流程。
 
-**强制读取审计报告**（工作流模式）：启动时必须读取 `.thesis-workflow/chapters/chX/audit.md`（如存在），获取其中的两个手交清单：
+**强制读取审计状态**（工作流模式）：启动时先读取 `.thesis-workflow/chapters/chX/status.json` 中的 `green_paragraphs` 和 `blocked_paragraphs` 字段，获取本章段落级许可清单：
 
-- `可润色段落`：这些段落可以正常改写润色。
-- `禁止润色成定论的段落`：这些段落含 P0/P1、缺数据或 unsupported claims，**只做标点和连接词修正，不改变技术表述的确定性**。不得将这些段落中的”可能””初步””待验证”等降级表述改为肯定语气。
+- `green_paragraphs`：这些段落可以正常改写润色。
+- `blocked_paragraphs`：这些段落含 P0/P1、缺数据或 unsupported claims，**只做标点和连接词修正，不改变技术表述的确定性**。不得将这些段落中的”可能””初步””待验证”等降级表述改为肯定语气。
 
-如果 `chapters/chX/audit.md` 不存在但 `status.json` 存在且 P0/P1 已清零，可继续但需在输出中注明”审计报告缺失，润色边界由 humanizer 自行判断”。
+随后读取 `.thesis-workflow/chapters/chX/audit.md`（如存在），获取各段落的详细审计说明和修复记录，补充 `status.json` 中仅有段落编号的不足。
 
-如果用户要求直接修改论文主文件，修改前先通过 `scripts/git_snapshot.py <主文件>` 创建备份。修改完成后将本轮润色操作记录（变更清单，非全文副本）写入 `.thesis-workflow/chapters/chX/humanized.md`，最终润色后文本写入对应章主文件 `main-chX.md` / `main-chX.txt` / `main-chX.tex`。
+如果 `status.json` 中无 `green_paragraphs`/`blocked_paragraphs` 字段（旧版兼容），回退到从 `audit.md` 获取”可润色段落”/”禁止润色成定论的段落”两份清单。如果 `status.json` 不存在但当前为 **validation mode**，可继续但需在输出中注明"审计报告缺失，润色边界由 humanizer 自行判断"。非 validation mode 且 status.json 不存在 → 按 workflow §强制串行规则第 5 条门控逻辑处理。
 
 文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/humanized.md`（润色操作记录，非全文副本）。
 
-如用户提供了项目级上下文文件（`ledger/` 目录），先读取 `ledger/facts.md` 和 `ledger/decisions.md`。
+如用户提供了项目级上下文文件，先读取 `main-tex-context.md`（格式约定：标题格式、中英双语规范、图表命名规则、引用方案）和 `ledger/facts.md`、`ledger/decisions.md`。
 
 ### 2. 运行文本检查
 
@@ -151,7 +148,7 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE>
 - 专业词汇可以适度降俗；但参数名、标准号、元件型号、单位、引用和影响结论的核心术语不乱改。
 - 删除”我觉得、我认为”等主观口语，但不要加入新的主观判断。
 
-**步骤3自检**：逐段回读改写结果，确认——每段都实际改动了句式或语序（非仅复制原文）？AI 套话（”显著提升””具有重要意义”等）是否已清除？如果有段落只改了一两个词，返回重改。
+**步骤3自检**：逐段回读改写结果，确认：每段都实际改动了句式或语序（非仅复制原文）？AI 套话（”显著提升””具有重要意义”等）是否已清除？如果有段落只改了一两个词，返回重改。
 
 ### 4. 标点专项处理
 
@@ -203,7 +200,7 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE>
 
 **独立模式**：返回改写后的文本，附简短改动说明。不写文件，不更新 `status.json`。
 
-**工作流模式**：返回改写后的文本，并附简短说明。若用户给的是文件并要求直接修改文件，先备份、再修改文件，修改后运行 `check_text.py` 复查，并把本轮润色变更清单写入 `.thesis-workflow/chapters/chX/humanized.md`（非全文副本），最终润色后文本写入主文件。
+**工作流模式**：返回改写后的文本，并附简短说明。若用户给的是文件并要求直接修改文件，先备份、再修改文件，修改后运行 `check_text.py` 复查，并把本轮润色变更清单写入 `.thesis-workflow/chapters/chX/humanized.md`（非全文副本）。主文件写入由 workflow 全流程完成仪式统一执行。
 
 **humanized.md 最低记录要求**（工作流模式）：
 - 每个高风险片段的原文首句 → 改文首句对照（至少标注段落位置）
@@ -217,12 +214,10 @@ python <SKILL_DIR>/scripts/check_text.py <TARGET_FILE>
 
 | 文件 | 用途 |
 | --- | --- |
-| `scripts/check_text.py` | 通用中文文本检查 |
-| `scripts/text_rules.json` | 文本规则数据 |
-| `scripts/generate_dict.py` | 生成文本规则速查表 |
+| `scripts/check_text.py` | 通用中文文本检查（脚本内部使用 `text_rules.json` 规则集） |
 | `scripts/git_snapshot.py` | 智能备份脚本（修改主文件前创建备份） |
 | `scripts/_shared.py` | checker 和 dict 生成器共享工具函数 |
 | `references/rewrite-guide.md` | 中文工程论文改写规则 |
 | `references/punctuation-guide.md` | 引号和破折号专项规则 |
 | `references/optional-checks.md` | 可选质量评判 |
-| 见 workflow router 参考文件 `main-tex-context-template.md` | 论文主文件结构地图模板；由 outline-planner 首次创建，humanizer 读取其中格式约定 |
+| 见 workflow router 参考文件 `main-tex-context-template.md` | 项目上下文格式定义；humanizer 读取由模板生成的 `.thesis-workflow/main-tex-context.md` 获取格式约定 |

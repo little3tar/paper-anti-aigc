@@ -14,7 +14,7 @@
 | `reference-integrity-auditor` | 审计 P0/P1 证据问题、source marker、公式可复现性 |
 | `engineering-paper-humanizer` | 润色中文工程论文正文，降 AI 腔，处理中文标点 |
 | `academic-format-cleaner` | 格式收尾：引用位置、命令保护、数学块和残留标记清理 |
-| `docx-translator` | 将 Word 文档(.docx)内容翻译为中文，保留原文档格式 |
+| `docx-translator` | 将 Word 文档(.docx)内容翻译为中文，保留原文档格式（独立 skill，非论文工作流流程的一部分） |
 
 ## 工作流
 
@@ -74,22 +74,23 @@ cp -r hooks/* your-project/.claude/hooks/
 cp settings.json your-project/.claude/settings.json
 ```
 
-> `hooks/hooks.json` 已弃用（Claude Code 改用 settings.json），仅保留供 OpenCode/Cursor 参考。复制后如不使用这些外部工具可删除此文件。
-> **关于 settings.json**：Claude Code 通过此文件启用 PreToolUse 钩子（主文件保护 + 阶段门控）和 SessionStart 钩子（会话启动时注入工作流状态）。如果不复制此文件，钩子保护机制不会生效，仅 AI 工作流层面的规则会执行。
+> **关于 settings.json**：Claude Code 通过此文件启用 PreToolUse 钩子（主文件保护 + 阶段门控）和 SessionStart 钩子（会话启动时注入工作流状态）。如果不复制此文件，钩子保护机制不会生效，仅 AI 工作流层面的规则会执行。`hooks/hooks.json` 已废弃并移除。
 
 **OpenCode**
 
 ```bash
 cp -r skills/* your-project/.opencode/skills/
-cp -r hooks/* your-project/.opencode/hooks/
 ```
+
+> OpenCode 支持 SKILL.md 格式的 skills，但 **不支持 Claude Code 的 Hook 协议**（PreToolUse/PostToolUse/Stop 事件格式不同）。hooks 目录仅供 Claude Code 使用，OpenCode 下无需复制。
 
 **Cursor / 其他**
 
 ```bash
 cp -r skills/* your-project/.agents/skills/
-cp -r hooks/* your-project/.cursorkit/hooks/
 ```
+
+> Cursor 的 Hook 配置使用 `~/.cursor/hooks.json`（camelCase 事件名 + 不同 JSON schema），与 Claude Code 的 `settings.json` 格式不兼容。hooks 目录仅供 Claude Code 使用，Cursor 下无需复制。
 
 > **关于 `skills/*/agents/openai.yaml`**：这些文件是 OpenCode/Cursor 兼容层（`interface.display_name` / `short_description` / `default_prompt`），Claude Code 忽略它们。Claude Code 的 agent 定义应放置在 `.claude/agents/*.md`。
 
@@ -165,6 +166,10 @@ AI 会从上次中断的阶段接着推进。
 关于 LaTeX，最初写论文时老师没说最后必须交 Word，我自作主张用了一段时间 LaTeX，但后续确认必须使用 Word，就中途放弃了 LaTeX 路线。因此 skills 里的 LaTeX 格式检查（`check_format.py`）可能并不完善，如果你用 LaTeX 写论文，格式方面建议自己再仔细过一遍。
 
 虽说最初整理这套 skills 的目标是尽可能自动化，但直到现在我的论文快结束了，在使用过程中不断发现和解决问题，依然没能做到完全自动化，AI 还是会在各种意想不到的地方出错。所以**推荐每一步结束后至少做一次人工检查**，不要把 AI 的输出直接当定稿。
+
+**关于 AI 检测率**：经过实践，完整按工作流走完全程，且每一步都进行人工把关（尤其是润色阶段），最终 AI 率能降到二十多。如果不满意，可以把 AI 检测报告中较为严重的段落单独再走一次润色 skill——工作流也支持这种用法（用户粘贴文本，直接进入独立润色模式）。本人论文 7 万字，经 [SpeedAI 模拟维普 AI 检测](https://speedai.com/aigc-detection) 测试，从最初检测 AI 率降到 5% 左右。根据周围同学反馈，SpeedAI 的 AI 率通常比学校定制的维普检测偏高一些，实际学校检测结果可能更低。当然，各学校定制的检测数据库可能有差异，该网站也宣称与官方检测结果一般在 10% 以内。
+
+作者只是机械类本科生，这套工作流是一边用一边完善的，做出的东西可能较为粗糙。写作中没有遇到的问题也就没有加强相关规则，局限性在所难免。也欢迎提 [issue](https://github.com/little3tar/paper-anti-aigc/issues) 和 [PR](https://github.com/little3tar/paper-anti-aigc/pulls)。
 
 ## 运行产物
 
@@ -357,7 +362,15 @@ python skills/thesis-writing-workflow/scripts/git_snapshot.py --list
 python skills/thesis-writing-workflow/scripts/git_snapshot.py --rollback paper.tex
 ```
 
+### LaTeX 项目生成
+
+格式清理完成后，可通过 workflow router 的 `latex-output-guide.md` 将 Markdown 章节转换为 LaTeX 项目（`main.tex` + 章节 `.tex` 文件 + `references.bib`），支持学校模板检测和 `ctexart` 默认模板。
+
 ### DOCX 翻译
+
+`docx-translator` 不参与论文写作流程，是独立的文档翻译工具。主要用途是将外文论文、技术文档等翻译为中文并保留原始 Word 格式。
+
+> 英文论文大多只有 PDF 文件，需要先转换为 docx 格式。推荐使用 [iLovePDF](https://www.ilovepdf.com/pdf_to_word) 等在线工具将 PDF 转为 docx，然后手动优化格式（修正表格错位、公式丢失等），最后通过 agent 翻译出成品。
 
 ```bash
 # 导出段落列表
@@ -398,6 +411,10 @@ python -m unittest discover -s tests
 git checkout single-skill   # 仅润色去 AI 腔
 git checkout two-skills     # 润色 + 格式清理
 ```
+
+## 待办
+
+- **Hooks 多平台兼容**：当前 `pre-tool-use`（四道防线门控）和 `session-start`（状态注入）仅支持 Claude Code。Cursor 的 `preToolUse` 事件格式不同但可适配（camelCase stdin/stdout、`permission` 替代 `permissionDecision`）。Codex CLI 和 OpenCode 缺少 PreToolUse 等价事件，只能适配 session-start。方案：新增 `hooks/_platform.py` 平台检测与格式适配层，配合各平台独立配置文件（`cursor-hooks.json`、`codex-hooks.json`），核心门控逻辑复用不改。
 
 ## 致谢
 

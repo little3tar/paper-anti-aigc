@@ -1,6 +1,6 @@
 """hooks 共享工具模块 — Windows UTF-8 终端兼容。
 
-session-start 和 pre-tool-use 钩子共用此模块，避免三处独立实现。
+session-start 和 pre-tool-use 钩子共用此模块，避免两处独立实现。
 """
 import sys
 import io

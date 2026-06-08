@@ -16,7 +16,7 @@
 - **占位符名**：正文中使用的占位符描述文本，如 `[此处插入图片：流量-压力曲线]` 中去掉前缀的"流量-压力曲线"，与 Figure ID 一一对应
 - **数据文件**：源数据文件路径（相对于论文项目根目录）
 - **真实/mock**：`real`（真实数据）、`mock`（占位数据，文件名应含 `mock_` 或 `synthetic_` 前缀）
-- **来源说明**：数据出处——实验采集、仿真导出、用户提供、开放数据集等
+- **来源说明**：数据出处，如实验采集、仿真导出、用户提供、开放数据集等
 - **生成脚本**：从数据文件生成最终图表的脚本路径
 - **输出格式**：目标输出格式列表
 - **状态**：`draft`、`data-ready`、`generated`、`confirmed`
@@ -41,6 +41,6 @@ AI 根据 Mermaid 代码块、matplotlib 脚本、Graphviz DOT 文件或提示�
 
 **命名格式**：`Fig X-Y 描述.png`（与 manifest 中 Figure ID 对应，如 `Fig 3-1 流量-压力曲线.png`）。
 
-此规则全流程适用——无论图片在 outline-planner、chapter-writer 还是修改回环中产生，均存入同一目录。manifest 中"生成脚本"列记录生成该图的代码/提示词来源，"数据文件"列可为空（纯代码生成图无外部数据文件）。
+此规则全流程适用。无论图片在 outline-planner、chapter-writer 还是修改回环中产生，均存入同一目录。manifest 中"生成脚本"列记录生成该图的代码/提示词来源，"数据文件"列可为空（纯代码生成图无外部数据文件）。
 
 Mermaid/matplotlib/DOT 图表代码块在格式转换阶段（format-cleaner）的保护规则见 format-cleaner 参考文件 `format-guide.md` §图表代码块保护。

@@ -348,6 +348,24 @@ def check_file(
                                   target_format, in_block_math, in_protected_env, in_markdown_protected)
     )
 
+    # 工程设计段落结构重复度聚合统计
+    diagnostics.extend(
+        check_module_enumeration_density(diagnostics, lines, start_line, end_line,
+                                         target_format, in_block_math, in_protected_env, in_markdown_protected)
+    )
+    diagnostics.extend(
+        check_clean_conclusion_density(diagnostics, lines, start_line, end_line,
+                                       target_format, in_block_math, in_protected_env, in_markdown_protected)
+    )
+    diagnostics.extend(
+        check_safety_jargon_density(diagnostics, lines, start_line, end_line,
+                                    target_format, in_block_math, in_protected_env, in_markdown_protected)
+    )
+    diagnostics.extend(
+        check_selection_template_density(diagnostics, lines, start_line, end_line,
+                                         target_format, in_block_math, in_protected_env, in_markdown_protected)
+    )
+
     return diagnostics
 
 
@@ -685,6 +703,156 @@ def check_three_part_patterns(
         })
 
     return result
+
+
+def _count_chinese_chars(
+    lines: list[str],
+    start: int,
+    end: int,
+    target_format: str,
+    in_block_math: list[bool],
+    in_protected_env: list[bool],
+    in_markdown_protected: list[bool],
+) -> int:
+    """统计正文区域汉字总数（跳过非正文行）。"""
+    count = 0
+    for i in range(start, end):
+        if in_block_math[i] or in_protected_env[i] or in_markdown_protected[i]:
+            continue
+        line = lines[i].strip()
+        if target_format == "latex" and line.startswith("%"):
+            continue
+        count += sum(1 for c in line if "一" <= c <= "鿿")
+    if count == 0:
+        count = 1
+    return count
+
+
+def _build_agg_diagnostic(
+    rule_id: str,
+    severity: str,
+    label: str,
+    hit_count: int,
+    chinese_char_count: int,
+    threshold: int,
+    hit_lines: list[int],
+    fix: str,
+) -> dict:
+    """构建聚合诊断条目，格式与 check_three_part_patterns 输出一致。"""
+    density = hit_count / (chinese_char_count / 1000)
+    return {
+        "line": hit_lines[0] if hit_lines else 1,
+        "column": 1,
+        "rule": rule_id,
+        "severity": severity,
+        "message": (
+            f"全文{label}超标：{hit_count} 处 / {chinese_char_count} 字 "
+            f"（密度 {density:.1f} 处/千字，阈值 {threshold}）。"
+            f"涉及行：{hit_lines}"
+        ),
+        "fix": fix,
+        "context": f"全文{label}密度 {density:.1f} 处/千字（阈值 {threshold}）",
+    }
+
+
+def check_module_enumeration_density(
+    diagnostics: list[dict],
+    lines: list[str],
+    start: int,
+    end: int,
+    target_format: str,
+    in_block_math: list[bool],
+    in_protected_env: list[bool],
+    in_markdown_protected: list[bool],
+) -> list[dict]:
+    """聚合统计功能模块流水账句式（AIGC-065），全章 > 3 处产生 warning。"""
+    hits = [d for d in diagnostics if d["rule"] == "AIGC-065"]
+    if len(hits) <= 3:
+        return []
+    chinese_char_count = _count_chinese_chars(
+        lines, start, end, target_format, in_block_math, in_protected_env, in_markdown_protected
+    )
+    hit_lines = sorted({d["line"] for d in hits})
+    return [_build_agg_diagnostic(
+        "AIGC-AGG-MODULE", "warning", "功能模块流水账句式",
+        len(hits), chinese_char_count, 3, hit_lines,
+        "不要连续写模块A负责B；改为按工况、信号流或动作顺序说明部件为何承担该功能",
+    )]
+
+
+def check_clean_conclusion_density(
+    diagnostics: list[dict],
+    lines: list[str],
+    start: int,
+    end: int,
+    target_format: str,
+    in_block_math: list[bool],
+    in_protected_env: list[bool],
+    in_markdown_protected: list[bool],
+) -> list[dict]:
+    """聚合统计参数结论过圆（AIGC-068），全章 > 5 处产生 warning。"""
+    hits = [d for d in diagnostics if d["rule"] == "AIGC-068"]
+    if len(hits) <= 5:
+        return []
+    chinese_char_count = _count_chinese_chars(
+        lines, start, end, target_format, in_block_math, in_protected_env, in_markdown_protected
+    )
+    hit_lines = sorted({d["line"] for d in hits})
+    return [_build_agg_diagnostic(
+        "AIGC-AGG-CONC", "warning", "参数结论过圆",
+        len(hits), chinese_char_count, 5, hit_lines,
+        "补出取值前提和边界条件；把三缸合力取写成三个缸的合力取，把该值高于计算载荷写成这个数值比前面算出来的载荷高了",
+    )]
+
+
+def check_safety_jargon_density(
+    diagnostics: list[dict],
+    lines: list[str],
+    start: int,
+    end: int,
+    target_format: str,
+    in_block_math: list[bool],
+    in_protected_env: list[bool],
+    in_markdown_protected: list[bool],
+) -> list[dict]:
+    """聚合统计安全规范口吻成串（AIGC-069），全章 > 5 处产生 warning。"""
+    hits = [d for d in diagnostics if d["rule"] == "AIGC-069"]
+    if len(hits) <= 5:
+        return []
+    chinese_char_count = _count_chinese_chars(
+        lines, start, end, target_format, in_block_math, in_protected_env, in_markdown_protected
+    )
+    hit_lines = sorted({d["line"] for d in hits})
+    return [_build_agg_diagnostic(
+        "AIGC-AGG-SAFETY", "warning", "安全规范口吻成串",
+        len(hits), chinese_char_count, 5, hit_lines,
+        "把命令式(应/必须/禁止)改为联锁条件、传感器状态、阈值和故障后果；规范条文单独引用",
+    )]
+
+
+def check_selection_template_density(
+    diagnostics: list[dict],
+    lines: list[str],
+    start: int,
+    end: int,
+    target_format: str,
+    in_block_math: list[bool],
+    in_protected_env: list[bool],
+    in_markdown_protected: list[bool],
+) -> list[dict]:
+    """聚合统计选型模板复制（AIGC-070），全章 > 3 处产生 warning。"""
+    hits = [d for d in diagnostics if d["rule"] == "AIGC-070"]
+    if len(hits) <= 3:
+        return []
+    chinese_char_count = _count_chinese_chars(
+        lines, start, end, target_format, in_block_math, in_protected_env, in_markdown_protected
+    )
+    hit_lines = sorted({d["line"] for d in hits})
+    return [_build_agg_diagnostic(
+        "AIGC-AGG-SELECT", "warning", "选型模板复制",
+        len(hits), chinese_char_count, 3, hit_lines,
+        "连续选用某方案 / 该方案模板必须轮换：改成这里选这个方案，主要是因为……",
+    )]
 
 
 # ── 输出格式化 ────────────────────────────────────────────

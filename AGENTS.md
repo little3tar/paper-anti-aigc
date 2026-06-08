@@ -1,13 +1,13 @@
 # 论文工作流 Skills 仓库
 
-一套中文工程类毕业论文 AI 辅助写作工作流。**本仓库是 skills 维护项目**，不是论文项目本身——论文产物写入用户项目的 `.thesis-workflow/`。
+一套中文工程类毕业论文 AI 辅助写作工作流。**本仓库是 skills 维护项目**，不是论文项目本身，论文产物写入用户项目的 `.thesis-workflow/`。
 
 ## 组件
 
 | 目录 | 用途 |
 |---|---|
 | `skills/` | 7 个 skill（6 个论文工作流 + 1 个 docx 翻译），渐进式加载（SKILL.md + references/ + scripts/） |
-| `hooks/` | SessionStart 钩子（注入工作流状态到新会话）+ PreToolUse 钩子（四道防线：主文件保护、阶段门控、跳阶段确认、细纲确认阻塞） |
+| `hooks/` | Hook 脚本（`session-start` 注入工作流状态、`pre-tool-use` 四道防线）。触发配置在 `.claude/settings.json`，`hooks/hooks.json` 已废弃 |
 | `tests/` | 脚本回归测试，不参与论文项目运行 |
 | `evals/` | skill description 触发边界评估，不参与论文项目运行 |
 
@@ -15,7 +15,9 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 
 ## 编写约束
 
-### 单一权威定义
+### 内容组织
+
+#### 单一权威定义
 每条规则只在一处完整定义，他处一句话引用。以下规则已有权威定义，不在其他文件中完整重述：
 
 | 规则 | 权威位置 |
@@ -33,44 +35,90 @@ skills 架构：`thesis-writing-workflow`（路由器）→ `thesis-outline-plan
 | 三级来源检索协议（Zotero → 用户 → 网络） | `skills/thesis-writing-workflow/references/source-policy.md` |
 | 主文件上下文模板（格式约定字段） | `skills/thesis-writing-workflow/references/main-tex-context-template.md` |
 | 图表数据溯源规则（Figure ID、数据文件、生成脚本、状态） | `skills/evidence-grounded-chapter-writer/references/figure-data-manifest-rules.md` |
-| 文献池分层（Tier 1/2/3 数量与职责） | `skills/thesis-outline-planner/references/evidence-rules.md` |
+| 文献池规模分级（按任务量：30-50/10+/2-5 篇） | `skills/thesis-outline-planner/references/evidence-rules.md` |
 | 计算链（8 步强制展开顺序） | `skills/evidence-grounded-chapter-writer/references/formula-calculation-rules.md` |
+| 用户确认信息的落盘规则（落盘映射表、覆盖范围） | `skills/thesis-writing-workflow/references/confirmation-save-rules.md` |
+| 确认问题模板（8 个确认门话术） | `skills/thesis-writing-workflow/references/confirmation-templates.md` |
 | status.json 状态机（fix-evidence → humanizer → format-cleaner → next-chapter） | workflow §强制串行规则 |
 
-### 不描述默认行为
+#### 不描述默认行为
 只写例外。持久文件不写"保留不删除"，正常备份不写"保留最近 N 个"。
 
-### Red Flag = 反直觉的 AI 陷阱
+#### Red Flag = 反直觉的 AI 陷阱
 只放 AI 特有的直觉错误。不是规则重述。写之前问：这是 AI 才容易犯的错吗？
 
-### ⭐ 标记约定
+#### ⭐ 标记约定
 
-`⭐` 标记表示"AI 容易跳过或遗漏的强制步骤"——不标 ⭐ 的步骤 AI 可能因对话压缩、上下文丢失或直觉判断而省略。仅用于真实存在的 AI 遗漏模式，不用作通用强调。
+`⭐` 标记表示"AI 容易跳过或遗漏的强制步骤"。不标 ⭐ 的步骤 AI 可能因对话压缩、上下文丢失或直觉判断而省略。仅用于真实存在的 AI 遗漏模式，不用作通用强调。
 
-### 中文排版
-
-技术文档自身的中文正文使用弯引号 `""`、`''`，代码块和 YAML frontmatter 中的字符串使用 ASCII 直引号。
-
-### 子 skill 引用 workflow，不复述
+#### 子 skill 引用 workflow，不复述
 文件产出 boilerplate 只在 workflow §输出与文件安全 定义。子 skill 步骤 1 写："文件产出规则遵循 workflow §输出与文件安全。本阶段产物为 `.thesis-workflow/chapters/chX/xxx.md`。"
 
-### 跨 skill 引用可解析
+**门控条件是复述最高发区**：humanizer 和 format-cleaner 需要在启动时自检门控条件，AI 容易把 workflow §强制串行规则中的 `next_allowed` 取值枚举、P0/P1 判断逻辑完整抄进子 skill SKILL.md。正确做法是写"本阶段门控条件见 workflow §强制串行规则第X条，此处不重述具体取值枚举"，只保留一句阻塞后果说明（如"P0/P1 > 0 时拒绝继续"）。当前 humanizer 和 format-cleaner 已遵循此模式，新增子 skill 或修改门控逻辑时参照执行。
+
+#### 跨 skill 引用可解析
 
 用文字说明（"见 workflow router 的同名参考文件"），不写 `../other-skill/references/xxx.md`。
 
 子 skill 参考文件表中的跨 skill 引用统一使用"见 <skill> 参考文件 `xxx.md`"格式，用途列填写该文件在本 skill 中的使用场景。
 
-### 脚本自包含
+**正文引用必须入表**：子 skill 正文中任何位置（Red Flags、工作流程、步骤说明）通过"见 <skill> 参考文件 `xxx.md`"引用的跨 skill 文件，**必须在末尾参考文件表中也列出一行**。仅正文引用不入表视为遗漏，审计时按不一致问题处理。
+
+#### 脚本自包含
 
 每个 skill 的 `scripts/` 不跨 skill 导入代码。如需共享工具函数，在各 skill 的 `scripts/` 下维护独立副本（如 `_shared.py`），每个副本只包含该 skill 实际使用的函数，确保每个 skill 可独立部署。
 
-修改共享函数时，只更新使用了该函数的 skill 副本，不同步到不使用该函数的 skill。当前分布：`git_snapshot.py`（workflow 含全部命令，humanizer 和 format-cleaner 仅含 `cmd_snapshot` 备份入口）、`_shared.py`（workflow 仅含 `setup_windows_utf8`，humanizer 版额外含 `mask_latex_inline_protected` 等函数，format-cleaner 版不含 humanizer 专有函数）。
+修改共享函数时，只更新使用了该函数的 skill 副本，不同步到不使用该函数的 skill。当前分布：`git_snapshot.py`（workflow 含全部命令含 list/rollback/diff/cleanup，humanizer 和 format-cleaner 仅含 `cmd_snapshot` + `main`，不含 list/rollback/diff/cleanup）、`_shared.py`（workflow 仅含 `setup_windows_utf8`，humanizer 版额外含 `mask_latex_inline_protected` 等函数，format-cleaner 版不含 humanizer 专有函数）。
 
-### 新增产物同步
+### 语言风格
+
+#### 指令风格一致性
+
+指令文件（SKILL.md、references、AGENTS.md）的标点、措辞、句式会被 AI 作为风格示范，通过启动效应（priming effect）影响其输出风格。指令文件不是"写给自己看的笔记"，它是 AI 的语体模板。
+
+- **标点**：指令文件中大量使用 `——` → AI 输出更倾向保留破折号（提交 `36600d9` 清理了 47 处）。指令文件用弯引号 → AI 输出更倾向用弯引号。
+- **措辞**：指令文件用描述句（"你可以……""建议……"）→ AI 执行时更倾向描述而非执行。指令文件用祈使句 → AI 执行时更倾向直接动作。
+- **句式**：指令文件结构松散 → AI 输出也松散。指令文件结构紧凑 → AI 输出也更紧凑。
+
+本规则是中文排版、Skill 指令语气等规则共同的底层原理。
+
+#### 中文排版
+
+技术文档自身的中文正文使用弯引号 `""`、`''`，代码块和 YAML frontmatter 中的字符串使用 ASCII 直引号。
+
+#### Skill 指令语气
+
+Skill 是给 AI 执行的指令，不是给人看的文档。**必须用祈使句**（动词开头的直接动作指令），不用描述句或能力陈述。
+
+| 类型 | 写法 | AI 的理解 |
+|------|------|------|
+| 祈使句 | "调用 Bash 工具" | 必须执行的步骤 |
+| 描述句 | "你可以使用 Bash 工具" | 可选，不做也行 |
+| 祈使句 | "读取 Y 文档，逐条对照" | 强制加载 |
+| 建议句 | "建议查阅 Y 文档" | 跳过也无妨 |
+| 祈使句 | "询问用户是否确认" | 必须交互 |
+| 猜测句 | "用户可能需要确认" | 自己判断，倾向于不问 |
+
+**Why**：描述句给 AI 的信号是"做不做随意"，祈使句给 AI 的信号是"这是必须执行的动作"。长上下文压缩后，描述句的约束力几乎为零。
+
+#### 术语一致性
+
+同一概念在全仓库使用**唯一名称**。新增概念时在本文档的单一权威定义表中记录权威名称，其他文件一律使用该名称引用。修改概念名称时 `grep` 搜索全仓库替换，不保留旧名称别名（如"文献池分层"改为"文献池规模分级"后，全仓库不得残留旧术语）。
+
+常见的不一致高发区：skill 名称大小写（`thesis-writing-workflow` vs `Thesis Writing Workflow`）、stage code 与阶段编号（`"02"` vs `阶段2`）、产物文件名（`main-tex-context.md` vs `main-tex-context-template.md`）。
+
+### 流程规范
+
+#### 新增产物同步
 新增 `.thesis-workflow/` 产物 → 同步更新 `README.md` 目录树 + 产物表、`workflow SKILL.md` 产出物列表。新增 `chapters/chX/` 下的阶段产物 → 同步更新目录树。新增 reference 文件 → 在所属 skill 参考文件表追加一行，并同步本文件（AGENTS.md）的单一权威定义表。
 
-### 修改前先研究
-修改 skills 或 hooks 前，必须通过 skill-creator 和联网搜索获取相关知识——skill 设计最佳实践、相似问题的解决模式、AI 指令执行的已知陷阱。禁止凭直觉直接改，先研究再动手。
+**原子提交**：新增文件与引用该文件的修改必须在**同一次提交**中完成。不允许先提交引用再补文件（导致 checkout 后引用悬空），也不允许先提交文件再补引用（导致文件孤立无人知晓）。
+
+#### 修改前先研究
+
+修改 skills 或 hooks 前，必须通过 skill-creator 和联网搜索获取相关知识：skill 设计最佳实践、相似问题的解决模式、AI 指令执行的已知陷阱。禁止凭直觉直接改，先研究再动手。
+
+**修改后检查影响范围**：修改单一权威定义文件中的规则后，必须 `grep` 搜索全仓库引用该规则的所有文件，检查是否需要连带更新。重点检查：子 skill SKILL.md 中的引用描述、Hook 脚本中的匹配逻辑、AGENTS.md 单一权威定义表中的路径。子 skill 中的引用与权威定义不一致时，以权威定义为准并同步修正子 skill。
 
 ## 新用户引导
 
